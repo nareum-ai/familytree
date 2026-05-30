@@ -1,0 +1,91 @@
+.my-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex; justify-content: flex-end;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.my-panel {
+  width: 360px; max-width: 100vw; height: 100%;
+  background: white; display: flex; flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+
+.my-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid #e8f0f5;
+}
+.my-header h2 { font-size: 16px; font-weight: 700; color: #1a2e3b; margin: 0; }
+.my-close { background:none; border:none; font-size:18px; color:#aaa; cursor:pointer; }
+.my-close:hover { color:#333; }
+
+.my-tabs {
+  display: flex; border-bottom: 1px solid #e8f0f5;
+}
+.my-tab {
+  flex: 1; padding: 12px 8px;
+  background: none; border: none; border-bottom: 3px solid transparent;
+  font-size: 13px; font-weight: 600; color: #94a3b8;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: all 0.15s;
+}
+.my-tab.active { color: #2AABE2; border-bottom-color: #2AABE2; }
+
+.my-badge {
+  background: #e53e3e; color: white;
+  font-size: 10px; font-weight: 800;
+  border-radius: 50%; width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.my-body { flex: 1; overflow-y: auto; padding: 16px; }
+.my-empty { text-align: center; color: #94a3b8; font-size: 14px; padding: 24px 0; }
+
+/* 요청 목록 */
+.my-req-list { display: flex; flex-direction: column; gap: 10px; }
+.my-req-row {
+  padding: 12px; background: #f8f9fa; border-radius: 10px;
+  border: 1px solid #e8f0f5;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.my-req-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.my-req-name { font-size: 13px; font-weight: 700; color: #1a2e3b; }
+.my-req-person { font-size: 12px; color: #2AABE2; }
+.my-req-date { font-size: 11px; color: #94a3b8; }
+.my-req-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.my-approve {
+  background: #2AABE2; color: white; border: none;
+  border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.my-reject {
+  background: white; color: #e53e3e; border: 1px solid #fca5a5;
+  border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+
+/* 비밀번호 변경 */
+.my-pw-form { display: flex; flex-direction: column; gap: 14px; }
+.my-field { display: flex; flex-direction: column; gap: 5px; }
+.my-field label { font-size: 12px; font-weight: 600; color: #4a5568; }
+.my-field input {
+  padding: 10px 12px; border: 1.5px solid #e0e0e0;
+  border-radius: 8px; font-size: 14px; outline: none;
+  transition: border-color 0.15s;
+}
+.my-field input:focus { border-color: #2AABE2; }
+
+.my-pw-msg { font-size: 13px; padding: 8px 12px; border-radius: 6px; margin: 0; }
+.my-pw-msg.ok  { background: #e8f5e9; color: #2e7d32; }
+.my-pw-msg.err { background: #fee2e2; color: #c53030; }
+
+.my-pw-btn {
+  padding: 12px; background: #2AABE2; color: white;
+  border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+}
+.my-pw-btn:hover:not(:disabled) { background: #1a8ab5; }
+.my-pw-btn:disabled { opacity: 0.5; cursor: not-allowed; }

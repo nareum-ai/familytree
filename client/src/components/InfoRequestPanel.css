@@ -1,0 +1,59 @@
+.irp-panel { gap: 16px; }
+
+.irp-lock-icon { font-size: 32px; }
+
+.irp-desc {
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.irp-request-btn {
+  width: 100%;
+  padding: 12px;
+  background: #2AABE2;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.irp-request-btn:hover:not(:disabled) { background: #1a8ab5; }
+.irp-request-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.irp-sent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  text-align: center;
+}
+.irp-sent-icon { font-size: 36px; }
+.irp-sent p { font-size: 14px; color: #4a5568; line-height: 1.7; margin: 0; }
+
+.irp-notice {
+  font-size: 12px;
+  color: #5a7ca0;
+  background: #eef6fb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+.irp-close-btn {
+  padding: 9px 24px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  color: #7f8c8d;
+}

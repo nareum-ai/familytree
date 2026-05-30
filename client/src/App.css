@@ -1,0 +1,222 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f0f7fb;
+}
+
+.app-header {
+  height: 56px;
+  background: white;
+  border-bottom: 1px solid #e8f0f5;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  z-index: 100;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 22px;
+}
+
+.logo-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2e3b;
+  letter-spacing: -0.3px;
+}
+
+.header-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .logo-text {
+    font-size: 14px;
+  }
+
+  .header-username {
+    font-size: 13px;
+  }
+}
+
+.header-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2AABE2;
+}
+
+.header-ann-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+
+.header-ann-btn:hover { transform: scale(1.15); }
+
+.header-my-btn { position: relative; }
+
+.header-notify-dot {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: #e53e3e;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 50%;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+.header-logout {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.header-logout:hover {
+  border-color: #2AABE2;
+  color: #2AABE2;
+}
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.app-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: #7f8c8d;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #2AABE2;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-slow {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.invite-loading,
+.invite-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 16px;
+  color: #7f8c8d;
+}
+
+.invite-landing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, #e6f5fb, #f0f7fb);
+}
+
+.invite-card {
+  background: white;
+  border-radius: 20px;
+  padding: 48px 40px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  max-width: 400px;
+  width: 90%;
+}
+
+.invite-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.invite-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a2e3b;
+  margin-bottom: 12px;
+}
+
+.invite-desc {
+  font-size: 15px;
+  color: #7f8c8d;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.invite-view-btn {
+  background: #2AABE2;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 40px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.invite-view-btn:hover { background: #1a8ab5; }
+
+.invite-person-name { color: #2AABE2; }
+.invite-btn-group { display: flex; flex-direction: column; gap: 10px; }
+.invite-note { font-size: 11px; color: #aaa; margin-top: 12px; }

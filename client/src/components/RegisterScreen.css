@@ -1,0 +1,10 @@
+.reg-back-btn {
+  background: none;
+  border: none;
+  color: #2AABE2;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 0;
+  text-decoration: underline;
+}
+.reg-back-btn:hover { color: #1a8ab5; }

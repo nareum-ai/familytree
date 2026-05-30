@@ -1,0 +1,147 @@
+.couple-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.couple-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+/* Individual hex inside a couple */
+.chex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  width: 64px;
+  user-select: none;
+}
+
+.chex-shape {
+  width: 64px;
+  height: 64px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: filter 0.15s;
+  position: relative;
+}
+
+.chex.male .chex-shape    { background: linear-gradient(135deg, #2AABE2, #1a8ab5); }
+.chex.female .chex-shape  { background: linear-gradient(135deg, #e27ba2, #c25a82); }
+.chex.root .chex-shape    { background: linear-gradient(135deg, #e2a32a, #c5861a); }
+
+.chex.selected .chex-shape {
+  filter: drop-shadow(0 0 8px rgba(42, 171, 226, 0.85));
+}
+
+.chex-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chex-initial {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+/* Wrapper needed to position ribbon relative to hex */
+.chex-shape-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.couple-hidden-badge {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #94a3b8;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.anon-chex { cursor: default; }
+.anon-chex .anon-hex { background: linear-gradient(135deg, #9ca3af, #6b7280) !important; }
+.anon-chex .anon-icon { font-size: 18px; }
+.anon-chex .anon-name { color: #9ca3af !important; font-style: italic; }
+
+.chex.deceased .chex-shape {
+  filter: grayscale(70%) brightness(0.85);
+}
+
+.chex-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-top: 6px;
+  text-align: center;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chex-age {
+  font-weight: 400;
+  color: #7f8c8d;
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+.chex-birth {
+  font-size: 11px;
+  color: #7f8c8d;
+  margin-top: 1px;
+}
+
+.chusu-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  background: #2AABE2;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.me-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #e74c3c;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}

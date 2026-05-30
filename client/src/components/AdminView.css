@@ -1,0 +1,405 @@
+.admin-wrap {
+  min-height: 100%;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header {
+  background: #1a2e3b;
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.admin-logout {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-logout:hover { background: rgba(255,255,255,0.25); }
+
+.admin-msg {
+  background: #e8f5e9;
+  border-left: 4px solid #4caf50;
+  padding: 10px 24px;
+  font-size: 14px;
+  color: #2e7d32;
+}
+
+.admin-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.admin-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+}
+
+.admin-section h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2e3b;
+  margin: 0 0 16px;
+}
+
+.admin-empty {
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 회원 관리 */
+.member-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.member-header h2 { margin: 0; }
+.member-search {
+  flex: 1; max-width: 200px; padding: 7px 10px;
+  border: 1.5px solid #e0e0e0; border-radius: 8px;
+  font-size: 13px; outline: none;
+}
+.member-search:focus { border-color: #2AABE2; }
+
+/* 테이블 컬럼 */
+.member-table-head, .admin-member-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 100px 80px 110px;
+  align-items: center; gap: 8px;
+  padding: 8px 12px;
+}
+.member-table-head {
+  background: #f0f4f8; border-radius: 8px;
+  font-size: 11px; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+.admin-member-row {
+  background: #f8f9fa; border-radius: 6px;
+  border: 1px solid #eef0f5; margin-bottom: 4px;
+}
+.admin-member-row:hover { background: #f0f9ff; }
+
+.col-idx { color: #aaa; font-size: 11px; }
+.member-id { font-size: 13px; font-weight: 600; color: #1a2e3b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-mapped { font-size: 12px; color: #2AABE2; font-weight: 600; }
+.member-unmapped { font-size: 11px; color: #aaa; }
+.member-date { font-size: 11px; color: #94a3b8; }
+
+.col-actions { display: flex; gap: 5px; }
+
+.btn-map-sm {
+  background: #f0f9ff; color: #2AABE2; border: 1px solid #2AABE2;
+  border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn-map-sm:hover { background: #e0f2fb; }
+
+.btn-del-member {
+  background: #fff5f5; color: #e53e3e; border: 1px solid #fca5a5;
+  border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.btn-del-member:hover { background: #fee2e2; }
+
+/* 페이지네이션 */
+.member-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-top: 10px; font-size: 13px; color: #4a5568;
+}
+.member-pagination button {
+  background: #f0f4f8; border: 1px solid #e0e0e0; border-radius: 6px;
+  width: 30px; height: 30px; font-size: 16px; cursor: pointer; line-height: 1;
+}
+.member-pagination button:hover:not(:disabled) { background: #e6f5fb; }
+.member-pagination button:disabled { opacity: 0.35; cursor: default; }
+
+.member-list { gap: 0; }
+
+/* 매핑 모달 */
+.mapping-box { max-height: 80vh; overflow-y: auto; }
+.map-search-row { display: flex; gap: 8px; margin: 12px 0 8px; }
+.map-search-input {
+  flex: 1; padding: 9px 12px; border: 1.5px solid #e0e0e0;
+  border-radius: 8px; font-size: 14px; outline: none;
+}
+.map-search-input:focus { border-color: #2AABE2; }
+.map-search-btn {
+  background: #2AABE2; color: white; border: none;
+  border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.map-results { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+.map-result-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; background: #f8f9fa; border-radius: 8px;
+  cursor: pointer; transition: background 0.1s;
+}
+.map-result-row:hover { background: #e6f5fb; }
+.map-result-name { font-size: 14px; font-weight: 600; color: #1a2e3b; }
+.map-result-deceased { opacity: 0.5; cursor: not-allowed !important; background: #f5f5f5; }
+.deceased-tag { font-size: 11px; color: #e53e3e; font-weight: 400; }
+.map-result-fid { font-size: 11px; color: #aaa; font-family: monospace; }
+
+/* 승인 요청 행 */
+.admin-req-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e8f0f5;
+}
+
+.req-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.req-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2e3b;
+}
+
+.req-member { font-size: 11px; color: #2AABE2; font-weight: 600; }
+.req-desc   { font-size: 11px; color: #7f8c8d; font-style: italic; }
+
+.req-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.req-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-approve {
+  background: #2AABE2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-approve:hover { background: #1a8ab5; }
+
+.btn-reject {
+  background: white;
+  color: #e53e3e;
+  border: 1.5px solid #fca5a5;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-reject:hover { background: #fee2e2; }
+
+/* 가족집단 행 */
+.admin-fam-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e8f0f5;
+}
+
+.fam-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fam-root {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2e3b;
+}
+
+.fam-id {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.fam-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.fam-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-fam-row.disabled {
+  opacity: 0.6;
+  background: #f9f9f9;
+}
+
+.fam-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.disabled-badge {
+  background: #fee2e2;
+  color: #e53e3e;
+}
+
+.btn-enter {
+  background: #f0f9ff;
+  color: #2AABE2;
+  border: 1.5px solid #2AABE2;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-enter:hover:not(:disabled) { background: #e0f2fb; }
+.btn-enter:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-disable {
+  background: #fff8e1;
+  color: #e65100;
+  border: 1.5px solid #ffcc02;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-disable:hover { background: #fff3cd; }
+
+.btn-enable {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1.5px solid #4caf50;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-enable:hover { background: #c8e6c9; }
+
+.btn-delete {
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1.5px solid #fca5a5;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-delete:hover { background: #fee2e2; }
+
+/* 삭제 확인 모달 */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-box {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  width: 340px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.confirm-box h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2e3b;
+  margin: 0 0 16px;
+}
+
+.confirm-box p {
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0 0 24px;
+}
+
+.confirm-warn {
+  display: block;
+  margin-top: 8px;
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-cancel-confirm {
+  flex: 1;
+  padding: 11px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #7f8c8d;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-delete-confirm {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: #e53e3e;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-delete-confirm:hover { background: #c53030; }

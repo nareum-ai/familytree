@@ -1,0 +1,16 @@
+.verify-card { max-width: 380px; }
+
+.verify-desc {
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.verify-hint {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 12px;
+  text-align: center;
+}

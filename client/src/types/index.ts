@@ -1,0 +1,70 @@
+import type { PersonPermissions } from './permissions';
+
+export interface Person {
+  id: string;
+  name: string;
+  birth_year: number | null;
+  birth_date: string | null;
+  birth_lunar: boolean;
+  gender: 'male' | 'female' | null;
+  photo_url: string | null;
+  is_root: number;
+  is_deceased: boolean;
+  death_date: string | null;
+  death_lunar: boolean;
+  created_by: string | null;
+  permissions: PersonPermissions;
+  family_id: string;   // 가족집단 식별자 ('main' 또는 UUID)
+  last_name: string;   // 성 (자동 파싱)
+  first_name: string;  // 이름 (자동 파싱)
+  created_at: string;
+}
+
+export type RelationshipType = 'spouse' | 'parent_child';
+
+export interface Relationship {
+  id: string;
+  person1_id: string;
+  person2_id: string;
+  type: RelationshipType;
+  family_id: string;   // 가족집단 식별자
+}
+
+export type BranchType = '친가' | '외가' | '처가' | '처외가';
+
+export type AddRelationType =
+  | 'father'
+  | 'mother'
+  | 'spouse'
+  | 'child'
+  | 'sibling';
+
+// 회원 계정
+export interface Member {
+  id: string;
+  username: string;
+  password_hash: string;
+  person_id: string | null;    // 매핑된 트리 인물 ID
+  family_id: string | null;    // 매핑된 가족집단 ID
+  person_name: string | null;  // 표시용 캐시
+  is_admin: boolean;
+  status: 'active' | 'suspended';
+  created_at: string;
+}
+
+// 새 가족집단 생성 승인 요청
+export interface ApprovalRequest {
+  id: string;
+  requested_name: string;
+  status: 'pending' | 'approved' | 'rejected';
+  family_id?: string;
+  // 계정 기반 신청 시 추가 필드
+  member_id?: string;
+  member_username?: string;
+  description?: string;
+  gender?: 'male' | 'female';
+  birth_date?: string | null;
+  birth_lunar?: boolean;
+  created_at: string;
+  reviewed_at?: string;
+}

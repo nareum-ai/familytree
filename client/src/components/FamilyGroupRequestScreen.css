@@ -1,0 +1,102 @@
+.fgr-card { max-width: 400px; }
+
+.fgr-desc {
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.fgr-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fgr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.fgr-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.fgr-required { color: #e53e3e; }
+
+.fgr-textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.fgr-textarea:focus { border-color: #2AABE2; }
+
+.fgr-gender-row {
+  display: flex;
+  gap: 10px;
+}
+
+.fgr-gender-btn {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #4a5568;
+  transition: all 0.15s;
+}
+.fgr-gender-btn:hover       { border-color: #aaa; }
+.fgr-gender-btn.active-male   { border-color: #2AABE2; background: #e6f5fb; color: #2AABE2; }
+.fgr-gender-btn.active-female { border-color: #e27ba2; background: #fce8f0; color: #e27ba2; }
+
+.fgr-lunar-check {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.fgr-pending-box {
+  background: #f0f9ff;
+  border: 1.5px solid #2AABE2;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin: 4px 0 12px;
+}
+.fgr-pending-name { font-size: 18px; font-weight: 700; color: #1a2e3b; margin: 0 0 4px; }
+.fgr-pending-date { font-size: 12px; color: #94a3b8; margin: 0 0 8px; }
+.fgr-pending-msg  { font-size: 13px; color: #2AABE2; font-weight: 600; margin: 0; }
+
+.fgr-cancel-btn {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: #e53e3e;
+  border: 1.5px solid #fca5a5;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fgr-cancel-btn:hover:not(:disabled) { background: #fee2e2; }
+.fgr-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fgr-done-icon { font-size: 48px; margin-bottom: 12px; }

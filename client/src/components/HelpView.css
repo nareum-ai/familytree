@@ -1,0 +1,175 @@
+.help-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  display: flex; justify-content: flex-end;
+  animation: helpFadeIn 0.15s ease;
+}
+@keyframes helpFadeIn { from{opacity:0} to{opacity:1} }
+
+.help-panel {
+  width: 400px; max-width: 100vw; height: 100%;
+  background: #f7f9fc;
+  display: flex; flex-direction: column;
+  box-shadow: -6px 0 32px rgba(0,0,0,0.16);
+  animation: helpSlideIn 0.22s ease;
+}
+@keyframes helpSlideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+
+/* ── 헤더 ────────────────────────────────────────────────── */
+.help-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 16px;
+  background: linear-gradient(135deg, #2AABE2 0%, #1a7fb5 100%);
+  flex-shrink: 0;
+}
+.help-header-title {
+  display: flex; align-items: center; gap: 12px;
+}
+.help-logo { font-size: 32px; }
+.help-header-title h2 {
+  font-size: 18px; font-weight: 800; color: white; margin: 0;
+}
+.help-header-title p {
+  font-size: 12px; color: rgba(255,255,255,0.8); margin: 2px 0 0;
+}
+.help-close {
+  background: rgba(255,255,255,0.2); border: none;
+  color: white; font-size: 16px; width: 32px; height: 32px;
+  border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.help-close:hover { background: rgba(255,255,255,0.35); }
+
+/* ── 본문 ────────────────────────────────────────────────── */
+.help-body {
+  flex: 1; overflow-y: auto; padding: 12px 14px 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+/* ── 아코디언 섹션 ───────────────────────────────────────── */
+.help-section {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #e8f0f5;
+}
+.help-section.open {
+  border-color: #b8ddf4;
+  box-shadow: 0 4px 16px rgba(42,171,226,0.12);
+}
+
+.help-section-header {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; background: none; border: none;
+  cursor: pointer; text-align: left;
+  transition: background 0.12s;
+}
+.help-section-header:hover { background: #f0f8fd; }
+.help-section.open .help-section-header { background: #eaf5fc; }
+
+.help-section-icon { font-size: 20px; flex-shrink: 0; }
+.help-section-title {
+  flex: 1; font-size: 14px; font-weight: 700; color: #1a2e3b;
+}
+.help-chevron { font-size: 10px; color: #94a3b8; flex-shrink: 0; }
+
+.help-section-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid #e8f4fb;
+}
+
+/* ── 본문 요소들 ──────────────────────────────────────────── */
+.help-para {
+  font-size: 13px; color: #4a5568; line-height: 1.7;
+  margin: 10px 0 8px;
+}
+
+.help-list {
+  margin: 8px 0; padding-left: 18px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.help-list li {
+  font-size: 13px; color: #4a5568; line-height: 1.6;
+}
+
+.help-steps {
+  margin: 8px 0; padding: 0;
+  list-style: none;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.help-steps li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: #4a5568; line-height: 1.6;
+}
+.step-num {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  background: #2AABE2; color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  margin-top: 1px;
+}
+
+.help-tip {
+  font-size: 12px; color: #2c6e9e;
+  background: #eaf5fb;
+  border-left: 3px solid #2AABE2;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px; margin-top: 10px;
+  line-height: 1.6;
+}
+.help-warn {
+  font-size: 12px; color: #7c4700;
+  background: #fff8e6;
+  border-left: 3px solid #f0a500;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px; margin-top: 10px;
+  line-height: 1.6;
+}
+
+.help-sub {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin: 10px 0;
+}
+.help-sub-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  width: 32px; height: 32px;
+  background: #eaf5fb; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #2AABE2;
+}
+.help-sub b { font-size: 13px; color: #1a2e3b; display: block; margin-bottom: 3px; }
+.help-sub p { font-size: 12px; color: #6b7c93; line-height: 1.6; margin: 0; }
+
+/* 기념일 뱃지 샘플 */
+.badge-sample {
+  display: inline-block;
+  padding: 1px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  margin-right: 4px;
+}
+.today-s  { background: #e53e3e; color: white; }
+.soon-s   { background: #f6ad55; color: white; }
+.near-s   { background: #68d391; color: white; }
+
+.badge-dot-sample {
+  display: inline-block;
+  width: 10px; height: 10px;
+  background: #e53e3e; border-radius: 50%;
+  vertical-align: middle; margin: 0 2px;
+}
+
+/* ── 푸터 ────────────────────────────────────────────────── */
+.help-footer {
+  text-align: center; font-size: 12px; color: #94a3b8;
+  padding: 12px 0 4px;
+}
+
+/* 스크롤바 */
+.help-body::-webkit-scrollbar { width: 4px; }
+.help-body::-webkit-scrollbar-track { background: transparent; }
+.help-body::-webkit-scrollbar-thumb { background: #c8dde9; border-radius: 4px; }
