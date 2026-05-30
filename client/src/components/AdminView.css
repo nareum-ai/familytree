@@ -298,6 +298,27 @@
 .btn-enter:hover:not(:disabled) { background: #e0f2fb; }
 .btn-enter:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.btn-export, .btn-upload {
+  background: white; border: 1.5px solid #e0e0e0;
+  border-radius: 6px; padding: 7px 9px;
+  font-size: 13px; cursor: pointer; line-height: 1;
+  transition: border-color 0.15s;
+}
+.btn-export:hover { border-color: #f59e0b; }
+.btn-upload:hover { border-color: #2AABE2; }
+
+.section-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.section-head h2 { margin: 0; }
+
+.btn-bulk-new {
+  background: #2AABE2; color: white; border: none;
+  border-radius: 8px; padding: 8px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.btn-bulk-new:hover { background: #1a8ab5; }
+
 .btn-disable {
   background: #fff8e1;
   color: #e65100;

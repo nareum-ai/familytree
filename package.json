@@ -1,26 +1,9 @@
 {
   "name": "familytree",
   "version": "1.0.0",
-  "description": "",
-  "main": "server/index.js",
   "scripts": {
-    "server": "nodemon server/index.js",
-    "client": "cd client && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "better-sqlite3": "^12.10.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "firebase-admin": "^13.10.0",
-    "uuid": "^14.0.0"
-  },
-  "devDependencies": {
-    "concurrently": "^10.0.0",
-    "nodemon": "^3.1.14"
+    "dev": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "deploy": "cd client && npm run build && cd .. && firebase deploy --only hosting"
   }
 }

@@ -1,0 +1,139 @@
+.bulk-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 1100; display: flex; align-items: center; justify-content: center;
+  animation: bfadeIn 0.15s ease;
+}
+@keyframes bfadeIn { from{opacity:0} to{opacity:1} }
+
+.bulk-panel {
+  background: white; border-radius: 16px;
+  width: min(780px, 96vw); max-height: 88vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  animation: bslideUp 0.2s ease;
+}
+@keyframes bslideUp { from{transform:translateY(24px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* ── 헤더 ── */
+.bulk-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e8f0f5;
+  flex-shrink: 0;
+}
+.bulk-header h2 { font-size: 17px; font-weight: 800; color: #1a2e3b; margin: 0 0 3px; }
+.bulk-sub { font-size: 12px; color: #94a3b8; margin: 0; }
+.bulk-close { background:none; border:none; font-size:18px; color:#aaa; cursor:pointer; padding:0; }
+.bulk-close:hover { color:#333; }
+
+.bulk-body { flex:1; overflow-y:auto; padding: 20px 24px; }
+
+/* ── 드롭존 ── */
+.bulk-dropzone {
+  border: 2px dashed #b8ddf4; border-radius: 14px;
+  padding: 40px 20px; text-align: center; cursor: pointer;
+  transition: all 0.15s; color: #7f8c8d;
+  background: #f7fbfe;
+}
+.bulk-dropzone:hover, .bulk-dropzone.drag-over {
+  border-color: #2AABE2; background: #eaf5fb; color: #1a2e3b;
+}
+.drop-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+.bulk-dropzone p { margin: 4px 0; font-size: 14px; font-weight: 600; }
+.drop-hint { font-size: 12px !important; font-weight: 400 !important; color: #94a3b8; }
+
+/* ── 템플릿 안내 ── */
+.bulk-template-box {
+  margin: 16px 0; padding: 14px 16px;
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.bulk-template-box p { margin: 0; font-size: 13px; color: #78350f; }
+.btn-template {
+  flex-shrink: 0; padding: 7px 14px;
+  background: #f59e0b; color: white; border: none;
+  border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.btn-template:hover { background: #d97706; }
+
+/* ── 열 설명 ── */
+.bulk-cols { margin-top: 16px; }
+.bulk-cols-title { font-size: 12px; font-weight: 700; color: #94a3b8; margin: 0 0 8px; text-transform: uppercase; }
+.col-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.col-table td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; }
+.col-name { font-family: monospace; color: #2AABE2; font-weight: 700; width: 120px; }
+.col-desc { color: #4a5568; }
+.col-note { color: #94a3b8; text-align: right; }
+
+/* ── 미리보기 ── */
+.preview-summary { display: flex; gap: 8px; margin-bottom: 12px; }
+.summary-chip {
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+.summary-chip.ok { background: #e6f9f0; color: #1a7f4e; }
+.summary-chip.err { background: #fee2e2; color: #c53030; }
+
+.err-list {
+  background: #fff5f5; border: 1px solid #fca5a5; border-radius: 10px;
+  padding: 12px; margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto;
+}
+.err-row { display: flex; gap: 8px; font-size: 12px; color: #c53030; align-items: baseline; }
+.err-line { background: #c53030; color: white; padding: 1px 6px; border-radius: 4px; font-size: 10px; flex-shrink: 0; }
+.err-ref  { font-family: monospace; color: #92400e; font-weight: 700; flex-shrink: 0; }
+
+.preview-table-wrap { overflow-x: auto; max-height: 300px; overflow-y: auto; border: 1px solid #e8f0f5; border-radius: 10px; }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+.preview-table th { background: #f1f5f9; padding: 8px 10px; text-align: left; font-weight: 700; color: #4a5568; position: sticky; top: 0; }
+.preview-table td { padding: 7px 10px; border-bottom: 1px solid #f0f4f8; color: #374151; }
+.preview-table tr:last-child td { border-bottom: none; }
+.preview-table code { font-size: 11px; color: #2AABE2; }
+.root-badge {
+  display: inline-block; margin-left: 5px;
+  background: #2AABE2; color: white; font-size: 9px; font-weight: 800;
+  padding: 1px 5px; border-radius: 4px;
+}
+
+/* ── 매칭 ── */
+.match-desc { font-size: 13px; color: #4a5568; line-height: 1.7; margin-bottom: 14px; }
+.match-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.match-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: #f7fafc; border-radius: 10px;
+  border: 1px solid #e2e8f0; cursor: pointer; font-size: 13px;
+}
+.match-row:hover { background: #eaf5fb; }
+.match-row input { flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+.match-ref code { color: #2AABE2; font-size: 12px; }
+.match-name { font-weight: 700; color: #1a2e3b; flex: 1; }
+.match-arrow { color: #94a3b8; font-size: 12px; }
+.match-warn { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #92400e; }
+
+/* ── 업로딩 / 완료 ── */
+.uploading-box, .done-box {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 14px; padding: 48px 0; text-align: center;
+}
+.uploading-spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #e0e0e0; border-top-color: #2AABE2;
+  border-radius: 50%; animation: bspin 0.8s linear infinite;
+}
+@keyframes bspin { to { transform: rotate(360deg); } }
+.uploading-box p { font-size: 14px; color: #7f8c8d; margin: 0; }
+.done-icon { font-size: 56px; }
+.done-box h3 { font-size: 20px; font-weight: 800; color: #1a2e3b; margin: 0; }
+.done-box p { font-size: 14px; color: #4a5568; margin: 0; }
+
+/* ── 버튼 ── */
+.bulk-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.btn-back {
+  padding: 10px 20px; background: white; border: 1.5px solid #e0e0e0;
+  border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; color: #7f8c8d;
+}
+.btn-back:hover { border-color: #2AABE2; color: #2AABE2; }
+.btn-next {
+  padding: 10px 24px; background: #2AABE2; color: white;
+  border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.btn-next:hover { background: #1a8ab5; }

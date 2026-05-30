@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { ApprovalRequest, Member } from '../types';
+import type { ApprovalRequest, Member, Person, Relationship } from '../types';
 import { LS } from '../lib/storageKeys';
+import { exportFamilyToCSV, downloadCSV } from '../utils/csvExport';
+import { BulkUploadView } from './BulkUploadView';
 import './AdminView.css';
 
 const LS_USER_KEY     = LS.USER_NAME;
@@ -37,6 +39,7 @@ export function AdminView({ onLogout }: Props) {
   const [memberFilter,  setMemberFilter]      = useState('');
   const [memberPage,    setMemberPage]        = useState(0);
   const [confirmDelMember, setConfirmDelMember] = useState<Member | null>(null);
+  const [bulkTarget, setBulkTarget] = useState<{ id: string; rootName: string } | 'new' | null>(null);
   const MEMBER_PAGE_SIZE = 10;
 
   const reload = async () => {
@@ -111,6 +114,17 @@ export function AdminView({ onLogout }: Props) {
     setSearchQuery('');
     setSearchResults([]);
     reload();
+  };
+
+  const handleExport = async (fam: FamilyInfo) => {
+    const [pSnap, rSnap] = await Promise.all([
+      getDocs(query(collection(db, 'persons'),      where('family_id', '==', fam.familyId))),
+      getDocs(query(collection(db, 'relationships'), where('family_id', '==', fam.familyId))),
+    ]);
+    const persons       = pSnap.docs.map(d => ({ ...(d.data() as Omit<Person, 'id'>), id: d.id })) as Person[];
+    const relationships = rSnap.docs.map(d => ({ ...(d.data() as Omit<Relationship, 'id'>), id: d.id })) as Relationship[];
+    const csv = exportFamilyToCSV(persons, relationships);
+    downloadCSV(`${fam.rootName}_가계도.csv`, csv);
   };
 
   const handleDeleteMember = async () => {
@@ -235,7 +249,10 @@ export function AdminView({ onLogout }: Props) {
 
         {/* 가족집단 목록 */}
         <section className="admin-section">
-          <h2>👨‍👩‍👧‍👦 가족집단 ({families.length}개)</h2>
+          <div className="section-head">
+            <h2>👨‍👩‍👧‍👦 가족집단 ({families.length}개)</h2>
+            <button className="btn-bulk-new" onClick={() => setBulkTarget('new')}>📥 새 가족 일괄 등록</button>
+          </div>
           {loading ? <p className="admin-empty">불러오는 중...</p> :
            families.length === 0 ? <p className="admin-empty">없음</p> : (
             <div className="admin-list">
@@ -248,6 +265,8 @@ export function AdminView({ onLogout }: Props) {
                   </div>
                   <div className="fam-actions">
                     <button className="btn-enter"   onClick={() => handleEnterFamily(f)} disabled={f.disabled}>보기</button>
+                    <button className="btn-export"  onClick={() => handleExport(f)}>📤</button>
+                    <button className="btn-upload"  onClick={() => setBulkTarget({ id: f.familyId, rootName: f.rootName })}>📥</button>
                     <button className={f.disabled ? 'btn-enable' : 'btn-disable'} onClick={() => handleToggle(f)}>
                       {f.disabled ? '활성화' : '비활성화'}
                     </button>
@@ -333,6 +352,15 @@ export function AdminView({ onLogout }: Props) {
             <button className="btn-cancel-confirm" style={{marginTop: 12, width: '100%'}} onClick={() => setMappingMember(null)}>취소</button>
           </div>
         </div>
+      )}
+
+      {/* 일괄 업로드 모달 */}
+      {bulkTarget !== null && (
+        <BulkUploadView
+          targetFamily={bulkTarget === 'new' ? undefined : bulkTarget}
+          onClose={() => setBulkTarget(null)}
+          onDone={reload}
+        />
       )}
     </div>
   );
