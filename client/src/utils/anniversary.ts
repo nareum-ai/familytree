@@ -109,11 +109,9 @@ export async function buildAnniversaries(
           daysUntil: daysBetween(t, next),
           count: next.getFullYear() - by,
           chusu: chusuRoot ? getChusu(p.id, chusuRoot, relationships) : null,
-          relationLabel: (() => {
-            if (!chusuRoot) return undefined;
-            const c = getChusu(p.id, chusuRoot, relationships);
-            return (c !== null && c <= 2) ? getRelationLabel(p.id, chusuRoot, persons, relationships) : undefined;
-          })(),
+          relationLabel: chusuRoot
+            ? (getRelationLabel(p.id, chusuRoot, persons, relationships) || undefined)
+            : undefined,
         });
       }
     }
@@ -135,8 +133,8 @@ export async function buildAnniversaries(
           daysUntil: daysBetween(t, next),
           count: next.getFullYear() - dy,
           chusu,
-          relationLabel: (chusu !== null && chusu <= 2 && chusuRoot)
-            ? getRelationLabel(p.id, chusuRoot, persons, relationships)
+          relationLabel: chusuRoot
+            ? (getRelationLabel(p.id, chusuRoot, persons, relationships) || undefined)
             : undefined,
         });
       }

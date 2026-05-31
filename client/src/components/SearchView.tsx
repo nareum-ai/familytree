@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import { classifyBranch, getChusu } from '../hooks/useTreeLayout';
+import { getRelationLabel } from '../utils/relationLabel';
 import type { BranchType } from '../types';
 import './SearchView.css';
 
@@ -71,7 +72,8 @@ export function SearchView({ onClose }: Props) {
           {results.map(p => {
             const branches = classifyBranch(p.id, persons, relationships);
             const chusu = chusuBase ? getChusu(p.id, chusuBase, relationships) : null;
-            const chusuLabel = chusu === 0 ? '나' : chusu != null ? `${chusu}촌` : '';
+            const relationLabel = chusuBase ? getRelationLabel(p.id, chusuBase, persons, relationships) : '';
+            const chusuLabel = relationLabel || (chusu != null ? `${chusu}촌` : '');
             const branchLabels = branches.map(b => {
               const map: Record<BranchType, string> = { '친가': '친가', '외가': '외가', '처가': '처가', '처외가': '처외가' };
               return map[b] ?? b;

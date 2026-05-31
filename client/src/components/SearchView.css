@@ -38,7 +38,7 @@
 .search-input {
   flex: 1;
   padding: 10px 14px;
-  border: 1.5px solid #2AABE2;
+  border: 1.5px solid #4F46E5;
   border-radius: 10px;
   font-size: 15px;
   outline: none;
@@ -94,7 +94,7 @@
   flex-shrink: 0;
 }
 
-.search-hex.male    { background: linear-gradient(135deg, #2AABE2, #1a8ab5); }
+.search-hex.male    { background: linear-gradient(135deg, #4F46E5, #3730A3); }
 .search-hex.female  { background: linear-gradient(135deg, #e27ba2, #c25a82); }
 .search-hex.root    { background: linear-gradient(135deg, #e2a32a, #c5861a); }
 .search-hex.deceased { filter: grayscale(70%); }
@@ -119,8 +119,8 @@
 .search-chusu {
   font-size: 11px;
   font-weight: 700;
-  color: #2AABE2;
-  background: #e6f5fb;
+  color: #4F46E5;
+  background: #EEF2FF;
   padding: 1px 6px;
   border-radius: 10px;
 }

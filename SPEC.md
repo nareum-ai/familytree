@@ -1,8 +1,8 @@
 # 우리 가족 가계도 — 프로그램 명세서
 
-**버전**: 1.2.0  
+**버전**: 1.3.0  
 **최초 작성**: 2026-05-31  
-**플랫폼**: Firebase Hosting (SPA)  
+**플랫폼**: Firebase Hosting (SPA) + PWA  
 **URL**: https://familytree-3221b.web.app  
 **Firebase 프로젝트**: `familytree-3221b`
 
@@ -469,4 +469,5 @@ npm run deploy
 
 *v1.0.0 — 2026-05-31 최초 작성*  
 *v1.1.0 — 2026-05-31 server/ 제거, CSV 업로드/내보내기 추가*  
-*v1.2.0 — 2026-05-31 Google OAuth, 모바일 UX, 인물 연락처, 편집 권한, 1촌 자동 공개, 프로젝트 이전(familytree-3221b)*
+*v1.2.0 — 2026-05-31 Google OAuth, 모바일 UX, 인물 연락처, 편집 권한, 1촌 자동 공개, 프로젝트 이전(familytree-3221b)*  
+*v1.3.0 — 2026-05-31 PWA 설치, 웹 푸시 알림(PWA 전용), 기념일 알림(D-7/3/1/당일, 6촌이내, 양음력), 관리자 접속 로그, 디자인 전면 개편(인디고 테마, Pretendard)*

@@ -14,6 +14,11 @@ import { GoogleLinkScreen } from './components/GoogleLinkScreen';
 import { MyMenuView } from './components/MyMenuView';
 import { HelpView } from './components/HelpView';
 import { LS, SS } from './lib/storageKeys';
+import { useFCMToken } from './hooks/useFCMToken';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+}
 import type { Member } from './types';
 import './App.css';
 
@@ -25,15 +30,25 @@ const LS_MEMBER_ID    = LS.MEMBER_ID;
 export const LS_ACCOUNT_NAME = LS.ACCOUNT_NAME;
 
 function App() {
+  useFCMToken(); // PWA에서만 알림 권한 요청
+
   const {
     init, loading, persons, updatePerson,
     setViewpoint, viewpointPersonId, currentFamilyId,
     loginMember, ensureAdminAccount, mapMemberToPerson,
     loadInfoRequestsForMe,
     loginWithGoogle, linkGoogleToMember, registerWithGoogle,
+    recordLogin,
   } = useFamilyStore();
 
   const [slowLoad,      setSlowLoad]      = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
   const [showAnniversary, setShowAnn]     = useState(false);
   const [showSearch,    setShowSearch]    = useState(false);
   const [showMyMenu,    setShowMyMenu]    = useState(false);
@@ -99,6 +114,7 @@ function App() {
 
   // ── 로그인 처리 (공통) ──────────────────────────────────────────────────────
   const applyMemberLogin = (member: Member, displayName?: string) => {
+    recordLogin(member.id).catch(() => {}); // 비동기, 실패 무시
     const invitePersonId   = sessionStorage.getItem(SS.INVITE_PERSON_ID);
     const invitePersonName = sessionStorage.getItem(SS.INVITE_PERSON_NAME);
     const inviteFamilyId   = sessionStorage.getItem(SS.INVITE_FAMILY_ID);
@@ -184,7 +200,12 @@ function App() {
   // ── 구글 → 기존 계정 연결 완료 ─────────────────────────────────────────────
   const handleGoogleLinkedToExisting = async (member: Member) => {
     if (!googleLinkData) return;
-    await linkGoogleToMember(member.id, googleLinkData.uid, googleLinkData.email);
+    const res = await linkGoogleToMember(member.id, googleLinkData.uid, googleLinkData.email);
+    if (!res.ok) {
+      setLoginError(res.error ?? '구글 연결 중 오류가 발생했습니다.');
+      setGoogleLinkData(null);
+      return;
+    }
     localStorage.setItem(LS.GOOGLE_EMAIL, googleLinkData.email);
     setGoogleLinkData(null);
     applyMemberLogin(member, googleLinkData.displayName);
@@ -312,7 +333,29 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-logo">
-          <span className="logo-icon">🌳</span>
+          <div className="logo-symbol">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              {/* 루트 */}
+              <circle cx="10" cy="3.5" r="2.8" fill="white"/>
+              {/* 루트→가로선 */}
+              <line x1="10" y1="6.3" x2="10" y2="9" stroke="rgba(255,255,255,0.8)" strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="4.5" y1="9" x2="15.5" y2="9" stroke="rgba(255,255,255,0.8)" strokeWidth="1.4" strokeLinecap="round"/>
+              {/* 2세대 */}
+              <line x1="4.5" y1="9" x2="4.5" y2="12" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round"/>
+              <line x1="15.5" y1="9" x2="15.5" y2="12" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round"/>
+              <circle cx="4.5" cy="14" r="2.2" fill="white" opacity="0.9"/>
+              <circle cx="15.5" cy="14" r="2.2" fill="white" opacity="0.9"/>
+              {/* 3세대 */}
+              <line x1="4.5" y1="16.2" x2="4.5" y2="17.5" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeLinecap="round"/>
+              <line x1="2" y1="17.5" x2="7" y2="17.5" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeLinecap="round"/>
+              <line x1="15.5" y1="16.2" x2="15.5" y2="17.5" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeLinecap="round"/>
+              <line x1="13" y1="17.5" x2="18" y2="17.5" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeLinecap="round"/>
+              <circle cx="2" cy="19" r="1.4" fill="white" opacity="0.75"/>
+              <circle cx="7" cy="19" r="1.4" fill="white" opacity="0.75"/>
+              <circle cx="13" cy="19" r="1.4" fill="white" opacity="0.75"/>
+              <circle cx="18" cy="19" r="1.4" fill="white" opacity="0.75"/>
+            </svg>
+          </div>
           <span className="logo-text">우리 가족 가계도</span>
         </div>
         <div className="header-user">
@@ -334,6 +377,12 @@ function App() {
             <button className="header-ann-btn" onClick={() => setShowHelp(true)} title="사용 안내">❓</button>
           </div>
           <span className="header-username">{displayName}</span>
+          {installPrompt && (
+            <button className="header-install-btn" onClick={async () => {
+              (installPrompt as BeforeInstallPromptEvent).prompt();
+              setInstallPrompt(null);
+            }}>📲 설치</button>
+          )}
           <button className="header-logout" onClick={handleLogout}>로그아웃</button>
         </div>
       </header>

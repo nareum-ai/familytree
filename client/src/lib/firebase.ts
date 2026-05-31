@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getMessaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
   projectId: 'familytree-3221b',
@@ -15,3 +16,10 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// FCM — 지원 환경에서만 초기화
+export const getMessagingInstance = async () => {
+  const supported = await isSupported();
+  if (!supported) return null;
+  return getMessaging(app);
+};

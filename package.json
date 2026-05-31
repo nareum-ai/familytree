@@ -5,5 +5,8 @@
     "dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "deploy": "cd client && npm run build && cd .. && firebase deploy --only hosting"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2"
   }
 }

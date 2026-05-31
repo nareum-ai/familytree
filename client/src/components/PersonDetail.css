@@ -1,18 +1,14 @@
 .detail-panel {
   position: fixed;
-  right: 0;
-  top: 60px;
-  bottom: 0;
-  width: 300px;
+  right: 0; top: 58px; bottom: 0;
+  width: 310px;
   background: white;
-  box-shadow: -4px 0 20px rgba(0,0,0,0.12);
-  padding: 24px;
+  box-shadow: -8px 0 40px rgba(79,70,229,0.10), -2px 0 8px rgba(0,0,0,0.05);
+  padding: 20px;
   overflow-y: auto;
   z-index: 200;
-  animation: slideIn 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  animation: slideIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column; gap: 14px;
 }
 
 @keyframes slideIn {
@@ -47,9 +43,9 @@
   color: white;
 }
 
-.detail-hex.male { background: linear-gradient(135deg, #2AABE2, #1a8ab5); }
-.detail-hex.female { background: linear-gradient(135deg, #e27ba2, #c25a82); }
-.detail-hex.root { background: linear-gradient(135deg, #e2a32a, #c5861a); }
+.detail-hex.male   { background: linear-gradient(150deg, #4F46E5, #7C3AED); }
+.detail-hex.female { background: linear-gradient(150deg, #EC4899, #DB2777); }
+.detail-hex.root   { background: linear-gradient(150deg, #F97316, #EA580C); }
 
 .detail-hex img {
   width: 100%;
@@ -98,8 +94,9 @@
 }
 
 .meta-chip.accent {
-  background: #e6f5fb;
-  color: #2AABE2;
+  background: #EEF2FF;
+  color: #4F46E5;
+  font-weight: 700;
 }
 
 .btn-edit {
@@ -115,7 +112,7 @@
   margin-top: 4px;
 }
 
-.btn-edit:hover { border-color: #2AABE2; color: #2AABE2; }
+.btn-edit:hover { border-color: #4F46E5; color: #4F46E5; }
 
 .edit-form {
   display: flex;
@@ -185,7 +182,7 @@
   resize: none;
 }
 
-.edit-input:focus { border-color: #2AABE2; }
+.edit-input:focus { border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
 
 .edit-memo {
   line-height: 1.5;
@@ -257,7 +254,7 @@
 }
 
 .btn-sm.save {
-  background: #2AABE2;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
   color: white;
 }
 
@@ -289,19 +286,17 @@
 }
 
 .action-btn.primary {
-  background: #2AABE2;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
   color: white;
 }
-
-.action-btn.primary:hover { background: #1a8ab5; }
+.action-btn.primary:hover { opacity: 0.9; }
 
 .action-btn.secondary {
-  background: #f0f9ff;
-  color: #2AABE2;
-  border: 1.5px solid #2AABE2;
+  background: #EEF2FF;
+  color: #4F46E5;
+  border: 1.5px solid #C7D2FE;
 }
-
-.action-btn.secondary:hover { background: #e0f2fb; }
+.action-btn.secondary:hover { background: #E0E7FF; }
 
 /* 정보공개 요청 섹션 */
 .info-req-section {

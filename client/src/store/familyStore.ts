@@ -64,8 +64,10 @@ interface FamilyState {
   ensureAdminAccount: () => Promise<void>;
   loginWithGoogle: () => Promise<{ member: Member | null; googleUid: string; googleEmail: string; displayName: string } | null>;
   registerWithGoogle: (googleUid: string, googleEmail: string, displayName: string) => Promise<Member>;
-  linkGoogleToMember: (memberId: string, googleUid: string, googleEmail: string) => Promise<void>;
+  linkGoogleToMember: (memberId: string, googleUid: string, googleEmail: string) => Promise<{ ok: boolean; error?: string }>;
   unlinkGoogleFromMember: (memberId: string) => Promise<void>;
+  saveFcmToken: (memberId: string, token: string) => Promise<void>;
+  recordLogin: (memberId: string) => Promise<void>;
 
   submitFamilyGroupRequest: (
     realName: string, description: string,
@@ -663,12 +665,38 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     };
   },
 
-  linkGoogleToMember: async (memberId, googleUid, googleEmail) => {
+  linkGoogleToMember: async (memberId, googleUid, googleEmail): Promise<{ ok: boolean; error?: string }> => {
+    // 동일 google_uid가 다른 계정에 이미 연결되어 있는지 확인
+    const snap = await getDocs(
+      query(collection(db, 'members'), where('google_uid', '==', googleUid))
+    );
+    const duplicate = snap.docs.find(d => d.id !== memberId);
+    if (duplicate) {
+      return { ok: false, error: '이 구글 계정은 이미 다른 계정에 연결되어 있습니다.' };
+    }
     await updateDoc(doc(db, 'members', memberId), { google_uid: googleUid, google_email: googleEmail });
+    return { ok: true };
   },
 
   unlinkGoogleFromMember: async (memberId) => {
     await updateDoc(doc(db, 'members', memberId), { google_uid: null, google_email: null });
+  },
+
+  saveFcmToken: async (memberId, token) => {
+    await updateDoc(doc(db, 'members', memberId), { fcm_token: token });
+  },
+
+  recordLogin: async (memberId) => {
+    const now = new Date().toISOString();
+    const ua  = navigator.userAgent;
+    // 최근 접속일 업데이트
+    await updateDoc(doc(db, 'members', memberId), { last_login_at: now });
+    // 접속 로그 기록
+    await addDoc(collection(db, 'login_logs'), {
+      member_id:  memberId,
+      logged_in_at: now,
+      user_agent: ua,
+    });
   },
 
   checkPendingFamilyRequest: async () => {

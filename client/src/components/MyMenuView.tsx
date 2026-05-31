@@ -36,6 +36,11 @@ export function MyMenuView({ onClose }: Props) {
   const username = localStorage.getItem(LS.ACCOUNT_NAME)
     ?? localStorage.getItem(LS.USER_NAME) ?? '';
 
+  // 관리자 or 관리자 대리 접속 중에는 구글 탭 숨김
+  const isAdminContext =
+    localStorage.getItem(LS.IS_ADMIN) === 'true' ||
+    localStorage.getItem(LS.ADMIN_RETURN) === 'true';
+
   useEffect(() => {
     setReqLoading(true);
     loadInfoRequestsForMe()
@@ -107,7 +112,11 @@ export function MyMenuView({ onClose }: Props) {
       const email = result.user.email ?? '';
       const memberId = localStorage.getItem(LS.MEMBER_ID);
       if (!memberId) return;
-      await linkGoogleToMember(memberId, uid, email);
+      const res = await linkGoogleToMember(memberId, uid, email);
+      if (!res.ok) {
+        setGoogleMsg({ ok: false, msg: res.error ?? '구글 연결 중 오류가 발생했습니다.' });
+        return;
+      }
       localStorage.setItem(LS.GOOGLE_EMAIL, email);
       setGoogleEmail(email);
       setGoogleMsg({ ok: true, msg: '구글 계정이 연결됐습니다.' });
@@ -153,10 +162,12 @@ export function MyMenuView({ onClose }: Props) {
             onClick={() => setTab('password')}>
             🔒 비밀번호
           </button>
-          <button className={`my-tab ${tab === 'google' ? 'active' : ''}`}
-            onClick={() => setTab('google')}>
-            🔗 구글{googleEmail === null && <span className="my-badge my-badge-warn">!</span>}
-          </button>
+          {!isAdminContext && (
+            <button className={`my-tab ${tab === 'google' ? 'active' : ''}`}
+              onClick={() => setTab('google')}>
+              🔗 구글{googleEmail === null && <span className="my-badge my-badge-warn">!</span>}
+            </button>
+          )}
         </div>
 
         <div className="my-body">

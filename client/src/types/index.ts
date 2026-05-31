@@ -55,6 +55,8 @@ export interface Member {
   created_at: string;
   google_uid?: string | null;
   google_email?: string | null;
+  fcm_token?: string | null;
+  last_login_at?: string | null;
 }
 
 // 새 가족집단 생성 승인 요청

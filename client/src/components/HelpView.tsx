@@ -113,6 +113,36 @@ export function HelpView({ onClose }: Props) {
       ),
     },
     {
+      id: 'push',
+      icon: '🔔',
+      title: '알림 설정',
+      content: (
+        <>
+          <p className="help-para">앱을 홈 화면에 설치하면 자동으로 알림을 받을 수 있습니다.</p>
+          <div className="help-tip">
+            💡 <b>PWA로 설치한 경우에만</b> 알림이 동작합니다. 일반 브라우저에서는 알림이 오지 않아요.
+          </div>
+          <div className="help-sub">
+            <span className="help-sub-icon">📬</span>
+            <div>
+              <b>정보공개 요청 알림</b>
+              <p>다른 가족이 내 정보를 요청하면 즉시 알림이 발송됩니다.</p>
+            </div>
+          </div>
+          <div className="help-sub">
+            <span className="help-sub-icon">🎂</span>
+            <div>
+              <b>기념일 알림 (매일 오전 8시)</b>
+              <p>6촌 이내 가족의 생일·기일을 <b>7일 전, 3일 전, 1일 전, 당일</b> 알려드립니다. 양력·음력 모두 지원합니다.</p>
+            </div>
+          </div>
+          <div className="help-warn">
+            ⚠️ 알림을 받으려면 앱 설치 후 첫 실행 시 뜨는 권한 요청에서 <b>허용</b>을 눌러야 합니다.
+          </div>
+        </>
+      ),
+    },
+    {
       id: 'search',
       icon: '🔍',
       title: '인물 검색',

@@ -75,7 +75,7 @@
 
 .ann-row.clickable { cursor: pointer; }
 .ann-row.clickable:hover { background: #f0f9ff; }
-.ann-row.clickable:hover .ann-name { color: #2AABE2; }
+.ann-row.clickable:hover .ann-name { color: #4F46E5; }
 .ann-row.memorial { background: #fafafa; }
 .ann-row.memorial:hover { background: #f5f5f5; }
 
@@ -92,7 +92,7 @@
 
 .day-chip.today { background: #e74c3c; color: white; }
 .day-chip.soon  { background: #e67e22; color: white; }
-.day-chip.near  { background: #2AABE2; color: white; }
+.day-chip.near  { background: #4F46E5; color: white; }
 .day-chip.far   { background: #f0f4f8; color: #7f8c8d; }
 
 .ann-info {
@@ -115,8 +115,8 @@
 .ann-chusu {
   font-size: 11px;
   font-weight: 700;
-  color: #2AABE2;
-  background: #e6f5fb;
+  color: #4F46E5;
+  background: #EEF2FF;
   padding: 1px 6px;
   border-radius: 10px;
   flex-shrink: 0;
@@ -130,7 +130,7 @@
   flex-shrink: 0;
 }
 
-.ann-type.birthday  { background: #e6f5fb; color: #2AABE2; }
+.ann-type.birthday  { background: #EEF2FF; color: #4F46E5; }
 .ann-type.memorial  { background: #f5f5f5; color: #777; }
 
 .ann-date {

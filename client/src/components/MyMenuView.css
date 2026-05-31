@@ -34,7 +34,7 @@
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
   transition: all 0.15s;
 }
-.my-tab.active { color: #2AABE2; border-bottom-color: #2AABE2; }
+.my-tab.active { color: #4F46E5; border-bottom-color: #4F46E5; }
 
 .my-badge {
   background: #e53e3e; color: white;
@@ -59,11 +59,11 @@
 }
 .my-req-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .my-req-name { font-size: 13px; font-weight: 700; color: #1a2e3b; }
-.my-req-person { font-size: 12px; color: #2AABE2; }
+.my-req-person { font-size: 12px; color: #4F46E5; }
 .my-req-date { font-size: 11px; color: #94a3b8; }
 .my-req-btns { display: flex; gap: 6px; flex-shrink: 0; }
 .my-approve {
-  background: #2AABE2; color: white; border: none;
+  background: #4F46E5; color: white; border: none;
   border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
 }
 .my-reject {
@@ -80,18 +80,18 @@
   border-radius: 8px; font-size: 14px; outline: none;
   transition: border-color 0.15s;
 }
-.my-field input:focus { border-color: #2AABE2; }
+.my-field input:focus { border-color: #4F46E5; }
 
 .my-pw-msg { font-size: 13px; padding: 8px 12px; border-radius: 6px; margin: 0; }
 .my-pw-msg.ok  { background: #e8f5e9; color: #2e7d32; }
 .my-pw-msg.err { background: #fee2e2; color: #c53030; }
 
 .my-pw-btn {
-  padding: 12px; background: #2AABE2; color: white;
+  padding: 12px; background: #4F46E5; color: white;
   border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
   cursor: pointer; transition: background 0.15s;
 }
-.my-pw-btn:hover:not(:disabled) { background: #1a8ab5; }
+.my-pw-btn:hover:not(:disabled) { background: #3730A3; }
 .my-pw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 구글 연결 섹션 */
@@ -117,8 +117,8 @@
 }
 
 .my-google-status.linked {
-  color: #2AABE2;
-  background: #e6f5fb;
+  color: #4F46E5;
+  background: #EEF2FF;
 }
 
 .my-google-email {
