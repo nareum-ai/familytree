@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFamilyStore } from './store/familyStore';
 import { FamilyTreeView } from './components/FamilyTreeView';
 import { InvitePage } from './components/InvitePage';
@@ -53,6 +53,9 @@ function App() {
   const [showSearch,    setShowSearch]    = useState(false);
   const [showMyMenu,    setShowMyMenu]    = useState(false);
   const [showHelp,      setShowHelp]      = useState(false);
+  const [showBackToast, setShowBackToast] = useState(false);
+  const backPressedRef = useRef(false);
+  const backTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingRequestCount, setPendingCount] = useState(0);
   const [loginError,    setLoginError]    = useState('');
   const [loginLoading,  setLoginLoading]  = useState(false);
@@ -96,8 +99,42 @@ function App() {
     return () => { unsub(); clearTimeout(timer); };
   }, [currentFamilyId]);
 
+  // 안드로이드 뒤로가기 이중 확인 (메인 화면에서만)
   useEffect(() => {
-    if (!userName || loading || isAdmin) return;
+    const isMain = !needsLogin && !isAdmin && hasFamilyId;
+    if (!isMain) return;
+
+    history.pushState(null, '', window.location.href);
+
+    const onPopState = () => {
+      if (!backPressedRef.current) {
+        history.pushState(null, '', window.location.href); // 다시 막기
+        backPressedRef.current = true;
+        setShowBackToast(true);
+        if (backTimerRef.current) clearTimeout(backTimerRef.current);
+        backTimerRef.current = setTimeout(() => {
+          backPressedRef.current = false;
+          setShowBackToast(false);
+        }, 2500);
+      }
+      // 두 번째 뒤로가기는 막지 않음 → 브라우저/앱 종료
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      if (backTimerRef.current) clearTimeout(backTimerRef.current);
+    };
+  }, [needsLogin, isAdmin, hasFamilyId]);
+
+  useEffect(() => {
+    if (!userName || isAdmin) return;
+    // family_id 자체가 없는 경우: hard refresh 해도 즉시 신청 화면으로
+    if (!hasFamilyId && !showFamilyGroupRequest) {
+      setShowFamilyGroupRequest(true);
+      return;
+    }
+    if (loading) return;
     if (persons.length === 0 && hasFamilyId && !showFamilyGroupRequest) {
       setShowFamilyGroupRequest(true);
       return;
@@ -113,13 +150,13 @@ function App() {
   }, [userName, loading]);
 
   // ── 로그인 처리 (공통) ──────────────────────────────────────────────────────
-  const applyMemberLogin = (member: Member, displayName?: string) => {
-    recordLogin(member.id).catch(() => {}); // 비동기, 실패 무시
+  const applyMemberLogin = async (member: Member, displayName?: string) => {
     const invitePersonId   = sessionStorage.getItem(SS.INVITE_PERSON_ID);
     const invitePersonName = sessionStorage.getItem(SS.INVITE_PERSON_NAME);
     const inviteFamilyId   = sessionStorage.getItem(SS.INVITE_FAMILY_ID);
 
     if (!member.family_id || !member.person_id) {
+      await recordLogin(member.id).catch(() => {});
       if (invitePersonId && invitePersonName && inviteFamilyId) {
         localStorage.setItem(LS_USER_KEY,  member.person_name ?? displayName ?? member.username);
         localStorage.setItem(LS_MEMBER_ID, member.id);
@@ -137,6 +174,7 @@ function App() {
     localStorage.setItem(LS_MEMBER_ID,     member.id);
     localStorage.setItem(LS_ACCOUNT_NAME,  member.username);
     sessionStorage.setItem(SS.VIEWPOINT_PERSON_ID, member.person_id);
+    await recordLogin(member.id).catch(() => {}); // reload 전에 완료 보장
     window.location.reload();
   };
 
@@ -260,7 +298,6 @@ function App() {
     return (
       <GoogleLinkScreen
         googleEmail={googleLinkData.email}
-        googleUid={googleLinkData.uid}
         displayName={googleLinkData.displayName}
         onLinkedToExisting={handleGoogleLinkedToExisting}
         onNewStart={handleGoogleNewStart}
@@ -413,6 +450,9 @@ function App() {
       {showSearch      && <SearchView      onClose={() => setShowSearch(false)} />}
       {showAnniversary && <AnniversaryView onClose={() => setShowAnn(false)} />}
       {showHelp        && <HelpView        onClose={() => setShowHelp(false)} />}
+      {showBackToast && (
+        <div className="back-exit-toast">한 번 더 누르면 앱을 종료합니다</div>
+      )}
     </div>
   );
 }

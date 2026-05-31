@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
+import { useAdminEmail } from '../hooks/useAdminEmail';
 import { DateInput } from './DateInput';
 import './LoginScreen.css';
 import './FamilyGroupRequestScreen.css';
@@ -24,6 +25,7 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
   const [desc, setDesc]           = useState('');
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
+  const adminEmail = useAdminEmail();
 
   // 마운트 시 기존 신청 내역 확인
   useEffect(() => {
@@ -64,8 +66,6 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
   return (
     <div className="login-screen">
       <div className="login-card fgr-card">
-        <div className="login-icon">🌳</div>
-
         {step === 'checking' && (
           <p className="fgr-desc">확인 중...</p>
         )}
@@ -100,10 +100,25 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
               안녕하세요, <strong>{memberUsername}</strong>님!<br />
               새로운 가족그룹을 생성 신청하시겠습니까?
             </p>
+
+            <div className="fgr-notice">
+              <span className="fgr-notice-icon">💡</span>
+              <p>이미 있는 가계도에 참여하시려면<br />
+              <strong>초대링크를 통해 로그인</strong>하셔야 합니다.</p>
+            </div>
+
             <div className="fgr-btn-group">
               <button className="login-btn" onClick={() => setStep('form')}>예, 신청할게요</button>
               <button className="login-register-btn" onClick={onLogout}>아니오 (로그아웃)</button>
             </div>
+
+            {adminEmail && (
+              <p className="fgr-contact">
+                문의사항은{' '}
+                <a href={`mailto:${adminEmail}`} className="fgr-contact-link">{adminEmail}</a>
+                {' '}으로 연락주세요.
+              </p>
+            )}
           </>
         )}
 

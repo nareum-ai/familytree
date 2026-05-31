@@ -43,9 +43,9 @@
   color: white;
 }
 
-.detail-hex.male   { background: linear-gradient(150deg, #4F46E5, #7C3AED); }
+.detail-hex.male   { background: linear-gradient(150deg, #0EA5E9, #0369A1); }
 .detail-hex.female { background: linear-gradient(150deg, #EC4899, #DB2777); }
-.detail-hex.root   { background: linear-gradient(150deg, #F97316, #EA580C); }
+.detail-hex.root   { background: linear-gradient(150deg, #4F46E5, #6D28D9); }
 
 .detail-hex img {
   width: 100%;
@@ -350,20 +350,60 @@
 .action-btn.danger:hover { background: #fee2e2; }
 
 .invite-box {
-  background: #f8f9fa;
-  border: 1.5px dashed #2AABE2;
-  border-radius: 10px;
-  padding: 14px;
+  background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+  border: 1.5px solid #C7D2FE;
+  border-radius: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .invite-label {
   font-size: 12px;
-  font-weight: 600;
-  color: #2AABE2;
+  font-weight: 700;
+  color: #4F46E5;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invite-expiry {
+  font-weight: 500;
+  color: #818CF8;
+  font-size: 11px;
+}
+
+/* 핵심 안내 문구 */
+.invite-desc-block {
+  background: white;
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.10);
+}
+
+.invite-desc-main {
+  margin: 0;
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.7;
+}
+
+.invite-name-highlight {
+  font-size: 22px;
+  font-weight: 800;
+  color: #4F46E5;
+  display: block;
+  margin: 4px 0 2px;
+  letter-spacing: -0.5px;
+}
+
+.invite-desc-sub {
+  font-size: 15px;
+  color: #374151;
+  font-weight: 500;
 }
 
 .invite-link-row {
@@ -375,32 +415,61 @@
   flex: 1;
   font-size: 11px;
   padding: 7px 8px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border: 1px solid #C7D2FE;
+  border-radius: 8px;
   background: white;
-  color: #4a5568;
+  color: #6B7280;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .btn-copy {
-  background: #2AABE2;
+  background: #4F46E5;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 7px 12px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
+  font-family: inherit;
+}
+.btn-copy:hover { background: #3730A3; }
+
+/* 공유 버튼 행 */
+.invite-share-row {
+  display: flex;
+  gap: 8px;
 }
 
-.btn-copy:hover { background: #1a8ab5; }
-
-.invite-hint {
-  font-size: 11px;
-  color: #7f8c8d;
-  margin: 0;
+.invite-share-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
 }
+.invite-share-btn:active { transform: scale(0.97); }
+
+.invite-share-btn.kakao {
+  background: #FEE500;
+  color: #191919;
+}
+.invite-share-btn.kakao:hover { opacity: 0.88; }
+
+.invite-share-btn.sms {
+  background: #4F46E5;
+  color: white;
+}
+.invite-share-btn.sms:hover { opacity: 0.88; }

@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
   MiniMap,
+  Panel,
   useReactFlow,
+  useStore,
   type NodeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -53,6 +54,69 @@ function FitToMeController({
   }, [meNodeId, activeBranch, fitView, getNodes]);
 
   return null;
+}
+
+// ── 줌 슬라이더 컨트롤 ────────────────────────────────────────────────────
+function ZoomControls() {
+  const { zoomIn, zoomOut, zoomTo } = useReactFlow();
+  const zoom = useStore((s) => s.transform[2]);
+
+  return (
+    <Panel position="bottom-right" className="zoom-controls-panel">
+      <div className="zoom-slider-wrap">
+        <button className="zoom-step-btn" onClick={() => zoomOut({ duration: 200 })} title="축소">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <input
+          type="range"
+          className="zoom-slider-input"
+          min={0.1} max={1.5} step={0.05}
+          value={Math.min(1.5, Math.max(0.1, zoom))}
+          onChange={e => zoomTo(Number(e.target.value), { duration: 0 })}
+        />
+        <button className="zoom-step-btn" onClick={() => zoomIn({ duration: 200 })} title="확대">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </Panel>
+  );
+}
+
+// ── 내 위치로 포커스 버튼 (GPS 스타일) ────────────────────────────────────
+function FocusMeButton({ meNodeId }: { meNodeId: string | null }) {
+  const { fitView } = useReactFlow();
+
+  const handleClick = () => {
+    const isMobile = window.innerWidth <= 640;
+    if (meNodeId) {
+      fitView({
+        nodes: [{ id: meNodeId }],
+        maxZoom: isMobile ? 0.95 : 0.65,
+        duration: 400,
+        padding: isMobile ? 0.9 : 1.8,
+      });
+    } else {
+      fitView({ maxZoom: isMobile ? 0.95 : 0.65, duration: 400, padding: 0.3 });
+    }
+  };
+
+  return (
+    <Panel position="top-right" className="focus-me-panel">
+      <button className="focus-me-btn" onClick={handleClick} title="내 위치로">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+          <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+        </svg>
+        나
+      </button>
+    </Panel>
+  );
 }
 
 // Maps internal branch IDs to display labels depending on who is viewing.
@@ -304,18 +368,28 @@ export function FamilyTreeView() {
           proOptions={{ hideAttribution: true }}
         >
           <FitToMeController meNodeId={meNodeId} activeBranch={activeBranch} />
-          <Background color="#e8f4f8" gap={24} size={1} />
-          <Controls />
+          <Background color="#E8EAF0" gap={28} size={1} />
+          <ZoomControls />
+          <FocusMeButton meNodeId={meNodeId} />
           <MiniMap
-            pannable
-            zoomable
+            pannable zoomable
             nodeColor={(node) => {
-              if (node.type === 'coupleNode') return '#2AABE2';
+              const vp = viewpointPersonId;
+              const root = persons.find(p => p.is_root === 1);
+              if (node.type === 'coupleNode') {
+                const d = node.data as { person1?: Person; person2?: Person };
+                const isMe = vp
+                  ? d.person1?.id === vp || d.person2?.id === vp
+                  : d.person1?.is_root === 1 || d.person2?.is_root === 1;
+                return isMe ? '#4F46E5' : '#0EA5E9';
+              }
               const p = node.data?.person as Person | undefined;
-              if (p?.is_root) return '#e2a32a';
-              return p?.gender === 'male' ? '#2AABE2' : '#e27ba2';
+              const isMe = vp ? p?.id === vp : p?.id === root?.id;
+              if (isMe) return '#4F46E5';
+              if (node.data?.anon) return '#CBD5E1';
+              return p?.gender === 'male' ? '#0EA5E9' : '#EC4899';
             }}
-            style={{ background: '#f0f7fb' }}
+            style={{ background: '#ffffff' }}
           />
         </ReactFlow>
 

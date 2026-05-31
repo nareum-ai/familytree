@@ -86,26 +86,36 @@ function getChusu(personId: string, baseId: string, rels: Rel[]): number | null 
 }
 
 // ── 기념일 알림 스케줄러 ──────────────────────────────────────────────────
-// 매일 KST 오전 8시 (= UTC 23:00) 1회 실행
-// D-7, D-3, D-1, 당일 / 생일+기일 / 6촌 이내 / 양력+음력
+// 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
 export const sendAnniversaryReminders = onSchedule(
-  { schedule: '0 23 * * *', timeZone: 'UTC' },
+  { schedule: '0 * * * *', timeZone: 'UTC' },
   async () => {
+    // ── 관리자 설정 로드 (없으면 기본값 사용) ─────────────────────────────
+    const settingsSnap = await db.doc('settings/push').get();
+    const cfg = settingsSnap.data() ?? {};
+    const sendHourKST: number   = typeof cfg.sendHourKST === 'number' ? cfg.sendHourKST : 8;
+    const offsets: number[]     = Array.isArray(cfg.offsets) ? cfg.offsets : [0, 1, 3, 7];
+    const maxChusu: number      = typeof cfg.maxChusu === 'number' ? cfg.maxChusu : 6;
+    const enableBirthday: boolean = cfg.enableBirthday !== false;
+    const enableDeathDay: boolean = cfg.enableDeathDay !== false;
+
     // KST 기준 오늘 날짜
     const now = new Date();
     const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+
+    // 설정된 발송 시간이 아니면 종료
+    if (kst.getUTCHours() !== sendHourKST) return;
+
     const todayY = kst.getUTCFullYear();
     const todayM = kst.getUTCMonth() + 1;
     const todayD = kst.getUTCDate();
 
-    // solarlunar로 오늘 날짜를 기준으로 D+0/1/3/7의 음력 날짜 미리 계산
+    // solarlunar로 각 offset의 음력 날짜 미리 계산
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const sl = require('solarlunar') as {
       solar2lunar: (y: number, m: number, d: number) => { lMonth: number; lDay: number };
     };
 
-    // offset별 (0=당일, 1=D-1, 3=D-3, 7=D-7) 체크할 날짜와 음력 날짜 준비
-    const offsets = [0, 1, 3, 7] as const;
     const checkDates = offsets.map(offset => {
       const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
       const m = d.getUTCMonth() + 1;
@@ -154,10 +164,10 @@ export const sendAnniversaryReminders = onSchedule(
           };
 
           const chusu = getChusu(p.id, member.personId, rels);
-          if (chusu === null || chusu > 6) continue; // 6촌 초과 제외
+          if (chusu === null || chusu > maxChusu) continue;
 
           // ── 생일 체크 ────────────────────────────────────────────────────
-          if (p.birth_date && !p.is_deceased) {
+          if (enableBirthday && p.birth_date && !p.is_deceased) {
             const [by, bm, bd] = p.birth_date.split('-').map(Number);
             for (const chk of checkDates) {
               const match = p.birth_lunar
@@ -183,7 +193,7 @@ export const sendAnniversaryReminders = onSchedule(
           }
 
           // ── 기일 체크 ────────────────────────────────────────────────────
-          if (p.death_date) {
+          if (enableDeathDay && p.death_date) {
             const [, dm, dd] = p.death_date.split('-').map(Number);
             for (const chk of checkDates) {
               const match = p.death_lunar
@@ -212,5 +222,43 @@ export const sendAnniversaryReminders = onSchedule(
 
     await Promise.all(sends);
     console.log(`기념일 알림 완료: ${sends.length}건`);
+  }
+);
+
+// ── 접속 로그 정리 ───────────────────────────────────────────────────────────
+// 매월 1일 UTC 00:00 (KST 09:00) 실행
+// 1년(365일) 이전 login_logs 문서 일괄 삭제 — 배치 500개 제한 준수
+export const cleanupLoginLogs = onSchedule(
+  { schedule: '0 0 1 * *', timeZone: 'UTC' },
+  async () => {
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
+    const cutoffIso = cutoff.toISOString();
+
+    const snap = await db.collection('login_logs')
+      .where('logged_in_at', '<', cutoffIso)
+      .get();
+
+    if (snap.empty) {
+      console.log('삭제할 오래된 접속 로그 없음');
+      return;
+    }
+
+    // 500개 단위 배치 삭제
+    const chunks: FirebaseFirestore.DocumentReference[][] = [];
+    const refs = snap.docs.map(d => d.ref);
+    for (let i = 0; i < refs.length; i += 500) {
+      chunks.push(refs.slice(i, i + 500));
+    }
+
+    await Promise.all(
+      chunks.map(chunk => {
+        const batch = db.batch();
+        chunk.forEach(ref => batch.delete(ref));
+        return batch.commit();
+      })
+    );
+
+    console.log(`접속 로그 정리 완료: ${snap.size}건 삭제 (기준: ${cutoffIso})`);
   }
 );

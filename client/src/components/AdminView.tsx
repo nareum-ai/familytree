@@ -10,6 +10,17 @@ import './AdminView.css';
 
 const LS_USER_KEY     = LS.USER_NAME;
 const LS_FAMILY_ID    = LS.FAMILY_ID;
+
+function fmtDt(iso: string, withTime = true) {
+  const d = new Date(iso);
+  const yy  = String(d.getFullYear()).slice(2);
+  const mm  = String(d.getMonth() + 1).padStart(2, '0');
+  const dd  = String(d.getDate()).padStart(2, '0');
+  if (!withTime) return `${yy}${mm}${dd}`;
+  const hh  = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yy}${mm}${dd} ${hh}:${min}`;
+}
 const LS_IS_ADMIN     = LS.IS_ADMIN;
 const LS_ADMIN_RETURN = LS.ADMIN_RETURN;
 
@@ -24,7 +35,7 @@ export function AdminView({ onLogout }: Props) {
   const { loadApprovalRequests, approveRequest, rejectRequest,
           listFamilies, toggleFamilyStatus, deleteFamily,
           listMembers, mapMemberToPerson, deleteMember,
-          loginMember } = useFamilyStore();
+          loginMember, linkGoogleToMember, unlinkGoogleFromMember } = useFamilyStore();
 
   const [requests, setRequests]     = useState<ApprovalRequest[]>([]);
   const [families, setFamilies]     = useState<FamilyInfo[]>([]);
@@ -52,6 +63,25 @@ export function AdminView({ onLogout }: Props) {
   const [adminPwMsg,   setAdminPwMsg]  = useState<{ ok: boolean; msg: string } | null>(null);
   const [adminPwLoading, setAdminPwLoading] = useState(false);
 
+  // 구글 연동
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [adminGoogleEmail, setAdminGoogleEmail] = useState<string | null | undefined>(undefined);
+  const [googleLinkMsg,    setGoogleLinkMsg]    = useState<{ ok: boolean; msg: string } | null>(null);
+  const [googleLinkLoading, setGoogleLinkLoading] = useState(false);
+
+  // 푸시 알림 설정
+  interface PushSettings {
+    sendHourKST: number;
+    offsets: number[];
+    maxChusu: number;
+    enableBirthday: boolean;
+    enableDeathDay: boolean;
+  }
+  const defaultPush: PushSettings = { sendHourKST: 8, offsets: [0, 1, 3, 7], maxChusu: 6, enableBirthday: true, enableDeathDay: true };
+  const [pushSettings, setPushSettings] = useState<PushSettings>(defaultPush);
+  const [pushLoading,  setPushLoading]  = useState(true);
+  const [pushSaveMsg,  setPushSaveMsg]  = useState<{ ok: boolean; msg: string } | null>(null);
+
   const adminUsername = localStorage.getItem(LS_USER_KEY) ?? '관리자';
   const MEMBER_PAGE_SIZE = 10;
 
@@ -67,9 +97,90 @@ export function AdminView({ onLogout }: Props) {
     setLoading(false);
   };
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => {
+    reload();
+    // 푸시 설정 로드
+    (async () => {
+      try {
+        const { getDoc, doc } = await import('firebase/firestore');
+        const { db: fdb } = await import('../lib/firebase');
+        // 관리자 구글 연동 상태 로드
+        const memberId = localStorage.getItem(LS.MEMBER_ID);
+        if (memberId) {
+          const msnap = await getDoc(doc(fdb, 'members', memberId));
+          setAdminGoogleEmail((msnap.data()?.google_email as string | null) ?? null);
+        }
+
+        const snap = await getDoc(doc(fdb, 'settings', 'push'));
+        if (snap.exists()) {
+          const d = snap.data();
+          setPushSettings({
+            sendHourKST:    typeof d.sendHourKST === 'number' ? d.sendHourKST : 8,
+            offsets:        Array.isArray(d.offsets) ? d.offsets : [0, 1, 3, 7],
+            maxChusu:       typeof d.maxChusu === 'number' ? d.maxChusu : 6,
+            enableBirthday: d.enableBirthday !== false,
+            enableDeathDay: d.enableDeathDay !== false,
+          });
+        }
+      } finally {
+        setPushLoading(false);
+      }
+    })();
+  }, []);
 
   const flash = (msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(''), 3000); };
+
+  const handleAdminLinkGoogle = async () => {
+    setGoogleLinkMsg(null);
+    setGoogleLinkLoading(true);
+    try {
+      const { signInWithPopup } = await import('firebase/auth');
+      const { auth, googleProvider } = await import('../lib/firebase');
+      const result = await signInWithPopup(auth, googleProvider);
+      const uid   = result.user.uid;
+      const email = result.user.email ?? '';
+      const memberId = localStorage.getItem(LS.MEMBER_ID);
+      if (!memberId) return;
+      const res = await linkGoogleToMember(memberId, uid, email);
+      if (!res.ok) { setGoogleLinkMsg({ ok: false, msg: res.error ?? '연결 실패' }); return; }
+      setAdminGoogleEmail(email);
+      setGoogleLinkMsg({ ok: true, msg: '구글 계정이 연결됐습니다.' });
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code !== 'auth/popup-closed-by-user')
+        setGoogleLinkMsg({ ok: false, msg: '연결 중 오류가 발생했습니다.' });
+    } finally {
+      setGoogleLinkLoading(false);
+    }
+  };
+
+  const handleAdminUnlinkGoogle = async () => {
+    setGoogleLinkMsg(null);
+    setGoogleLinkLoading(true);
+    try {
+      const memberId = localStorage.getItem(LS.MEMBER_ID);
+      if (!memberId) return;
+      await unlinkGoogleFromMember(memberId);
+      setAdminGoogleEmail(null);
+      setGoogleLinkMsg({ ok: true, msg: '구글 연결이 해제됐습니다.' });
+    } catch {
+      setGoogleLinkMsg({ ok: false, msg: '해제 중 오류가 발생했습니다.' });
+    } finally {
+      setGoogleLinkLoading(false);
+    }
+  };
+
+  const savePushSettings = async () => {
+    setPushSaveMsg(null);
+    try {
+      const { setDoc, doc } = await import('firebase/firestore');
+      const { db: fdb } = await import('../lib/firebase');
+      await setDoc(doc(fdb, 'settings', 'push'), pushSettings);
+      setPushSaveMsg({ ok: true, msg: '✅ 설정이 저장됐습니다.' });
+    } catch {
+      setPushSaveMsg({ ok: false, msg: '❌ 저장 중 오류가 발생했습니다.' });
+    }
+    setTimeout(() => setPushSaveMsg(null), 3000);
+  };
 
   const handleApprove = async (req: ApprovalRequest) => {
     await approveRequest(req.id, req.requested_name);
@@ -239,8 +350,11 @@ export function AdminView({ onLogout }: Props) {
       <div className="admin-header">
         <div className="admin-logo">🛡️ 관리자 패널</div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button className="admin-pw-btn" onClick={() => { setShowGoogleModal(true); setGoogleLinkMsg(null); }}>
+            🔗 구글 연동{adminGoogleEmail ? ' ✓' : ''}
+          </button>
           <button className="admin-pw-btn" onClick={() => { setShowPwChange(true); setAdminPwMsg(null); }}>
-            🔑 비밀번호 변경
+            🔑 비밀번호
           </button>
           <button className="admin-logout" onClick={onLogout}>로그아웃</button>
         </div>
@@ -286,14 +400,14 @@ export function AdminView({ onLogout }: Props) {
                         : <span className="member-unmapped">미매핑</span>}
                     </span>
                     <span className="col-date member-date">
-                      {new Date(m.created_at).toLocaleDateString('ko-KR')}
+                      {fmtDt(m.created_at, false)}
                     </span>
                     <span className="col-login member-date">
                       {m.last_login_at
                         ? <button className="btn-log" onClick={() => handleShowLogs(m)}>
-                            {new Date(m.last_login_at).toLocaleDateString('ko-KR')}
+                            {fmtDt(m.last_login_at)}
                           </button>
-                        : <span style={{color:'#ccc'}}>-</span>}
+                        : <span style={{color:'#ccc'}}>미접속</span>}
                     </span>
                     <span className="col-actions">
                       {m.family_id && m.person_id && (
@@ -301,6 +415,9 @@ export function AdminView({ onLogout }: Props) {
                           접속
                         </button>
                       )}
+                      <button className="btn-log-icon" onClick={() => handleShowLogs(m)} title="접속 로그">
+                        📋{m.last_login_at ? <span className="log-dot log-dot-on"/> : <span className="log-dot"/>}
+                      </button>
                       <button className="btn-map-sm" onClick={() => { setMappingMember(m); setSearchQuery(''); setSearchResults([]); }}>
                         {m.person_name ? '재매핑' : '매핑'}
                       </button>
@@ -340,7 +457,7 @@ export function AdminView({ onLogout }: Props) {
                     {r.description && (
                       <span className="req-desc">"{r.description}"</span>
                     )}
-                    <span className="req-date">{new Date(r.created_at).toLocaleDateString('ko-KR')}</span>
+                    <span className="req-date">{fmtDt(r.created_at)}</span>
                   </div>
                   <div className="req-actions">
                     <button className="btn-approve" onClick={() => handleApprove(r)}>승인</button>
@@ -379,6 +496,92 @@ export function AdminView({ onLogout }: Props) {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </section>
+        {/* 푸시 알림 설정 */}
+        <section className="admin-section">
+          <h2>🔔 푸시 알림 설정</h2>
+          {pushLoading ? <p className="admin-empty">불러오는 중...</p> : (
+            <div className="push-settings">
+
+              {/* 발송 시간 */}
+              <div className="push-row">
+                <label className="push-label">발송 시간 (KST)</label>
+                <select
+                  className="push-select"
+                  value={pushSettings.sendHourKST}
+                  onChange={e => setPushSettings(s => ({ ...s, sendHourKST: Number(e.target.value) }))}
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 알림 시기 */}
+              <div className="push-row push-row-col">
+                <label className="push-label">알림 시기 (몇 일 전)</label>
+                <div className="push-offsets">
+                  {[0, 1, 3, 7, 14, 30].map(day => (
+                    <label key={day} className="push-check-label">
+                      <input
+                        type="checkbox"
+                        checked={pushSettings.offsets.includes(day)}
+                        onChange={e => {
+                          const next = e.target.checked
+                            ? [...pushSettings.offsets, day].sort((a, b) => a - b)
+                            : pushSettings.offsets.filter(d => d !== day);
+                          setPushSettings(s => ({ ...s, offsets: next }));
+                        }}
+                      />
+                      {day === 0 ? '당일' : `${day}일 전`}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 촌수 범위 */}
+              <div className="push-row">
+                <label className="push-label">알림 대상 촌수</label>
+                <select
+                  className="push-select"
+                  value={pushSettings.maxChusu}
+                  onChange={e => setPushSettings(s => ({ ...s, maxChusu: Number(e.target.value) }))}
+                >
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <option key={n} value={n}>{n}촌 이내</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 알림 종류 */}
+              <div className="push-row push-row-col">
+                <label className="push-label">알림 종류</label>
+                <div className="push-toggles">
+                  <label className="push-check-label">
+                    <input
+                      type="checkbox"
+                      checked={pushSettings.enableBirthday}
+                      onChange={e => setPushSettings(s => ({ ...s, enableBirthday: e.target.checked }))}
+                    />
+                    🎂 생일 알림
+                  </label>
+                  <label className="push-check-label">
+                    <input
+                      type="checkbox"
+                      checked={pushSettings.enableDeathDay}
+                      onChange={e => setPushSettings(s => ({ ...s, enableDeathDay: e.target.checked }))}
+                    />
+                    🕯️ 기일 알림
+                  </label>
+                </div>
+              </div>
+
+              {pushSaveMsg && (
+                <p className={`push-save-msg ${pushSaveMsg.ok ? 'ok' : 'err'}`}>{pushSaveMsg.msg}</p>
+              )}
+              <button className="push-save-btn" onClick={savePushSettings}>저장</button>
             </div>
           )}
         </section>
@@ -509,6 +712,54 @@ export function AdminView({ onLogout }: Props) {
         </div>
       )}
 
+      {/* 구글 연동 모달 */}
+      {showGoogleModal && (
+        <div className="confirm-backdrop" onClick={() => setShowGoogleModal(false)}>
+          <div className="confirm-box" onClick={e => e.stopPropagation()} style={{ width: 320 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 16, marginBottom: 6 }}>구글 계정 연동</h3>
+            {adminGoogleEmail ? (
+              <>
+                <p style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, marginBottom: 4 }}>● 연결됨</p>
+                <p style={{ fontSize: 13, color: '#4a5568', marginBottom: 16 }}>{adminGoogleEmail}</p>
+                {googleLinkMsg && <p style={{ fontSize: 13, marginBottom: 10, color: googleLinkMsg.ok ? '#16a34a' : '#e53e3e' }}>{googleLinkMsg.msg}</p>}
+                <div className="confirm-actions">
+                  <button className="btn-cancel-confirm" onClick={() => setShowGoogleModal(false)}>닫기</button>
+                  <button className="btn-delete-confirm"
+                    style={{ background: '#e53e3e' }}
+                    disabled={googleLinkLoading}
+                    onClick={handleAdminUnlinkGoogle}>
+                    {googleLinkLoading ? '처리 중...' : '연결 해제'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 16 }}>
+                  구글 계정을 연결하면 비밀번호 없이 로그인할 수 있습니다.
+                </p>
+                {googleLinkMsg && <p style={{ fontSize: 13, marginBottom: 10, color: googleLinkMsg.ok ? '#16a34a' : '#e53e3e' }}>{googleLinkMsg.msg}</p>}
+                <div className="confirm-actions">
+                  <button className="btn-cancel-confirm" onClick={() => setShowGoogleModal(false)}>취소</button>
+                  <button className="btn-approve" style={{ flex: 1 }}
+                    disabled={googleLinkLoading}
+                    onClick={handleAdminLinkGoogle}>
+                    {googleLinkLoading ? '처리 중...' : '구글로 연결'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 접속 로그 모달 */}
       {logMember && (
         <div className="confirm-backdrop" onClick={() => setLogMember(null)}>
@@ -521,7 +772,6 @@ export function AdminView({ onLogout }: Props) {
             ) : (
               <div className="log-list">
                 {loginLogs.map((l, i) => {
-                  const dt = new Date(l.logged_in_at);
                   const mobile = /Mobile|Android|iPhone/i.test(l.user_agent);
                   const browser = l.user_agent.includes('Chrome') ? 'Chrome'
                     : l.user_agent.includes('Safari') ? 'Safari'
@@ -531,7 +781,7 @@ export function AdminView({ onLogout }: Props) {
                       <span className="log-num">{i + 1}</span>
                       <div className="log-info">
                         <span className="log-date">
-                          {dt.toLocaleDateString('ko-KR')} {dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                          {fmtDt(l.logged_in_at)}
                         </span>
                         <span className="log-device">{mobile ? '📱 모바일' : '💻 PC'} · {browser}</span>
                       </div>

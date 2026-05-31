@@ -54,12 +54,18 @@
   .branch-tab { padding: 12px 4px; font-size: 14px; font-weight: 700; }
 }
 
-/* 미니맵 */
+/* 미니맵 — 슬라이더(44px)와 한몸: 위쪽만 라운드 */
 .react-flow__minimap {
-  transform: scale(0.7);
-  transform-origin: bottom right;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0 !important;
   overflow: hidden;
+  box-shadow: none !important;
+  border: 1px solid #E4E6F0;
+  border-bottom: none !important;
+  bottom: 44px !important;
+  right: 8px !important;
+  width: 148px !important;
+  height: 100px !important;
+  background: white !important;
 }
 
 .flow-wrapper {
@@ -69,6 +75,92 @@
 
 /* React Flow 배경 */
 .react-flow__background { background: #F4F5FA; }
+
+/* ── 줌 슬라이더 ────────────────────────────────────────────────────────── */
+.zoom-controls-panel {
+  bottom: 0 !important;   /* 툴바에 딱 붙음 */
+  right: 8px !important;
+  margin: 0 !important;
+}
+
+.zoom-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border-radius: 0 0 12px 12px;
+  padding: 0 10px;
+  height: 44px;           /* 고정 높이: 미니맵 bottom 값과 동일 */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07);
+  border: 1px solid #E4E6F0;
+  border-top: none;
+  width: 148px;           /* 미니맵과 동일 너비 */
+  box-sizing: border-box;
+}
+
+.zoom-step-btn {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  background: #EEF2FF;
+  border: none; border-radius: 50%;
+  color: #4F46E5; cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.zoom-step-btn:hover { background: #C7D2FE; }
+
+.zoom-slider-input {
+  flex: 1;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #E0E7FF;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.zoom-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #4F46E5;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(79,70,229,0.4);
+  transition: transform 0.1s;
+}
+.zoom-slider-input::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.zoom-pct {
+  font-size: 11px; font-weight: 700;
+  color: #6B7280; min-width: 32px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── GPS / 나 위치 버튼 ──────────────────────────────────────────────────── */
+.focus-me-panel {
+  top: 12px !important;
+  right: 12px !important;
+  margin: 0 !important;
+}
+
+.focus-me-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: white;
+  border: none; border-radius: 20px;
+  padding: 8px 14px 8px 10px;
+  color: #4F46E5;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.08);
+  transition: all 0.15s;
+}
+.focus-me-btn:hover {
+  background: #EEF2FF;
+  box-shadow: 0 4px 16px rgba(79,70,229,0.2);
+  transform: translateY(-1px);
+}
+.focus-me-btn:active { transform: translateY(0); }
 
 .empty-branch {
   position: absolute; inset: 0;

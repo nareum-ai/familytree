@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
+import { useAdminEmail } from '../hooks/useAdminEmail';
 import { LS } from '../lib/storageKeys';
 import './MyMenuView.css';
 
@@ -32,6 +33,7 @@ export function MyMenuView({ onClose }: Props) {
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const [googleMsg, setGoogleMsg]     = useState<{ ok: boolean; msg: string } | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const adminEmail = useAdminEmail();
 
   const username = localStorage.getItem(LS.ACCOUNT_NAME)
     ?? localStorage.getItem(LS.USER_NAME) ?? '';
@@ -263,6 +265,19 @@ export function MyMenuView({ onClose }: Props) {
               )}
             </div>
           )}
+        </div>
+
+        {/* 문의 · 탈퇴 안내 */}
+        <div className="my-contact-footer">
+          <p className="my-contact-title">탈퇴 및 문의</p>
+          <p className="my-contact-desc">
+            계정 탈퇴는 관리자를 통해 처리됩니다.<br />
+            탈퇴 요청 또는 문의사항은 아래 이메일로 연락주세요.
+          </p>
+          {adminEmail
+            ? <a href={`mailto:${adminEmail}?subject=계정 탈퇴 요청`} className="my-contact-email">{adminEmail}</a>
+            : <span className="my-contact-email" style={{ color: '#aaa' }}>이메일 불러오는 중...</span>
+          }
         </div>
       </div>
     </div>

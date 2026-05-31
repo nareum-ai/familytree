@@ -151,6 +151,28 @@ html, body, #root {
 }
 .header-logout:hover { border-color: var(--pri); color: var(--pri); }
 
+/* 뒤로가기 이중확인 토스트 */
+.back-exit-toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26,26,46,0.88);
+  color: white;
+  padding: 11px 22px;
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 9999;
+  pointer-events: none;
+  animation: toast-up 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes toast-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* ── 메인 ─────────────────────────────────────────────────────────────────── */
 .app-main {
   flex: 1;
@@ -258,6 +280,35 @@ html, body, #root {
   display: flex; align-items: center; justify-content: center;
   padding: 0 2px; line-height: 1;
 }
+
+/* ── 공통 확인 모달 ───────────────────────────────────────────────────────── */
+.confirm-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+}
+.confirm-box {
+  background: white; border-radius: 16px;
+  padding: 28px; width: 300px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.confirm-box h3 { font-size: 17px; font-weight: 700; color: var(--text); margin: 0 0 20px; }
+.confirm-actions { display: flex; gap: 10px; }
+.btn-cancel-confirm {
+  flex: 1; padding: 11px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  background: white; color: var(--text-2);
+  font-size: 14px; font-family: inherit; cursor: pointer;
+}
+.btn-delete-confirm {
+  flex: 1; padding: 11px;
+  border: none; border-radius: 8px;
+  background: var(--pri); color: white;
+  font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
+}
+.btn-delete-confirm:hover { background: var(--pri-dark); }
 
 /* ── Invite / Loading 화면 ────────────────────────────────────────────────── */
 .invite-loading,

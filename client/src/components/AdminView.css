@@ -134,6 +134,21 @@
   font-size: 11px; font-weight: 600; cursor: pointer;
   padding: 0; text-decoration: underline; white-space: nowrap;
 }
+
+.btn-log-icon {
+  position: relative;
+  background: #f0f4f8; border: none; border-radius: 7px;
+  padding: 6px 8px; font-size: 13px; cursor: pointer;
+  line-height: 1; transition: background 0.15s;
+}
+.btn-log-icon:hover { background: #e0ecf8; }
+
+.log-dot {
+  position: absolute; top: 4px; right: 4px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #cbd5e1;
+}
+.log-dot.log-dot-on { background: #16a34a; }
 .btn-log:hover { color: #1a8ab5; }
 
 .log-box { width: 380px; max-height: 70vh; overflow-y: auto; }
@@ -477,3 +492,165 @@
   cursor: pointer;
 }
 .btn-delete-confirm:hover { background: #c53030; }
+
+/* ── 푸시 알림 설정 ─────────────────────────────────────────────────────── */
+.push-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.push-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.push-row-col {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.push-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2e3b;
+  flex-shrink: 0;
+}
+
+.push-select {
+  padding: 7px 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+}
+.push-select:focus { border-color: #2AABE2; }
+
+.push-offsets, .push-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.push-check-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f4f8;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2e3b;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.push-check-label:has(input:checked) {
+  background: #e6f5fb;
+  border-color: #2AABE2;
+  color: #1a8ab5;
+}
+.push-check-label input { display: none; }
+
+.push-save-btn {
+  align-self: flex-start;
+  background: #2AABE2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.push-save-btn:hover { background: #1a8ab5; }
+
+.push-save-msg { font-size: 13px; margin: 0; }
+.push-save-msg.ok { color: #16a34a; }
+.push-save-msg.err { color: #e53e3e; }
+
+/* ── 모바일 ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* 헤더: 패딩·폰트 축소, 버튼 한 줄 유지 */
+  .admin-header {
+    padding: 10px 14px;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .admin-logo { font-size: 14px; white-space: nowrap; }
+  .admin-pw-btn { padding: 5px 8px; font-size: 11px; }
+  .admin-logout  { padding: 5px 10px; font-size: 11px; }
+
+  /* 바디 */
+  .admin-body { padding: 12px; gap: 14px; }
+  .admin-section { padding: 14px; }
+
+  /* 회원 검색 – 전체 너비 */
+  .member-header { flex-direction: column; align-items: stretch; }
+  .member-search { max-width: 100%; }
+
+  /* 회원 테이블 → 카드 레이아웃 */
+  .member-table-head { display: none; }
+  .admin-member-row {
+    /* 2열 그리드: 왼쪽(이름+날짜) / 오른쪽(매핑+최근접속) + 버튼 풀행 */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 3px 8px;
+    padding: 12px 14px 10px;
+  }
+
+  .col-idx  { display: none; }
+
+  /* 행 1: 아이디 | 매핑 인물 */
+  .col-id   { grid-column: 1; grid-row: 1; font-size: 14px; }
+  .col-map  { grid-column: 2; grid-row: 1; text-align: right; }
+
+  /* 행 2: 가입일 | 최근 접속 */
+  .col-date  { grid-column: 1; grid-row: 2; font-size: 11px; color: #94a3b8; }
+  .col-login {
+    grid-column: 2; grid-row: 2;
+    display: block;          /* 모바일에서도 표시 */
+    text-align: right;
+    font-size: 11px;
+  }
+  .col-login .btn-log {
+    font-size: 11px;
+  }
+
+  /* 행 3: 버튼 전체 너비 */
+  .col-actions {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px solid #eef0f5;
+  }
+  .col-actions button { flex: 1; min-width: 0; justify-content: center; }
+  .btn-log-icon { flex: 0 0 auto !important; }
+
+  /* 승인 대기 행: 세로 배치 */
+  .admin-req-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .req-actions { display: flex; width: 100%; }
+  .btn-approve, .btn-reject { flex: 1; }
+
+  /* 가족집단 행: 세로 배치, 버튼 줄바꿈 */
+  .admin-fam-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .fam-actions { flex-wrap: wrap; width: 100%; }
+
+  /* section-head "새 가족" 버튼 줄바꿈 허용 */
+  .section-head { flex-wrap: wrap; gap: 8px; }
+}

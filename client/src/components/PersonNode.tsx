@@ -40,7 +40,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
   }
 
   return (
-    <div className={`person-node ${isMale ? 'male' : 'female'} ${isRoot ? 'root' : ''} ${selected ? 'selected' : ''} ${deceased ? 'deceased' : ''}`}>
+    <div className={`person-node ${isMale ? 'male' : 'female'} ${show나 ? 'me' : ''} ${selected ? 'selected' : ''} ${deceased ? 'deceased' : ''}`}>
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {chusu !== null && chusu > 0 && <div className="chusu-badge">{chusu}촌</div>}

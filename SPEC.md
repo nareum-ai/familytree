@@ -1,6 +1,6 @@
 # 우리 가족 가계도 — 프로그램 명세서
 
-**버전**: 1.3.0  
+**버전**: 1.4.0  
 **최초 작성**: 2026-05-31  
 **플랫폼**: Firebase Hosting (SPA) + PWA  
 **URL**: https://familytree-3221b.web.app  
@@ -19,12 +19,14 @@
 7. [핵심 알고리즘](#7-핵심-알고리즘)
 8. [컴포넌트 구조](#8-컴포넌트-구조)
 9. [상태 관리 (Zustand Store)](#9-상태-관리-zustand-store)
-10. [유틸리티](#10-유틸리티)
+10. [유틸리티 & 커스텀 훅](#10-유틸리티--커스텀-훅)
 11. [화면 흐름 (라우팅)](#11-화면-흐름-라우팅)
 12. [CSV 대량 업로드 / 내보내기](#12-csv-대량-업로드--내보내기)
-13. [배포 구성](#13-배포-구성)
-14. [보안 고려사항](#14-보안-고려사항)
-15. [알려진 제한 사항](#15-알려진-제한-사항)
+13. [푸시 알림 시스템](#13-푸시-알림-시스템)
+14. [Cloud Functions](#14-cloud-functions)
+15. [배포 구성](#15-배포-구성)
+16. [보안 고려사항](#16-보안-고려사항)
+17. [알려진 제한 사항](#17-알려진-제한-사항)
 
 ---
 
@@ -36,7 +38,7 @@
 
 - 친가·외가·처가·처외가 4개 계통을 탭으로 구분하여 시각적으로 표현
 - 가족 구성원별 계정 연결 및 프라이버시 보호
-- 생일·기일 기념일 자동 알림 (음력 지원)
+- 생일·기일 기념일 자동 알림 (음력 지원, 관리자 설정 가능)
 - 초대 링크를 통한 가족 온보딩
 - CSV 기반 대량 데이터 등록 및 내보내기
 - Google OAuth를 통한 소셜 로그인
@@ -47,12 +49,13 @@
 |----------|------|
 | 가족 트리 생성 | 관리자 승인 후 본인을 root로 트리 개설 |
 | CSV 일괄 등록 | 관리자가 CSV 파일로 가족 트리 전체를 한번에 등록 |
-| 가족 초대 | 인물 노드 → 초대 링크 생성 → 카카오톡 등 공유 |
+| 가족 초대 | 인물 노드 → 초대 링크 생성 → 카카오톡/문자 공유 (이름 미포함) |
 | 비공개 정보 요청 | 잠긴 노드 클릭 → 권한자에게 요청 → 양방향 승인 |
 | 1촌 자동 공개 | 부모·자녀(1촌)는 정보공개 요청 없이 자동 열람 |
 | 기념일 확인 | 📅 버튼 → 가까운 순 생일/기일 목록 |
 | 구글 로그인 | 구글 계정으로 간편 로그인 / 비밀번호 분실 대체 |
 | 관리자 대리 접속 | 관리자가 특정 회원 계정으로 바로 접속 |
+| 탈퇴 | 관리자 이메일로 요청 → 관리자가 회원 삭제 처리 |
 
 ---
 
@@ -69,6 +72,7 @@
 | 트리 렌더링 | @xyflow/react | 12.10.2 | 노드·엣지 그래프 |
 | 레이아웃 | dagre | 0.8.5 | 방향성 그래프 배치 |
 | 음력 변환 | solarlunar | 3.1.0 | 음력↔양력 날짜 변환 |
+| PWA | vite-plugin-pwa | 1.3.0 | 서비스 워커, 설치, 푸시 |
 
 ### Backend / 인프라
 
@@ -77,6 +81,8 @@
 | 데이터베이스 | Firebase Firestore | 실시간 NoSQL DB |
 | 호스팅 | Firebase Hosting | SPA 정적 배포 |
 | 인증 | Firebase Auth (Google OAuth) + 자체 구현 (Firestore + SHA-256) | 계정 관리 |
+| 서버리스 | Firebase Cloud Functions (Node.js 20, 2nd Gen) | 푸시 알림, 로그 정리 |
+| 푸시 | Firebase Cloud Messaging (FCM) | 기념일·정보공개 요청 알림 |
 
 ---
 
@@ -86,37 +92,40 @@
 FamilyTree/
 ├── client/                         # React 프론트엔드
 │   ├── src/
-│   │   ├── components/             # UI 컴포넌트
-│   │   │   ├── GoogleLinkScreen.tsx/css  # 구글 계정 연결 화면
-│   │   │   └── ...
+│   │   ├── components/             # UI 컴포넌트 (14개)
 │   │   ├── hooks/
-│   │   │   └── useTreeLayout.ts    # 트리 레이아웃 엔진 + canSeeFull
+│   │   │   ├── useTreeLayout.ts    # 트리 레이아웃 엔진 + canSeeFull
+│   │   │   ├── useFCMToken.ts      # FCM 토큰 등록 및 포그라운드 알림
+│   │   │   └── useAdminEmail.ts    # 관리자 구글 이메일 조회 훅
 │   │   ├── store/
 │   │   │   └── familyStore.ts      # Zustand 전역 스토어
 │   │   ├── utils/
-│   │   │   ├── anniversary.ts
+│   │   │   ├── anniversary.ts      # 기념일 날짜 계산 (UI용)
 │   │   │   ├── csvExport.ts
-│   │   │   ├── csvImport.ts
+│   │   │   ├── csvImport.ts        # EUC-KR/UTF-8 자동 감지
 │   │   │   ├── relationLabel.ts
-│   │   │   ├── nameParser.ts
-│   │   │   ├── crypto.ts
+│   │   │   ├── nameParser.ts       # 복성 처리
+│   │   │   ├── crypto.ts           # SHA-256 해싱
 │   │   │   └── age.ts
 │   │   ├── types/
 │   │   │   ├── index.ts
 │   │   │   └── permissions.ts
 │   │   ├── lib/
 │   │   │   ├── firebase.ts         # Firebase 초기화 (Auth 포함)
-│   │   │   └── storageKeys.ts
-│   │   ├── App.tsx
+│   │   │   └── storageKeys.ts      # localStorage/sessionStorage 키 상수
+│   │   ├── sw.ts                   # Service Worker (백그라운드 푸시 처리)
+│   │   ├── App.tsx                 # 라우팅·인증 허브, 뒤로가기 인터셉트
 │   │   └── main.tsx
 │   ├── public/
-│   │   └── favicon.svg             # 나무 모양 파비콘
-│   ├── index.html                  # 타이틀: 우리 가족 가계도
-│   └── ...
+│   │   ├── favicon.svg
+│   │   └── icons/                  # PWA 아이콘 (192px, 512px)
+│   ├── index.html
+│   └── vite.config.ts              # PWA 설정 (orientation: 'any')
+├── functions/
+│   └── src/index.ts                # Cloud Functions (3개)
 ├── firebase.json
-├── firestore.rules
+├── firestore.rules                 # 현재: allow read, write: if true
 ├── firestore.indexes.json
-├── .firebaserc                     # project: familytree-3221b
 └── SPEC.md
 ```
 
@@ -133,19 +142,18 @@ interface Person {
   last_name: string;
   first_name: string;
   gender: 'male' | 'female' | null;
-  birth_date: string | null;
+  birth_date: string | null;       // YYYY-MM-DD
   birth_lunar: boolean;
   birth_year: number | null;
-  is_root: number;
+  is_root: number;                 // 1 = 이 가족의 기준 인물
   is_deceased: boolean;
   death_date: string | null;
   death_lunar: boolean;
   photo_url: string | null;
-  created_by: string | null;
+  created_by: string | null;       // 계정 아이디 or 인물명 (레거시)
   family_id: string;
   permissions: PersonPermissions;
   created_at: string;
-  // 부가 연락처 정보
   phone?: string | null;
   email?: string | null;
   memo?: string | null;
@@ -170,15 +178,17 @@ interface Relationship {
 interface Member {
   id: string;
   username: string;
-  password_hash: string;       // SHA-256(salt + password), 구글 전용 계정은 ''
+  password_hash: string;        // SHA-256(salt + password), 구글 전용은 ''
   person_id: string | null;
   family_id: string | null;
   person_name: string | null;
   is_admin: boolean;
   status: 'active' | 'suspended';
-  created_at: string;
+  created_at: string;           // ISO 8601
+  last_login_at?: string | null; // ISO 8601, 로그인 시마다 갱신
   google_uid?: string | null;   // Firebase Auth UID
-  google_email?: string | null;
+  google_email?: string | null; // 연결된 구글 계정 이메일
+  fcm_token?: string | null;    // FCM 디바이스 토큰
 }
 ```
 
@@ -190,12 +200,26 @@ interface Member {
 |--------|------|-----------|
 | `persons` | 인물 데이터 | `where family_id ==` |
 | `relationships` | 관계 엣지 | `where family_id ==` |
-| `members` | 계정 | `where username ==`, `where google_uid ==` |
-| `invites` | 초대 토큰 | `where token ==` |
+| `members` | 계정 | `where username ==`, `where google_uid ==`, `where is_admin ==` |
+| `invites` | 초대 토큰 (30일 유효) | `where token ==` |
 | `approval_requests` | 트리 개설 신청 | `where status == 'pending'` |
 | `info_requests` | 정보공개 요청 | `where holder_member_id ==` |
 | `info_access` | 승인된 정보 접근권 | `where requester_member_id ==` |
 | `person_access_pairs` | 양방향 접근 합의 | `where person_a_id ==` |
+| `login_logs` | 접속 로그 (1년 보관) | `where member_id ==`, `where logged_in_at <` |
+| `settings/push` | 푸시 알림 설정 (단일 문서) | 직접 읽기 |
+
+### settings/push 문서 구조
+
+```typescript
+{
+  sendHourKST: number;      // 발송 시각 (0~23, KST 기준), 기본값 8
+  offsets: number[];        // D-day 알림 목록 (기본값 [0, 1, 3, 7])
+  maxChusu: number;         // 최대 촌수 (기본값 6)
+  enableBirthday: boolean;  // 생일 알림 여부 (기본값 true)
+  enableDeathDay: boolean;  // 기일 알림 여부 (기본값 true)
+}
+```
 
 ---
 
@@ -218,6 +242,11 @@ interface Member {
       → "기존 계정 연결" (아이디+비밀번호 1회 입력) → google_uid 저장
       → "처음 시작하기" → 새 계정 생성 → 가족그룹 신청 플로우
 ```
+
+### 로그인 후 처리 (`applyMemberLogin`)
+
+로그인 완료 시 `recordLogin` → Firestore 쓰기 완료 후 `window.location.reload()` 실행.  
+(쓰기 완료 전 reload 방지 — `await recordLogin` 후 reload)
 
 ### 세션 관리
 
@@ -251,20 +280,11 @@ interface Member {
 | created_by = 관리자 | **즉시 자동 승인** |
 | 권한자 없음 | **즉시 자동 승인** |
 
-### 편집 권한 (`canEdit` in PersonDetail)
-
-| 조건 | 편집 버튼 |
-|------|-----------|
-| 내 노드 (viewpointPersonId 일치) | 표시 |
-| 내가 만든 노드 (created_by 일치) | 표시 |
-| 관리자 생성 + 미매핑 | 표시 |
-| 다른 사람에게 매핑된 노드 | 숨김 |
-
 ### 계정 역할
 
 | 역할 | 조건 | 권한 |
 |------|------|------|
-| 관리자 | `is_admin: true` | AdminView 전체, 대리 접속, CSV 업로드/내보내기 |
+| 관리자 | `is_admin: true` | AdminView 전체, 대리 접속, CSV 업로드/내보내기, 푸시 설정 |
 | 일반 회원 | `person_id` 연결됨 | 가족 트리 편집, 초대, 기념일·검색 |
 | 미매핑 회원 | `person_id: null` | 가족 트리 개설 신청만 가능 |
 
@@ -315,28 +335,32 @@ BFS 그래프 거리. **배우자 = 0 hop**.
 ## 8. 컴포넌트 구조
 
 ```
-App.tsx (라우팅·인증 허브)
+App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트)
 ├── LoginScreen              로그인 (아이디/비밀번호 + Google)
 ├── RegisterScreen           회원가입
 ├── GoogleLinkScreen         구글 계정 연결/새로 시작 선택 화면
-├── InvitePage               /invite/:token 랜딩
+├── InvitePage               /invite/:token 랜딩 (이름 미노출)
 │   └── InviteVerifyScreen   이름 검증
-├── FamilyGroupRequestScreen 가족 트리 개설 신청
+├── FamilyGroupRequestScreen 가족 트리 개설 신청 (관리자 이메일 문의 안내)
 ├── NewFamilyRequestView     개설 승인 대기
-├── AdminView                관리자 대시보드 (대리 접속 포함)
-│   └── BulkUploadView       CSV 일괄 업로드 (EUC-KR/UTF-8 자동 감지)
+├── AdminView                관리자 대시보드
+│   ├── BulkUploadView       CSV 일괄 업로드 (EUC-KR/UTF-8 자동 감지)
+│   └── [Push Settings UI]   푸시 알림 설정 (시간·오프셋·촌수·종류)
 └── Main Layout
     ├── FamilyTreeView        트리 캔버스
+    │   ├── ZoomControls      줌 슬라이더 (미니맵과 한 덩어리)
+    │   ├── FocusMeButton     나 위치 포커스 버튼
+    │   ├── MiniMap           ReactFlow 미니맵
     │   ├── CoupleNode
     │   │   └── PersonNode
-    │   ├── PersonDetail      인물 상세·편집 (연락처 포함, canEdit 적용)
+    │   ├── PersonDetail      인물 상세·편집 (초대 링크 + 카카오/문자 공유)
     │   │   └── DateInput
     │   ├── AddPersonModal
     │   └── InfoRequestPanel  정보공개 요청 (자동 승인 지원)
     ├── AnniversaryView       기념일 목록
     ├── SearchView            인물 검색
-    ├── MyMenuView            My 메뉴 (정보공개 요청 / 비밀번호 / 구글 연결)
-    └── HelpView              사용 안내
+    ├── MyMenuView            My 메뉴 (정보공개 요청/비밀번호/구글 연결/탈퇴 문의)
+    └── HelpView              사용 안내 (탈퇴 방법 포함)
 ```
 
 ---
@@ -351,26 +375,34 @@ App.tsx (라우팅·인증 허브)
 | `registerMember` | 일반 회원가입 |
 | `loginWithGoogle` | 구글 팝업 인증 → member 조회 |
 | `registerWithGoogle` | 구글 전용 신규 계정 생성 |
-| `linkGoogleToMember` | 기존 계정에 google_uid 연결 |
+| `linkGoogleToMember` | 기존 계정에 google_uid 연결 (중복 체크 포함) |
 | `unlinkGoogleFromMember` | google_uid 연결 해제 |
+| `recordLogin` | last_login_at 갱신 + login_logs 기록 |
 | `createInfoRequest` | 정보공개 요청 (관리자 생성 노드 자동 승인) |
 
 ---
 
-## 10. 유틸리티
+## 10. 유틸리티 & 커스텀 훅
 
-### csvImport.ts
+### hooks/
 
-- 파일 인코딩 자동 감지: UTF-8(BOM 포함) → EUC-KR 폴백
+| 파일 | 설명 |
+|------|------|
+| `useTreeLayout.ts` | 트리 레이아웃 엔진, `classifyBranch`, `getChusu`, `canSeeFull` |
+| `useFCMToken.ts` | PWA 설치 시 FCM 토큰 등록, 포그라운드 알림 처리 |
+| `useAdminEmail.ts` | 관리자 `google_email` 조회 훅 (HelpView·MyMenuView·FamilyGroupRequestScreen 공용) |
 
-### 기타
+### utils/
 
 | 파일 | 주요 함수 |
 |------|-----------|
 | `crypto.ts` | `hashPassword(pw)` — SHA-256 |
-| `age.ts` | `getManAge(birthDate)` |
-| `nameParser.ts` | `parseKoreanName(name)` |
-| `relationLabel.ts` | `getRelationLabel(...)` |
+| `age.ts` | `getManAge(birthDate)`, `getAgeAtDeath(birth, death)` |
+| `nameParser.ts` | `parseKoreanName(name)` — 복성 처리 |
+| `relationLabel.ts` | `getRelationLabel(...)` — 한국어 관계명 |
+| `anniversary.ts` | 기념일 날짜 계산 (클라이언트 UI용) |
+| `csvExport.ts` | `exportFamilyToCSV`, `downloadCSV` |
+| `csvImport.ts` | `parseCSV` — UTF-8(BOM)/EUC-KR 자동 감지 |
 
 ---
 
@@ -392,8 +424,9 @@ App.tsx (라우팅·인증 허브)
  │   isAdmin=true
  ├──────────────────────────────────────────────► AdminView
  │
- │   showFamilyGroupRequest=true
+ │   !hasFamilyId OR (persons 빈 배열 + hasFamilyId)
  ├──────────────────────────────────────────────► FamilyGroupRequestScreen
+ │   (hard refresh 시에도 정상 복원됨)
  │
  └── 정상 로그인 ────────────────────────────────► Main App
 ```
@@ -421,7 +454,48 @@ is_deceased, death_date, death_lunar, father_ref, mother_ref, spouse_ref
 
 ---
 
-## 13. 배포 구성
+## 13. 푸시 알림 시스템
+
+### 알림 종류
+
+| 종류 | 트리거 | 발송 주체 |
+|------|--------|-----------|
+| 기념일 알림 | 매시 정각 스케줄 (KST 설정 시각에만 실제 발송) | Cloud Functions |
+| 정보공개 요청 알림 | `info_requests` 문서 생성 즉시 | Cloud Functions (Firestore 트리거) |
+
+### 기념일 알림 동작
+
+- **발송 시각**: `settings/push` 문서의 `sendHourKST` (기본 8시 KST)
+- **D-day 오프셋**: `offsets` 배열 (기본 [0, 1, 3, 7] — 당일·1일·3일·7일 전)
+- **대상 촌수**: `maxChusu` 이내 (기본 6촌)
+- **알림 종류**: `enableBirthday`(생일), `enableDeathDay`(기일) 각각 토글
+- **음력 지원**: `solarlunar` 라이브러리로 양력 변환 후 비교
+
+### 관리자 설정 변경
+
+AdminView → 🔔 푸시 알림 설정 섹션에서 실시간 변경 가능.  
+변경 즉시 `settings/push` Firestore 문서에 저장 → 다음 정각 실행 시 반영.
+
+### PWA 전용
+
+FCM 토큰은 PWA 설치 후 첫 실행 시 알림 권한 허용 시에만 등록됨.  
+일반 브라우저 탭에서는 알림 미지원.
+
+---
+
+## 14. Cloud Functions
+
+| 함수 | 트리거 | 설명 |
+|------|--------|------|
+| `onInfoRequestCreated` | Firestore 트리거 (`info_requests/{id}` 생성) | 권한자에게 즉시 FCM 푸시 |
+| `sendAnniversaryReminders` | 매시 정각 스케줄 (`0 * * * *` UTC) | `settings/push` 읽어 KST 시각 비교 후 기념일 알림 발송 |
+| `cleanupLoginLogs` | 매월 1일 자정 UTC (`0 0 1 * *`) | `login_logs`에서 1년 초과 문서 일괄 삭제 (500건 배치) |
+
+**리전**: `asia-northeast3` (서울)
+
+---
+
+## 15. 배포 구성
 
 ### Firebase 프로젝트
 
@@ -431,43 +505,61 @@ is_deceased, death_date, death_lunar, father_ref, mother_ref, spouse_ref
 ### 배포 명령
 
 ```bash
-npm run deploy
-# 내부: cd client && npm run build && firebase deploy --only hosting
+# 클라이언트 빌드
+cd client && npm run build
+
+# Hosting 배포
+firebase deploy --only hosting
+
+# Functions 배포 (functions/src 변경 시)
+firebase deploy --only functions
+
+# 전체 배포
+firebase deploy --only hosting,functions
 ```
 
-### Firebase Console 수동 설정 필요
+### PWA 설정 (vite.config.ts)
 
-- Authentication → Google 프로바이더 활성화
+```typescript
+manifest: {
+  orientation: 'any',   // 가로/세로 모두 지원
+  display: 'standalone',
+  theme_color: '#2AABE2',
+}
+```
 
 ---
 
-## 14. 보안 고려사항
+## 16. 보안 고려사항
 
 | 항목 | 현황 |
 |------|------|
 | Firestore rules | `allow read, write: if true` (가족 내 신뢰 환경 가정) |
 | 비밀번호 | SHA-256 클라이언트 해싱 |
 | Google OAuth | Firebase Auth 표준 방식 |
-| 초대 토큰 | UUID v4, 30일 만료 |
+| 초대 토큰 | UUID v4, 30일 만료, 공유 시 대상자 이름 미포함 |
 | 세션 | localStorage (영구) |
 | HTTPS | Firebase Hosting 기본 제공 |
+| 접속 로그 | 1년 보관 후 자동 삭제 (monthly Cloud Function) |
 
 ---
 
-## 15. 알려진 제한 사항
+## 17. 알려진 제한 사항
 
 | # | 항목 | 내용 |
 |---|------|------|
 | 1 | 권한 시스템 | `PersonPermissions` 정의 완료, role-based 편집 권한 미구현 |
 | 2 | 사진 업로드 | `photo_url` 필드 존재, 업로드 UI 미구현 |
-| 3 | 비밀번호 찾기 | 구글 계정 미연결 시 자체 리셋 불가 — 관리자 문의 필요 |
+| 3 | 비밀번호 찾기 | 구글 계정 미연결 시 자체 리셋 불가 — 관리자 이메일 문의 필요 |
 | 4 | 동시 편집 충돌 | 실시간 동기화로 기본 처리, 충돌 해결 로직 없음 |
 | 5 | CSV 복수 배우자 | 배우자 1명만 지원 |
 | 6 | 가족 병합 자동화 | 수동 CSV 편집으로 가능, 전용 merge UI 미구현 |
+| 7 | Firestore 보안 규칙 | 현재 전체 공개 — 프로덕션 확장 시 규칙 강화 필요 |
 
 ---
 
 *v1.0.0 — 2026-05-31 최초 작성*  
 *v1.1.0 — 2026-05-31 server/ 제거, CSV 업로드/내보내기 추가*  
 *v1.2.0 — 2026-05-31 Google OAuth, 모바일 UX, 인물 연락처, 편집 권한, 1촌 자동 공개, 프로젝트 이전(familytree-3221b)*  
-*v1.3.0 — 2026-05-31 PWA 설치, 웹 푸시 알림(PWA 전용), 기념일 알림(D-7/3/1/당일, 6촌이내, 양음력), 관리자 접속 로그, 디자인 전면 개편(인디고 테마, Pretendard)*
+*v1.3.0 — 2026-05-31 PWA 설치, 웹 푸시 알림(PWA 전용), 기념일 알림(D-7/3/1/당일, 6촌이내, 양음력), 관리자 접속 로그, 디자인 전면 개편(인디고 테마, Pretendard)*  
+*v1.4.0 — 2026-05-31 푸시 알림 관리자 설정 UI, 관리자 구글 계정 연동, 접속 로그 1년 보관·월 자동 삭제, 안드로이드 뒤로가기 이중 확인, 초대 공유 보안(이름 미포함), 모바일 관리자 레이아웃 개선, 탈퇴·문의 이메일 안내, 가족그룹 신청화면 hard refresh 버그 수정, useAdminEmail 훅 추출(중복 제거), 로그인 이력 기록 버그 수정(await recordLogin)*

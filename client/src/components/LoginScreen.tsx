@@ -34,39 +34,10 @@ export function LoginScreen({ onLogin, onGoogleLogin, onRegister, error, success
     <div className="login-screen">
       <div className="login-card">
 
-        {/* 로고 아이콘 */}
-        <div className="login-logo">
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-            <defs>
-              <linearGradient id="lg" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#4F46E5"/>
-                <stop offset="1" stopColor="#6D28D9"/>
-              </linearGradient>
-            </defs>
-            <rect width="56" height="56" rx="16" fill="url(#lg)"/>
-            <circle cx="28" cy="10" r="6" fill="white"/>
-            <line x1="28" y1="16" x2="28" y2="22" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="14" y1="22" x2="42" y2="22" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="14" y1="22" x2="14" y2="28" stroke="rgba(255,255,255,0.7)" strokeWidth="1.8" strokeLinecap="round"/>
-            <line x1="42" y1="22" x2="42" y2="28" stroke="rgba(255,255,255,0.7)" strokeWidth="1.8" strokeLinecap="round"/>
-            <circle cx="14" cy="32" r="5" fill="white" opacity="0.92"/>
-            <circle cx="42" cy="32" r="5" fill="white" opacity="0.92"/>
-            <line x1="14" y1="37" x2="14" y2="42" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round"/>
-            <line x1="7"  y1="42" x2="21" y2="42" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round"/>
-            <line x1="42" y1="37" x2="42" y2="42" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round"/>
-            <line x1="35" y1="42" x2="49" y2="42" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round"/>
-            <circle cx="7"  cy="46" r="3.5" fill="white" opacity="0.75"/>
-            <circle cx="21" cy="46" r="3.5" fill="white" opacity="0.75"/>
-            <circle cx="35" cy="46" r="3.5" fill="white" opacity="0.75"/>
-            <circle cx="49" cy="46" r="3.5" fill="white" opacity="0.75"/>
-          </svg>
-        </div>
-
         <h1 className="login-title">우리 가족 가계도</h1>
 
         {success && (
           <div className="login-success">
-            <span className="login-success-icon">✅</span>
             {success}
           </div>
         )}

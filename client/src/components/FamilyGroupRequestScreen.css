@@ -100,3 +100,32 @@
 .fgr-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .fgr-done-icon { font-size: 48px; margin-bottom: 12px; }
+
+.fgr-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #FFF9E6;
+  border: 1.5px solid #F6C90E;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 18px;
+  text-align: left;
+}
+.fgr-notice-icon { font-size: 18px; flex-shrink: 0; line-height: 1.5; }
+.fgr-notice p { font-size: 13px; color: #6B5500; line-height: 1.65; margin: 0; }
+.fgr-notice strong { color: #4a3800; }
+
+.fgr-contact {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.6;
+}
+.fgr-contact-link {
+  color: #4F46E5;
+  font-weight: 600;
+  text-decoration: none;
+}
+.fgr-contact-link:hover { text-decoration: underline; }

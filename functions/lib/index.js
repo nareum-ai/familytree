@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAnniversaryReminders = exports.onInfoRequestCreated = void 0;
+exports.cleanupLoginLogs = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const messaging_1 = require("firebase-admin/messaging");
@@ -80,21 +80,29 @@ function getChusu(personId, baseId, rels) {
     return null;
 }
 // ── 기념일 알림 스케줄러 ──────────────────────────────────────────────────
-// 매일 KST 오전 8시 (= UTC 23:00) 1회 실행
-// D-7, D-3, D-1, 당일 / 생일+기일 / 6촌 이내 / 양력+음력
-exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 23 * * *', timeZone: 'UTC' }, async () => {
-    var _a;
+// 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
+exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * * * *', timeZone: 'UTC' }, async () => {
+    var _a, _b;
+    // ── 관리자 설정 로드 (없으면 기본값 사용) ─────────────────────────────
+    const settingsSnap = await db.doc('settings/push').get();
+    const cfg = (_a = settingsSnap.data()) !== null && _a !== void 0 ? _a : {};
+    const sendHourKST = typeof cfg.sendHourKST === 'number' ? cfg.sendHourKST : 8;
+    const offsets = Array.isArray(cfg.offsets) ? cfg.offsets : [0, 1, 3, 7];
+    const maxChusu = typeof cfg.maxChusu === 'number' ? cfg.maxChusu : 6;
+    const enableBirthday = cfg.enableBirthday !== false;
+    const enableDeathDay = cfg.enableDeathDay !== false;
     // KST 기준 오늘 날짜
     const now = new Date();
     const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    // 설정된 발송 시간이 아니면 종료
+    if (kst.getUTCHours() !== sendHourKST)
+        return;
     const todayY = kst.getUTCFullYear();
     const todayM = kst.getUTCMonth() + 1;
     const todayD = kst.getUTCDate();
-    // solarlunar로 오늘 날짜를 기준으로 D+0/1/3/7의 음력 날짜 미리 계산
+    // solarlunar로 각 offset의 음력 날짜 미리 계산
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const sl = require('solarlunar');
-    // offset별 (0=당일, 1=D-1, 3=D-3, 7=D-7) 체크할 날짜와 음력 날짜 준비
-    const offsets = [0, 1, 3, 7];
     const checkDates = offsets.map(offset => {
         const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
         const m = d.getUTCMonth() + 1;
@@ -113,7 +121,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 23
         const d = doc.data();
         if (!d.family_id || !d.fcm_token || !d.person_id || d.is_admin)
             continue;
-        const list = (_a = familyMap.get(d.family_id)) !== null && _a !== void 0 ? _a : [];
+        const list = (_b = familyMap.get(d.family_id)) !== null && _b !== void 0 ? _b : [];
         list.push({ memberId: doc.id, personId: d.person_id, token: d.fcm_token });
         familyMap.set(d.family_id, list);
     }
@@ -133,10 +141,10 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 23
             for (const person of persons) {
                 const p = person;
                 const chusu = getChusu(p.id, member.personId, rels);
-                if (chusu === null || chusu > 6)
-                    continue; // 6촌 초과 제외
+                if (chusu === null || chusu > maxChusu)
+                    continue;
                 // ── 생일 체크 ────────────────────────────────────────────────────
-                if (p.birth_date && !p.is_deceased) {
+                if (enableBirthday && p.birth_date && !p.is_deceased) {
                     const [by, bm, bd] = p.birth_date.split('-').map(Number);
                     for (const chk of checkDates) {
                         const match = p.birth_lunar
@@ -163,7 +171,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 23
                     }
                 }
                 // ── 기일 체크 ────────────────────────────────────────────────────
-                if (p.death_date) {
+                if (enableDeathDay && p.death_date) {
                     const [, dm, dd] = p.death_date.split('-').map(Number);
                     for (const chk of checkDates) {
                         const match = p.death_lunar
@@ -193,5 +201,32 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 23
     }
     await Promise.all(sends);
     console.log(`기념일 알림 완료: ${sends.length}건`);
+});
+// ── 접속 로그 정리 ───────────────────────────────────────────────────────────
+// 매월 1일 UTC 00:00 (KST 09:00) 실행
+// 1년(365일) 이전 login_logs 문서 일괄 삭제 — 배치 500개 제한 준수
+exports.cleanupLoginLogs = (0, scheduler_1.onSchedule)({ schedule: '0 0 1 * *', timeZone: 'UTC' }, async () => {
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
+    const cutoffIso = cutoff.toISOString();
+    const snap = await db.collection('login_logs')
+        .where('logged_in_at', '<', cutoffIso)
+        .get();
+    if (snap.empty) {
+        console.log('삭제할 오래된 접속 로그 없음');
+        return;
+    }
+    // 500개 단위 배치 삭제
+    const chunks = [];
+    const refs = snap.docs.map(d => d.ref);
+    for (let i = 0; i < refs.length; i += 500) {
+        chunks.push(refs.slice(i, i + 500));
+    }
+    await Promise.all(chunks.map(chunk => {
+        const batch = db.batch();
+        chunk.forEach(ref => batch.delete(ref));
+        return batch.commit();
+    }));
+    console.log(`접속 로그 정리 완료: ${snap.size}건 삭제 (기준: ${cutoffIso})`);
 });
 //# sourceMappingURL=index.js.map

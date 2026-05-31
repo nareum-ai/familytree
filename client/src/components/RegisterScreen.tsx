@@ -36,9 +36,8 @@ export function RegisterScreen({ onBack, onSuccess }: Props) {
   return (
     <div className="login-screen">
       <div className="login-card">
-        <div className="login-icon">🌳</div>
         <h1 className="login-title">회원가입</h1>
-        <p className="login-desc">아이디와 비밀번호를 설정하세요</p>
+        <p className="login-desc">지금 가입하시면 자신만의 가계도를 시작할 수 있습니다.</p>
         <form onSubmit={handleSubmit} className="login-form">
           <input
             className="login-input"

@@ -5,14 +5,13 @@ import './GoogleLinkScreen.css';
 
 interface Props {
   googleEmail: string;
-  googleUid: string;
   displayName: string;
   onLinkedToExisting: (member: Member) => void;
   onNewStart: () => void;
   onCancel: () => void;
 }
 
-export function GoogleLinkScreen({ googleEmail, googleUid: _googleUid, displayName, onLinkedToExisting, onNewStart, onCancel }: Props) {
+export function GoogleLinkScreen({ googleEmail, displayName, onLinkedToExisting, onNewStart, onCancel }: Props) {
   const { loginMember } = useFamilyStore();
   const [mode, setMode]       = useState<'choose' | 'link'>('choose');
   const [username, setUser]   = useState('');

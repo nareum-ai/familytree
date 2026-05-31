@@ -22,9 +22,9 @@
   position: relative;
 }
 
-.male   .hex-shape { background: linear-gradient(150deg, #4F46E5, #7C3AED); }
+.male   .hex-shape { background: linear-gradient(150deg, #0EA5E9, #0369A1); }
 .female .hex-shape { background: linear-gradient(150deg, #EC4899, #DB2777); }
-.person-node.root .hex-shape { background: linear-gradient(150deg, #F97316, #EA580C); }
+.person-node.me .hex-shape { background: linear-gradient(150deg, #4F46E5, #6D28D9); }
 
 .person-node:hover .hex-shape { transform: scale(1.06); filter: brightness(1.05); }
 .person-node.selected .hex-shape {

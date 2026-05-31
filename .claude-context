@@ -1,0 +1,107 @@
+PROJECT: 우리가족가계도
+REPO: c:\Users\nareu\Project\FamilyTree
+LIVE: https://familytree-3221b.web.app
+FIREBASE_PROJECT: familytree-3221b
+STACK: React19+TS+Vite / Zustand / @xyflow/react / dagre / Firebase(Firestore+Auth+Functions+FCM) / PWA(vite-plugin-pwa)
+SPEC: ./SPEC.md (v1.4.0)
+
+--- DEPLOY_INVARIANT ---
+NO_DEV_SERVER. Built dist/ is what users see.
+ALWAYS: cd client && npm run build && cd .. && firebase deploy --only hosting
+Functions change: firebase deploy --only functions
+User saying "변경이 안 보여요" = forgot build+deploy.
+
+--- ARCHITECTURE ---
+NO_BACKEND. Client-only + Cloud Functions.
+Auth: Firebase Auth (Google popup only) + custom Firestore members collection.
+  google_uid links Firebase Auth <-> members doc. Not using Firebase Auth for session.
+  Session state = localStorage (LS.* constants from lib/storageKeys.ts). NEVER hardcode key strings.
+  After login: await recordLogin(id) THEN window.location.reload(). Order matters — reload kills pending Firestore writes.
+
+Admin: single members doc where is_admin:true. AdminView is separate route.
+  Admin google_email shown to users as contact → useAdminEmail() hook (hooks/useAdminEmail.ts).
+  3 components use this hook: HelpView, MyMenuView, FamilyGroupRequestScreen.
+
+Routing: all in App.tsx. No react-router. Conditional returns based on localStorage + React state.
+  FamilyGroupRequestScreen triggers when: !hasFamilyId OR (persons empty AND hasFamilyId).
+  hard-refresh safe: useEffect checks !hasFamilyId BEFORE awaiting loading.
+
+--- KEY_FILES ---
+App.tsx: routing hub, auth state, android back-intercept (backPressedRef+toast), applyMemberLogin (MUST await recordLogin before reload)
+store/familyStore.ts: ALL Firestore CRUD. Components only touch store, never Firestore directly (except dynamic imports in a few admin ops).
+hooks/useTreeLayout.ts: getChusu(BFS촌수), classifyBranch(4계통), canSeeFull(가시성), layout engine. Wide blast radius — touch carefully.
+functions/src/index.ts: 3 functions: onInfoRequestCreated(FCM trigger), sendAnniversaryReminders(hourly+KST check), cleanupLoginLogs(monthly 1yr purge)
+lib/storageKeys.ts: LS.* and SS.* — always use these, never raw strings.
+sw.ts: Service Worker. Background FCM handling.
+
+--- COLLECTIONS ---
+persons, relationships, members, invites, approval_requests, info_requests, info_access, person_access_pairs, login_logs, settings/push(single doc)
+
+settings/push schema: {sendHourKST:number, offsets:number[], maxChusu:number, enableBirthday:bool, enableDeathDay:bool}
+  Functions read this at runtime. Admin UI writes it. No redeploy needed to change push behavior.
+
+members schema adds: last_login_at(ISO), fcm_token, google_uid, google_email, is_admin(bool)
+
+--- PATTERNS_CRITICAL ---
+# Admin email fetch — use hook, not inline:
+import { useAdminEmail } from '../hooks/useAdminEmail';
+const adminEmail = useAdminEmail();
+
+# Login flow completion:
+await recordLogin(member.id).catch(() => {});
+window.location.reload(); // must come after
+
+# ReactFlow NodeProps data cast (intentional double-cast, TS requires it):
+data as unknown as PersonNodeData  // NOT: data as PersonNodeData (won't compile)
+
+# Dynamic imports pattern (used in admin ops to avoid bundle bloat):
+const { setDoc, doc } = await import('firebase/firestore');
+const { db: fdb } = await import('../lib/firebase');
+
+# Date format used in admin UI: YYMMDD hh:mm
+function fmtDt(iso: string, withTime = true) — defined top of AdminView.tsx
+
+--- MOBILE ---
+Breakpoint: max-width 640px
+Bottom nav: .mobile-bottom-nav, height 76px, fixed bottom.
+app-main gets padding-bottom:76px on mobile so flow-wrapper clears the nav.
+MiniMap: bottom:44px, width:148px, border-radius:12px 12px 0 0, border-bottom:none
+ZoomSlider Panel: bottom:0, width:148px, border-radius:0 0 12px 12px, border-top:none, height:44px
+→ they share a border and appear as one widget above the nav.
+
+--- UX_RULES ---
+Android back button: first press shows toast "한 번 더 누르면 앱을 종료합니다" (2.5s), second press exits.
+  Implemented via history.pushState + popstate listener in App.tsx.
+Logout: single click, no confirmation (user explicitly requested this).
+Invite share text: NO person name in shared content (security). Recipients must verify name themselves.
+FamilyGroupRequestScreen shows adminEmail (from Firestore) as mailto link for withdrawal requests.
+
+--- PUSH_NOTIFICATIONS ---
+PWA-only. FCM token registered via useFCMToken hook on install.
+Functions run hourly, check if UTC hour == sendHourKST-9, then send.
+Admin can change all settings via AdminView → settings/push doc. No redeploy.
+login_logs purged monthly (1yr retention) by cleanupLoginLogs function.
+
+--- USER_PREFERENCES ---
+terse communication, no emojis unless asked
+always complete build+deploy, report URL when done
+mobile-first when checking UI changes
+no redundant summaries of what was just done
+prefers fixing root cause over workarounds
+
+--- GOTCHAS ---
+1. No dev server. Changes need full build+deploy cycle.
+2. recordLogin must complete before reload or logs are lost.
+3. FamilyGroupRequestScreen requires !hasFamilyId check BEFORE loading check in useEffect.
+4. GoogleLinkScreen does NOT receive googleUid prop (removed — unused). App.tsx closes over googleLinkData.uid directly.
+5. PersonNode data cast requires `as unknown as PersonNodeData` due to NodeProps.data typing.
+6. Firestore rules: allow read, write: if true — no server-side auth enforcement.
+7. FCM push only works when app is installed as PWA. Browser tabs get nothing.
+8. Admin email displayed to users comes from admin member's google_email field. If admin hasn't linked Google, field is null.
+9. settings/push defaults used in Functions when doc doesn't exist: {sendHourKST:8, offsets:[0,1,3,7], maxChusu:6, enableBirthday:true, enableDeathDay:true}
+10. CSS confirm-backdrop/confirm-box etc. defined in App.css globally — not in AdminView.css.
+
+--- CURRENT_STATE ---
+Version: v1.4.0, deployed, no known bugs.
+Last session work: code optimization (useAdminEmail hook extraction, unused prop removal), SPEC.md v1.4.0, HANDOVER docs.
+Outstanding: Firestore security rules still open (known, intentional for now).

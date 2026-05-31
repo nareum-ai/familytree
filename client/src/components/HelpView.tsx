@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAdminEmail } from '../hooks/useAdminEmail';
 import './HelpView.css';
 
 interface Props { onClose: () => void; }
@@ -12,6 +13,7 @@ interface Section {
 
 export function HelpView({ onClose }: Props) {
   const [open, setOpen] = useState<string | null>('tree');
+  const adminEmail = useAdminEmail();
 
   const toggle = (id: string) => setOpen(p => p === id ? null : id);
 
@@ -216,6 +218,37 @@ export function HelpView({ onClose }: Props) {
       ),
     },
     {
+      id: 'withdraw',
+      icon: '🚪',
+      title: '탈퇴 및 문의',
+      content: (
+        <>
+          <p className="help-para">계정 탈퇴는 관리자를 통해 처리됩니다.</p>
+          <div className="help-sub">
+            <span className="help-sub-icon">📧</span>
+            <div>
+              <b>탈퇴 요청 방법</b>
+              <p>탈퇴를 원하시면 아래 이메일로 <b>아이디와 탈퇴 요청</b>을 보내주시면 관리자가 처리해 드립니다.</p>
+              {adminEmail
+                ? <a href={`mailto:${adminEmail}?subject=계정 탈퇴 요청`} className="help-contact-link">{adminEmail}</a>
+                : <span className="help-para" style={{ color: '#aaa' }}>이메일 불러오는 중...</span>
+              }
+            </div>
+          </div>
+          <div className="help-sub">
+            <span className="help-sub-icon">💬</span>
+            <div>
+              <b>기타 문의</b>
+              <p>앱 이용 중 불편한 점이나 오류가 있으면 동일한 이메일로 문의해 주세요.</p>
+            </div>
+          </div>
+          <div className="help-tip">
+            💡 탈퇴 시 본인의 계정 정보와 접속 기록은 삭제되며, 가계도 인물 데이터는 유지됩니다.
+          </div>
+        </>
+      ),
+    },
+    {
       id: 'account',
       icon: '🆕',
       title: '처음 가입했는데 트리가 없어요',
@@ -273,7 +306,10 @@ export function HelpView({ onClose }: Props) {
           ))}
 
           <div className="help-footer">
-            문의 사항은 가계도 관리자에게 연락하세요.
+            {adminEmail
+              ? <>문의 · 탈퇴: <a href={`mailto:${adminEmail}`} className="help-footer-link">{adminEmail}</a></>
+              : '문의 사항은 가계도 관리자에게 연락하세요.'
+            }
           </div>
         </div>
       </div>

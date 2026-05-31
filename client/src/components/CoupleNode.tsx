@@ -20,7 +20,6 @@ function HexAvatar({
   anon: boolean; onClick: (e: React.MouseEvent) => void;
 }) {
   const isMale = person.gender === 'male';
-  const isRoot = person.is_root === 1;
   const deceased = person.is_deceased;
 
   if (anon) {
@@ -37,7 +36,7 @@ function HexAvatar({
 
   return (
     <div
-      className={`chex ${isMale ? 'male' : 'female'} ${isRoot ? 'root' : ''} ${selected ? 'selected' : ''} ${deceased ? 'deceased' : ''}`}
+      className={`chex ${isMale ? 'male' : 'female'} ${showME ? 'me' : ''} ${selected ? 'selected' : ''} ${deceased ? 'deceased' : ''}`}
       onClick={onClick}
     >
       {chusu !== null && chusu > 0 && <div className="chusu-badge">{chusu}촌</div>}
