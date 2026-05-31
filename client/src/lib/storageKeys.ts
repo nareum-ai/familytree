@@ -1,11 +1,12 @@
 /** localStorage / sessionStorage 키 중앙 관리 */
 export const LS = {
-  USER_NAME:    'familyTreeUser',       // 매핑된 인물명 (표시/뷰포인트)
+  USER_NAME:    'familyTreeUser',
   FAMILY_ID:    'familyTreeFamilyId',
   IS_ADMIN:     'familyTreeIsAdmin',
   ADMIN_RETURN: 'familyTreeAdminReturn',
   MEMBER_ID:    'familyTreeMemberId',
-  ACCOUNT_NAME: 'familyTreeAccountName', // 계정 아이디 (created_by 비교용)
+  ACCOUNT_NAME: 'familyTreeAccountName',
+  GOOGLE_EMAIL: 'familyTreeGoogleEmail',
 } as const;
 
 export const SS = {

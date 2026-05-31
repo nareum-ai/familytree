@@ -60,11 +60,13 @@ export function HelpView({ onClose }: Props) {
       content: (
         <>
           <p className="help-para">자물쇠 아이콘이 있는 인물은 비공개 상태로, 이름 외 정보가 숨겨져 있습니다.</p>
+          <div className="help-tip">
+            💡 나와 <b>1촌(부모·자녀)</b>인 인물은 별도 요청 없이 자동으로 공개됩니다.
+          </div>
           <ol className="help-steps">
             <li><span className="step-num">1</span> 비공개 인물 노드를 클릭합니다.</li>
             <li><span className="step-num">2</span> <b>정보공개 요청하기</b> 버튼을 누릅니다.</li>
-            <li><span className="step-num">3</span> 권한자에게 알림이 전송됩니다.</li>
-            <li><span className="step-num">4</span> 권한자가 승인하면 상세 정보를 열람할 수 있습니다.</li>
+            <li><span className="step-num">3</span> 권한자가 승인하면 상세 정보를 열람할 수 있습니다.</li>
           </ol>
           <div className="help-warn">
             ⚠️ 정보공개는 <b>양방향</b>입니다. 상대방의 정보를 공유받으면, 나의 정보도 상대방에게 공유됩니다.
@@ -131,20 +133,54 @@ export function HelpView({ onClose }: Props) {
       title: 'My 메뉴',
       content: (
         <>
-          <p className="help-para">상단 <b>👤</b> 버튼을 누르면 My 메뉴가 열립니다.</p>
+          <p className="help-para">상단(또는 하단) <b>👤 My</b> 버튼을 누르면 My 메뉴가 열립니다.</p>
           <div className="help-sub">
             <span className="help-sub-icon">📬</span>
             <div>
               <b>정보공개 요청</b>
-              <p>다른 구성원에게 받은 정보공개 요청을 확인하고 수락 또는 거절할 수 있습니다. 처리할 요청이 있으면 버튼에 <span className="badge-dot-sample" /> 빨간 표시가 나타납니다.</p>
+              <p>다른 구성원에게 받은 정보공개 요청을 확인하고 수락 또는 거절할 수 있습니다. 처리할 요청이 있으면 버튼에 빨간 표시가 나타납니다.</p>
             </div>
           </div>
           <div className="help-sub">
-            <span className="help-sub-icon">🔑</span>
+            <span className="help-sub-icon">🔒</span>
             <div>
               <b>비밀번호 변경</b>
               <p>현재 비밀번호를 확인한 후 새 비밀번호로 변경할 수 있습니다. 새 비밀번호는 6자 이상이어야 합니다.</p>
             </div>
+          </div>
+          <div className="help-sub">
+            <span className="help-sub-icon">🔗</span>
+            <div>
+              <b>구글 계정 연결</b>
+              <p>구글 계정을 연결해두면 비밀번호를 잊어버려도 구글로 로그인할 수 있습니다. 연결되지 않은 경우 탭에 <b>!</b> 표시가 나타납니다.</p>
+            </div>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'login',
+      icon: '🔑',
+      title: '로그인 방법',
+      content: (
+        <>
+          <p className="help-para">두 가지 방법으로 로그인할 수 있습니다.</p>
+          <div className="help-sub">
+            <span className="help-sub-icon">G</span>
+            <div>
+              <b>Google로 로그인</b>
+              <p>구글 계정이 연결되어 있으면 비밀번호 없이 바로 로그인됩니다. <b>비밀번호를 잊어버린 경우에도 사용 가능합니다.</b></p>
+            </div>
+          </div>
+          <div className="help-sub">
+            <span className="help-sub-icon">ID</span>
+            <div>
+              <b>아이디 / 비밀번호</b>
+              <p>가입 시 설정한 아이디와 비밀번호로 로그인합니다.</p>
+            </div>
+          </div>
+          <div className="help-tip">
+            💡 비밀번호 분실 시를 대비해 My 메뉴 → 구글 탭에서 미리 구글 계정을 연결해두세요.
           </div>
         </>
       ),

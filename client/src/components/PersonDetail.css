@@ -20,6 +20,14 @@
   to { transform: translateX(0); }
 }
 
+@media (max-width: 640px) {
+  .detail-panel {
+    bottom: 76px;
+    width: 100%;
+    top: 50px;
+  }
+}
+
 .detail-header {
   display: flex;
   justify-content: space-between;
@@ -173,9 +181,59 @@
   font-size: 14px;
   outline: none;
   transition: border-color 0.15s;
+  font-family: inherit;
+  resize: none;
 }
 
 .edit-input:focus { border-color: #2AABE2; }
+
+.edit-memo {
+  line-height: 1.5;
+}
+
+.edit-contact-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.detail-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e8f0f5;
+}
+
+.contact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #2AABE2;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.contact-row:hover { text-decoration: underline; }
+
+.contact-memo {
+  color: #4a5568;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.contact-memo:hover { text-decoration: none; }
+
+.contact-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
 
 .edit-actions {
   display: flex;

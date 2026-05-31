@@ -18,6 +18,9 @@ export interface Person {
   last_name: string;   // 성 (자동 파싱)
   first_name: string;  // 이름 (자동 파싱)
   created_at: string;
+  phone?: string | null;
+  email?: string | null;
+  memo?: string | null;
 }
 
 export type RelationshipType = 'spouse' | 'parent_child';
@@ -44,12 +47,14 @@ export interface Member {
   id: string;
   username: string;
   password_hash: string;
-  person_id: string | null;    // 매핑된 트리 인물 ID
-  family_id: string | null;    // 매핑된 가족집단 ID
-  person_name: string | null;  // 표시용 캐시
+  person_id: string | null;
+  family_id: string | null;
+  person_name: string | null;
   is_admin: boolean;
   status: 'active' | 'suspended';
   created_at: string;
+  google_uid?: string | null;
+  google_email?: string | null;
 }
 
 // 새 가족집단 생성 승인 요청

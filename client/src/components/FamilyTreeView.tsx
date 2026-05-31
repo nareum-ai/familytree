@@ -36,17 +36,17 @@ function FitToMeController({
       const allNodes = getNodes();
       if (allNodes.length === 0) return;
 
+      const isMobile = window.innerWidth <= 640;
+
       if (meNodeId) {
-        // 나 노드 + 나 노드의 부모/자녀 2세대를 함께 보여줌
         fitView({
           nodes: [{ id: meNodeId }],
-          maxZoom: 0.65,
+          maxZoom: isMobile ? 0.95 : 0.65,
           duration: 350,
-          padding: 1.8,   // 넉넉한 여백 → 위아래 세대가 함께 보임
+          padding: isMobile ? 0.9 : 1.8,
         });
       } else {
-        // me 노드 없으면 전체 트리 맞춤
-        fitView({ maxZoom: 0.65, duration: 350, padding: 0.3 });
+        fitView({ maxZoom: isMobile ? 0.95 : 0.65, duration: 350, padding: isMobile ? 0.4 : 0.3 });
       }
     }, 100);
     return () => clearTimeout(t);

@@ -53,7 +53,7 @@ interface FamilyState {
   // 정보공개 요청
   grantedPersonIds: Set<string>;
   loadGrantedAccess: () => Promise<void>;
-  createInfoRequest: (targetPersonId: string) => Promise<void>;
+  createInfoRequest: (targetPersonId: string) => Promise<boolean>; // true = 자동 승인됨
   loadInfoRequestsForMe: () => Promise<Array<{ id: string; requesterName: string; personId: string; createdAt: string }>>;
   approveInfoRequest: (requestId: string, requesterMemberId: string, personId: string) => Promise<void>;
   rejectInfoRequest:  (requestId: string) => Promise<void>;
@@ -62,6 +62,10 @@ interface FamilyState {
   registerMember: (username: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   loginMember: (username: string, password: string) => Promise<Member | null>;
   ensureAdminAccount: () => Promise<void>;
+  loginWithGoogle: () => Promise<{ member: Member | null; googleUid: string; googleEmail: string; displayName: string } | null>;
+  registerWithGoogle: (googleUid: string, googleEmail: string, displayName: string) => Promise<Member>;
+  linkGoogleToMember: (memberId: string, googleUid: string, googleEmail: string) => Promise<void>;
+  unlinkGoogleFromMember: (memberId: string) => Promise<void>;
 
   submitFamilyGroupRequest: (
     realName: string, description: string,
@@ -311,6 +315,9 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       permissions: personData.permissions ?? DEFAULT_PERMISSIONS,
       family_id:   familyId,
       created_at:  new Date().toISOString(),
+      phone:       personData.phone  ?? null,
+      email:       personData.email  ?? null,
+      memo:        personData.memo   ?? null,
     };
     const ref = await addDoc(collection(db, 'persons'), fields);
     return { ...fields, id: ref.id } as Person;
@@ -394,46 +401,74 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   },
 
   createInfoRequest: async (targetPersonId) => {
-    const memberId  = localStorage.getItem(LS_MEMBER_ID);
-    const userName  = localStorage.getItem(LS_USER_KEY);
-    if (!memberId || !userName) return;
+    const memberId = localStorage.getItem(LS_MEMBER_ID);
+    const userName = localStorage.getItem(LS_USER_KEY);
+    if (!memberId || !userName) return false;
 
-    // 요청자의 person_id 확보 (양방향 접근권 페어 생성에 필요)
     const memberSnap = await getDoc(doc(db, 'members', memberId));
     const requesterPersonId = (memberSnap.data()?.person_id as string | null) ?? null;
 
     const { persons } = get();
     const target = persons.find(p => p.id === targetPersonId);
 
-    // 권한 보유자: 매핑된 회원 → 없으면 작성자 이름
-    // 1순위: 해당 인물에 매핑된 계정
+    let holderMemberId: string | null = null;
+    let holderName = '';
+    let holderIsAdmin = false;
+
+    // 1순위: 해당 인물에 직접 매핑된 계정
     const holderSnap = await getDocs(
       query(collection(db, 'members'), where('person_id', '==', targetPersonId))
     );
-    let holderMemberId: string | null  = holderSnap.empty ? null : holderSnap.docs[0].id;
-    let holderName: string             = holderSnap.empty ? ''    : holderSnap.docs[0].data().username as string;
+    if (!holderSnap.empty) {
+      const d = holderSnap.docs[0];
+      holderMemberId = d.id;
+      holderName     = d.data().username as string;
+      holderIsAdmin  = d.data().is_admin === true;
+    }
 
-    // 2순위: created_by(계정 아이디)로 계정 찾기
+    // 2순위: created_by 계정 찾기
     if (!holderMemberId && target?.created_by) {
       const creatorSnap = await getDocs(
         query(collection(db, 'members'), where('username', '==', target.created_by))
       );
       if (!creatorSnap.empty) {
-        holderMemberId = creatorSnap.docs[0].id;
+        const d = creatorSnap.docs[0];
+        holderMemberId = d.id;
         holderName     = target.created_by;
+        holderIsAdmin  = d.data().is_admin === true;
       } else {
-        holderName = target.created_by; // 계정 없음, 이름만
+        holderName = target.created_by;
       }
     }
     if (!holderName) holderName = '알 수 없음';
 
-    // 중복 체크
-    const dup = await getDocs(query(collection(db, 'info_requests'),
-      where('requester_member_id', '==', memberId),
-      where('target_person_id',   '==', targetPersonId),
-      where('status',             '==', 'pending')
-    ));
-    if (!dup.empty) return; // 이미 대기 중
+    // 권한자가 관리자이거나 없으면 → 즉시 자동 승인
+    if (!holderMemberId || holderIsAdmin) {
+      // 단일 where로 중복 체크 (복합 인덱스 불필요)
+      const accessSnap = await getDocs(
+        query(collection(db, 'info_access'), where('requester_member_id', '==', memberId))
+      );
+      const alreadyGranted = accessSnap.docs.some(d => d.data().person_id === targetPersonId);
+      if (!alreadyGranted) {
+        await addDoc(collection(db, 'info_access'), {
+          requester_member_id: memberId,
+          person_id:           targetPersonId,
+          granted_at:          new Date().toISOString(),
+        });
+        const { grantedPersonIds } = get();
+        set({ grantedPersonIds: new Set([...grantedPersonIds, targetPersonId]) });
+      }
+      return true; // 자동 승인
+    }
+
+    // 일반 회원이 권한자 → 대기 요청 생성
+    const reqSnap = await getDocs(
+      query(collection(db, 'info_requests'), where('requester_member_id', '==', memberId))
+    );
+    const alreadyPending = reqSnap.docs.some(
+      d => d.data().target_person_id === targetPersonId && d.data().status === 'pending'
+    );
+    if (alreadyPending) return false;
 
     await addDoc(collection(db, 'info_requests'), {
       requester_member_id:  memberId,
@@ -445,6 +480,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       status:               'pending',
       created_at:           new Date().toISOString(),
     });
+    return false;
   },
 
   loadInfoRequestsForMe: async () => {
@@ -581,6 +617,58 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
         created_at: new Date().toISOString(),
       });
     }
+  },
+
+  loginWithGoogle: async () => {
+    try {
+      const { signInWithPopup } = await import('firebase/auth');
+      const { auth, googleProvider } = await import('../lib/firebase');
+      const result = await signInWithPopup(auth, googleProvider);
+      const googleUid   = result.user.uid;
+      const googleEmail = result.user.email ?? '';
+      const displayName = result.user.displayName ?? googleEmail;
+
+      const snap = await getDocs(
+        query(collection(db, 'members'), where('google_uid', '==', googleUid))
+      );
+      if (snap.empty) return { member: null, googleUid, googleEmail, displayName };
+      const d = snap.docs[0];
+      return { member: { id: d.id, ...(d.data() as Omit<Member, 'id'>) }, googleUid, googleEmail, displayName };
+    } catch (err: unknown) {
+      // 팝업을 닫거나 취소한 경우 null 반환 (에러 표시 안 함)
+      if ((err as { code?: string })?.code === 'auth/popup-closed-by-user') return null;
+      if ((err as { code?: string })?.code === 'auth/cancelled-popup-request') return null;
+      throw err;
+    }
+  },
+
+  registerWithGoogle: async (googleUid, googleEmail, displayName) => {
+    const ref = await addDoc(collection(db, 'members'), {
+      username:      googleEmail,
+      password_hash: '',
+      google_uid:    googleUid,
+      google_email:  googleEmail,
+      person_id:     null,
+      family_id:     null,
+      person_name:   displayName || null,
+      is_admin:      false,
+      status:        'active',
+      created_at:    new Date().toISOString(),
+    });
+    return {
+      id: ref.id, username: googleEmail, password_hash: '',
+      google_uid: googleUid, google_email: googleEmail,
+      person_id: null, family_id: null, person_name: displayName || null,
+      is_admin: false, status: 'active' as const, created_at: new Date().toISOString(),
+    };
+  },
+
+  linkGoogleToMember: async (memberId, googleUid, googleEmail) => {
+    await updateDoc(doc(db, 'members', memberId), { google_uid: googleUid, google_email: googleEmail });
+  },
+
+  unlinkGoogleFromMember: async (memberId) => {
+    await updateDoc(doc(db, 'members', memberId), { google_uid: null, google_email: null });
   },
 
   checkPendingFamilyRequest: async () => {

@@ -1,0 +1,148 @@
+.glink-screen {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e6f5fb 0%, #f0f7fb 100%);
+}
+
+.glink-card {
+  background: white;
+  border-radius: 24px;
+  padding: 40px 36px 36px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(42, 171, 226, 0.15);
+  width: 380px;
+  max-width: 92vw;
+  animation: fadeUp 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.glink-google-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3c4043;
+  margin-bottom: 20px;
+}
+
+.glink-email {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2e3b;
+  margin: 0 0 4px;
+}
+
+.glink-email-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 0 20px;
+}
+
+.glink-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.glink-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.glink-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.glink-btn.primary {
+  background: #2AABE2;
+  color: white;
+}
+
+.glink-btn.primary:hover:not(:disabled) { background: #1a8ab5; }
+
+.glink-btn.secondary {
+  background: #f0f9ff;
+  color: #2AABE2;
+  border: 1.5px solid #2AABE2;
+}
+
+.glink-btn.secondary:hover { background: #e0f2fb; }
+
+.glink-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.glink-btn-sub {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.glink-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.glink-input {
+  padding: 13px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+  color: #1a2e3b;
+}
+
+.glink-input:focus { border-color: #2AABE2; }
+.glink-input::placeholder { color: #c0cdd8; }
+
+.glink-error {
+  color: #e53e3e;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}
+
+.glink-cancel {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px;
+  text-decoration: underline;
+}
+
+.glink-cancel:hover { color: #64748b; }

@@ -34,8 +34,18 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
   const createdBy = localStorage.getItem(LS.ACCOUNT_NAME) ?? localStorage.getItem(LS.USER_NAME) ?? 'admin';
 
   // ── 파일 읽기 ────────────────────────────────────────────────────────────
+  const readCsvText = async (file: File): Promise<string> => {
+    const buffer = await file.arrayBuffer();
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    } catch {
+      // 한국 Excel 기본 저장 인코딩(EUC-KR) 폴백
+      return new TextDecoder('euc-kr').decode(buffer);
+    }
+  };
+
   const handleFile = async (file: File) => {
-    const text = await file.text();
+    const text = await readCsvText(file);
     const { rows: parsed, errors: errs } = parseCSVText(text);
     setRows(parsed);
     setErrors(errs);

@@ -55,15 +55,18 @@
   text-align: center;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .branch-tabs {
     padding: 0;
+    border-bottom-width: 3px;
   }
 
   .branch-tab {
-    padding: 11px 4px;
-    font-size: 13px;
+    padding: 13px 4px;
+    font-size: 15px;
+    font-weight: 700;
     letter-spacing: 0;
+    color: #64748b;
   }
 }
 

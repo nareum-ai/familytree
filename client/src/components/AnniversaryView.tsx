@@ -78,7 +78,7 @@ export function AnniversaryView({ onClose }: Props) {
       const branches = classifyBranch(p.id, persons, relationships);
       if (!branches.some(b => (accessibleBranches as string[]).includes(b))) return false;
       // 비공개 노드는 기념일에서 제외
-      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds);
+      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships);
     }),
   [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds]);
 

@@ -1,14 +1,17 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
-  projectId: 'famliytree-dfb80',
-  appId: '1:284584296251:web:ea90ef0c0e0589f1d4011e',
-  storageBucket: 'famliytree-dfb80.firebasestorage.app',
-  apiKey: 'AIzaSyDwd55qGcb0KdRF6uE8zihiCB2GsVwWyQA',
-  authDomain: 'famliytree-dfb80.firebaseapp.com',
-  messagingSenderId: '284584296251',
+  projectId: 'familytree-3221b',
+  appId: '1:237404804989:web:2493070fb784a7f1b79e14',
+  storageBucket: 'familytree-3221b.firebasestorage.app',
+  apiKey: 'AIzaSyCMwRlXqDZxatmpe4fZKLyfYBi_hv4Udtw',
+  authDomain: 'familytree-3221b.firebaseapp.com',
+  messagingSenderId: '237404804989',
 };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();

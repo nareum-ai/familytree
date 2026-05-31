@@ -38,6 +38,9 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [isDeceased, setIsDeceased] = useState(person.is_deceased ?? false);
   const [deathDate, setDeathDate] = useState(person.death_date ?? '');
   const [deathLunar, setDeathLunar] = useState(person.death_lunar ?? false);
+  const [phone, setPhone] = useState(person.phone ?? '');
+  const [email, setEmail] = useState(person.email ?? '');
+  const [memo, setMemo]   = useState(person.memo ?? '');
   const [saving, setSaving] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState('');
@@ -53,6 +56,9 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
       is_deceased: isDeceased,
       death_date: isDeceased && deathDate ? deathDate : null,
       death_lunar: isDeceased ? deathLunar : false,
+      phone: phone.trim() || null,
+      email: email.trim() || null,
+      memo:  memo.trim()  || null,
     });
     setSaving(false);
     setEditing(false);
@@ -114,6 +120,17 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const genderLabel = person.gender === 'male' ? '남성' : person.gender === 'female' ? '여성' : '-';
   const { viewpointPersonId: vpId } = useFamilyStore();
   const mePersonId  = vpId ?? root?.id;
+
+  const currentUserAccount = localStorage.getItem('familyTreeAccountName') ?? localStorage.getItem('familyTreeUser');
+
+  // 편집 권한: 나 자신 | 내가 만든 노드 | 관리자 생성+미매핑(상관없음)
+  // 다른 사람에게 매핑된 노드는 숨김
+  const canEdit = (() => {
+    if (person.id === vpId) return true;                                     // 내 노드
+    if (person.created_by && person.created_by === currentUserAccount) return true; // 내가 만든 노드
+    if (alreadyMapped) return false;                                          // 다른 사람 매핑
+    return true;                                                              // 관리자 생성+미매핑
+  })();
   const relationName = root ? getRelationLabel(person.id, root, persons, relationships) : '';
 
   // 촌수 배지: 0촌이면 나/배우자, 그 외엔 "N촌 (관계명)"
@@ -138,7 +155,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
         <button className="close-btn" onClick={onClose}>✕</button>
       </div>
 
-      {!editing ? (
+      {!editing || !canEdit ? (
         <div className="detail-info">
           <h2 className="detail-name">
             {person.is_deceased && <span className="deceased-mark">†</span>}
@@ -155,7 +172,28 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             )}
             <span className="meta-chip accent">{chusuLabel}</span>
           </div>
-          <button className="btn-edit" onClick={() => setEditing(true)}>편집</button>
+          {(person.phone || person.email || person.memo) && (
+            <div className="detail-contact">
+              {person.phone && (
+                <a className="contact-row" href={`tel:${person.phone}`}>
+                  <span className="contact-icon">📱</span>{person.phone}
+                </a>
+              )}
+              {person.email && (
+                <a className="contact-row" href={`mailto:${person.email}`}>
+                  <span className="contact-icon">📧</span>{person.email}
+                </a>
+              )}
+              {person.memo && (
+                <div className="contact-row contact-memo">
+                  <span className="contact-icon">📝</span>{person.memo}
+                </div>
+              )}
+            </div>
+          )}
+          {canEdit && (
+            <button className="btn-edit" onClick={() => setEditing(true)}>편집</button>
+          )}
         </div>
       ) : (
         <div className="edit-form">
@@ -183,6 +221,15 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               </label>
             </>
           )}
+
+          <div className="edit-contact-group">
+            <input value={phone} onChange={e => setPhone(e.target.value)}
+              className="edit-input" placeholder="📱 휴대폰 번호" maxLength={20} />
+            <input value={email} onChange={e => setEmail(e.target.value)}
+              className="edit-input" placeholder="📧 이메일" maxLength={80} />
+            <textarea value={memo} onChange={e => setMemo(e.target.value)}
+              className="edit-input edit-memo" placeholder="📝 기타 사항" rows={3} maxLength={200} />
+          </div>
 
           <div className="edit-actions">
             <button onClick={() => setEditing(false)} className="btn-sm cancel">취소</button>

@@ -232,12 +232,13 @@ export function canSeeFull(
   currentUser: string | null,
   viewpointPersonId: string | null,
   root: Person | undefined,
-  grantedPersonIds?: Set<string>
+  grantedPersonIds?: Set<string>,
+  relationships?: Relationship[]
 ): boolean {
   if (!currentUser) return true;
-  // created_by가 계정 아이디와 일치 (정확한 비교)
+  // created_by가 계정 아이디와 일치
   if (person.created_by && person.created_by === currentUser) return true;
-  // created_by가 없거나 레거시 데이터 → root 소유자에게 공개
+  // created_by 없음 → root 소유자에게 공개
   if (!person.created_by && root) {
     const rootOwner = localStorage.getItem('familyTreeAccountName')
       ?? localStorage.getItem('familyTreeUser');
@@ -245,13 +246,18 @@ export function canSeeFull(
   }
   // 나(ME) 뷰포인트 인물
   if (person.id === viewpointPersonId) return true;
-  // 루트 인물 자체는 루트 소유자가 봄
+  // 루트 인물
   if (person.is_root === 1) {
     const rootOwner = localStorage.getItem('familyTreeAccountName')
       ?? localStorage.getItem('familyTreeUser');
     if (rootOwner === currentUser) return true;
   }
   if (grantedPersonIds?.has(person.id)) return true;
+  // 나(viewpoint)와 1촌(부모·자녀)은 기본 공개
+  if (viewpointPersonId && relationships) {
+    const chusu = getChusu(person.id, { id: viewpointPersonId } as Person, relationships);
+    if (chusu === 1) return true;
+  }
   return false;
 }
 
@@ -573,8 +579,8 @@ export function useTreeLayout(
             chusu1: getChusu(p1.id, chusuBase, relationships),
             chusu2: getChusu(p2.id, chusuBase, relationships),
             hiddenDescendants: hiddenDesc,
-            anon1: !canSeeFull(p1, currentUserName, viewpointPersonId, root, grantedPersonIds),
-            anon2: !canSeeFull(p2, currentUserName, viewpointPersonId, root, grantedPersonIds),
+            anon1: !canSeeFull(p1, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
+            anon2: !canSeeFull(p2, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
           },
         };
       }
@@ -590,7 +596,7 @@ export function useTreeLayout(
           chusu: getChusu(p.id, chusuBase, relationships),
           isRoot: p.is_root === 1,
           hiddenDescendants: hiddenDesc,
-          anon: !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds),
+          anon: !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
         },
       };
     });

@@ -92,9 +92,9 @@
 /* 테이블 컬럼 */
 .member-table-head, .admin-member-row {
   display: grid;
-  grid-template-columns: 28px 1fr 100px 80px 110px;
+  grid-template-columns: 28px 1fr 120px 80px 160px;
   align-items: center; gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 14px;
 }
 .member-table-head {
   background: #f0f4f8; border-radius: 8px;
@@ -103,8 +103,8 @@
   margin-bottom: 4px;
 }
 .admin-member-row {
-  background: #f8f9fa; border-radius: 6px;
-  border: 1px solid #eef0f5; margin-bottom: 4px;
+  background: #f8f9fa; border-radius: 8px;
+  border: 1px solid #eef0f5; margin-bottom: 6px;
 }
 .admin-member-row:hover { background: #f0f9ff; }
 
@@ -114,19 +114,34 @@
 .member-unmapped { font-size: 11px; color: #aaa; }
 .member-date { font-size: 11px; color: #94a3b8; }
 
-.col-actions { display: flex; gap: 5px; }
+.col-actions { display: flex; gap: 6px; align-items: center; }
+
+.btn-login-as {
+  display: flex; align-items: center; gap: 4px;
+  background: #16a34a; color: white; border: none;
+  border-radius: 7px; padding: 6px 10px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: background 0.15s;
+}
+.btn-login-as:hover { background: #15803d; }
 
 .btn-map-sm {
-  background: #f0f9ff; color: #2AABE2; border: 1px solid #2AABE2;
-  border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  display: flex; align-items: center; gap: 4px;
+  background: #2AABE2; color: white; border: none;
+  border-radius: 7px; padding: 6px 10px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: background 0.15s;
 }
-.btn-map-sm:hover { background: #e0f2fb; }
+.btn-map-sm:hover { background: #1a8ab5; }
 
 .btn-del-member {
-  background: #fff5f5; color: #e53e3e; border: 1px solid #fca5a5;
-  border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  background: #fee2e2; color: #e53e3e; border: none;
+  border-radius: 7px; padding: 6px 10px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: background 0.15s;
 }
-.btn-del-member:hover { background: #fee2e2; }
+.btn-del-member:hover { background: #fecaca; }
 
 /* 페이지네이션 */
 .member-pagination {

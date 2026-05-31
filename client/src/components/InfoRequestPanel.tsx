@@ -15,8 +15,12 @@ export function InfoRequestPanel({ personId, onClose }: Props) {
 
   const handleRequest = async () => {
     setLoading(true);
-    await createInfoRequest(personId);
-    setSent(true);
+    const autoApproved = await createInfoRequest(personId);
+    if (autoApproved) {
+      onClose(); // 즉시 패널 닫기 → 트리에서 바로 열람 가능
+    } else {
+      setSent(true);
+    }
     setLoading(false);
   };
 

@@ -3,7 +3,7 @@ import { useFamilyStore } from '../store/familyStore';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { ApprovalRequest, Member, Person, Relationship } from '../types';
-import { LS } from '../lib/storageKeys';
+import { LS, SS } from '../lib/storageKeys';
 import { exportFamilyToCSV, downloadCSV } from '../utils/csvExport';
 import { BulkUploadView } from './BulkUploadView';
 import './AdminView.css';
@@ -135,6 +135,21 @@ export function AdminView({ onLogout }: Props) {
     reload();
   };
 
+  const handleLoginAsMember = (m: Member) => {
+    if (!m.family_id || !m.person_id) {
+      flash('⚠️ 가족 또는 인물이 매핑되지 않은 계정입니다.');
+      return;
+    }
+    localStorage.removeItem(LS_IS_ADMIN);
+    localStorage.setItem(LS_ADMIN_RETURN, 'true');
+    localStorage.setItem(LS_USER_KEY,      m.person_name ?? m.username);
+    localStorage.setItem(LS_FAMILY_ID,     m.family_id);
+    localStorage.setItem(LS.MEMBER_ID,     m.id);
+    localStorage.setItem(LS.ACCOUNT_NAME,  m.username);
+    sessionStorage.setItem(SS.VIEWPOINT_PERSON_ID, m.person_id);
+    window.location.reload();
+  };
+
   // 필터링된 회원 목록
   const filteredMembers = members.filter(m =>
     !memberFilter ||
@@ -196,6 +211,11 @@ export function AdminView({ onLogout }: Props) {
                       {new Date(m.created_at).toLocaleDateString('ko-KR')}
                     </span>
                     <span className="col-actions">
+                      {m.family_id && m.person_id && (
+                        <button className="btn-login-as" onClick={() => handleLoginAsMember(m)}>
+                          접속
+                        </button>
+                      )}
                       <button className="btn-map-sm" onClick={() => { setMappingMember(m); setSearchQuery(''); setSearchResults([]); }}>
                         {m.person_name ? '재매핑' : '매핑'}
                       </button>
