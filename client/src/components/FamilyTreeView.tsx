@@ -6,6 +6,7 @@ import {
   Panel,
   useReactFlow,
   useStore,
+  type Node as RFNode,
   type NodeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -15,43 +16,86 @@ import { useTreeLayout, classifyBranch } from '../hooks/useTreeLayout';
 import type { BranchType, Person, Relationship } from '../types';
 import { PersonNode } from './PersonNode';
 import { CoupleNode } from './CoupleNode';
+import { FamilyEdge } from './FamilyEdge';
 import { PersonDetail } from './PersonDetail';
 import { AddPersonModal } from './AddPersonModal';
 import { InfoRequestPanel } from './InfoRequestPanel';
 import './FamilyTreeView.css';
 
 const nodeTypes = { personNode: PersonNode, coupleNode: CoupleNode };
+const edgeTypes = { familyEdge: FamilyEdge };
 
-// 탭 전환 시 전체 브랜치를 보여주되 "나" 노드가 보이는 수준으로 포커스
+// ── 탭 전환 시 "나" 노드 중심 이동 ──────────────────────────────────────────
+// focusTargetId가 있으면 skip=true로 동작 안 함
 function FitToMeController({
   meNodeId,
   activeBranch,
+  skip,
 }: {
   meNodeId: string | null;
   activeBranch: string;
+  skip: boolean;
 }) {
   const { fitView, getNodes } = useReactFlow();
 
   useEffect(() => {
+    if (skip) return;
     const t = setTimeout(() => {
-      const allNodes = getNodes();
-      if (allNodes.length === 0) return;
-
+      if (getNodes().length === 0) return;
       const isMobile = window.innerWidth <= 640;
-
       if (meNodeId) {
-        fitView({
-          nodes: [{ id: meNodeId }],
-          maxZoom: isMobile ? 0.95 : 0.65,
-          duration: 350,
-          padding: isMobile ? 0.9 : 1.8,
-        });
+        fitView({ nodes: [{ id: meNodeId }], maxZoom: isMobile ? 0.95 : 0.65, duration: 350, padding: isMobile ? 0.9 : 1.8 });
       } else {
         fitView({ maxZoom: isMobile ? 0.95 : 0.65, duration: 350, padding: isMobile ? 0.4 : 0.3 });
       }
     }, 100);
     return () => clearTimeout(t);
-  }, [meNodeId, activeBranch, fitView, getNodes]);
+  }, [meNodeId, activeBranch, skip, fitView, getNodes]);
+
+  return null;
+}
+
+// ── 기념일/검색 포커스 이동 ───────────────────────────────────────────────────
+// fitView 대신 setCenter 사용: nodes.position을 직접 읽어 좌표 계산
+// → ReactFlow 내부 스토어 타이밍에 전혀 의존하지 않음
+function FocusTargetController({
+  personId,
+  nodes,
+}: {
+  personId: string | null;
+  nodes: RFNode[];
+}) {
+  const { setCenter } = useReactFlow();
+
+  useEffect(() => {
+    if (!personId || nodes.length === 0) return;
+
+    // 타깃 인물이 속한 노드의 위치와 크기를 nodes 배열에서 직접 읽음
+    let cx: number | null = null;
+    let cy: number | null = null;
+    for (const n of nodes) {
+      let match = false;
+      if (n.id === personId) {
+        match = true;
+      } else if (n.type === 'coupleNode') {
+        const d = n.data as { person1?: { id: string }; person2?: { id: string } };
+        match = d.person1?.id === personId || d.person2?.id === personId;
+      }
+      if (match) {
+        cx = n.position.x + (n.width  ?? 90)  / 2;
+        cy = n.position.y + (n.height ?? 110) / 2;
+        break;
+      }
+    }
+    if (cx === null || cy === null) return;
+
+    const zoom = window.innerWidth <= 640 ? 0.95 : 0.65;
+    const x = cx, y = cy;
+    const t = setTimeout(() => {
+      setCenter(x, y, { zoom, duration: 350 });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [personId, nodes, setCenter]);
 
   return null;
 }
@@ -268,22 +312,26 @@ export function FamilyTreeView() {
 
   const [activeBranch, setActiveBranch] = useState<BranchType>(tabConfig[0].branchId);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [focusTargetId, setFocusTargetId] = useState<string | null>(null);
 
   // 뷰포인트 변경 시 첫 탭으로 리셋
   useEffect(() => {
     setActiveBranch(tabConfig[0].branchId);
   }, [tabConfig[0].branchId]);
 
-  // 기념일 클릭으로 온 포커스 요청: 해당 브랜치로 전환
+  // 기념일/검색 클릭으로 온 포커스 요청: 해당 브랜치로 전환 + 타겟 인물 ID 로컬에 보관
   useEffect(() => {
     if (!focusRequest) return;
     setActiveBranch(focusRequest.branchId);
+    setFocusTargetId(focusRequest.personId);
     clearFocusRequest();
   }, [focusRequest]);
 
   const isAdminReturn = localStorage.getItem('familyTreeAdminReturn') === 'true';
-  // created_by 비교용: 계정 아이디 우선, 없으면 인물명 폴백 (레거시 데이터 대응)
-  const currentUserName = isAdminReturn ? null
+  // 관리자 "가족 접속"(MEMBER_ID 없음): 전체 공개
+  // 관리자 "계정 접속"(MEMBER_ID 있음): 해당 계정 권한 적용
+  const isMemberImpersonation = isAdminReturn && !!localStorage.getItem('familyTreeMemberId');
+  const currentUserName = (isAdminReturn && !isMemberImpersonation) ? null
     : (localStorage.getItem('familyTreeAccountName') ?? localStorage.getItem('familyTreeUser'));
 
   const { nodes, edges } = useTreeLayout(
@@ -291,11 +339,8 @@ export function FamilyTreeView() {
     currentUserName, grantedPersonIds
   );
 
-  // 포커스할 인물 ID (기념일 클릭 > ME > root 순)
+  // "나" 노드 ID — 탭 전환 시 중심점 (focusTargetId와 무관)
   const mePersonId = viewpointPersonId ?? persons.find(p => p.is_root === 1)?.id;
-
-  // store에서 온 focusRequest를 한 번만 처리하기 위해 ref로 저장
-  const pendingFocusPersonId = useFamilyStore(s => s.focusRequest?.personId ?? null);
 
   const findNodeId = useCallback((personId: string | null | undefined) => {
     if (!personId) return null;
@@ -309,10 +354,7 @@ export function FamilyTreeView() {
     return null;
   }, [nodes]);
 
-  const meNodeId = useMemo(
-    () => findNodeId(pendingFocusPersonId) ?? findNodeId(mePersonId),
-    [findNodeId, pendingFocusPersonId, mePersonId]
-  );
+  const meNodeId = useMemo(() => findNodeId(mePersonId), [findNodeId, mePersonId]);
 
   const selectedPerson = selectedPersonId
     ? persons.find(p => p.id === selectedPersonId) ?? null
@@ -347,7 +389,7 @@ export function FamilyTreeView() {
           <button
             key={tab.branchId}
             className={`branch-tab ${activeBranch === tab.branchId ? 'active' : ''}`}
-            onClick={() => { setActiveBranch(tab.branchId); selectPerson(null); }}
+            onClick={() => { setActiveBranch(tab.branchId); setFocusTargetId(null); selectPerson(null); }}
           >
             {tab.label}
           </button>
@@ -359,6 +401,7 @@ export function FamilyTreeView() {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
           fitView
@@ -367,11 +410,13 @@ export function FamilyTreeView() {
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
         >
-          <FitToMeController meNodeId={meNodeId} activeBranch={activeBranch} />
+          <FitToMeController meNodeId={meNodeId} activeBranch={activeBranch} skip={!!focusTargetId} />
+          <FocusTargetController personId={focusTargetId} nodes={nodes} />
           <Background color="#E8EAF0" gap={28} size={1} />
           <ZoomControls />
           <FocusMeButton meNodeId={meNodeId} />
           <MiniMap
+            position="bottom-right"
             pannable zoomable
             nodeColor={(node) => {
               const vp = viewpointPersonId;
@@ -420,6 +465,7 @@ export function FamilyTreeView() {
         <AddPersonModal
           targetPerson={selectedPerson}
           onClose={() => setShowAddModal(false)}
+          onDone={() => { setShowAddModal(false); selectPerson(null); }}
         />
       )}
     </div>

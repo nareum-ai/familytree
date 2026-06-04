@@ -54,15 +54,15 @@
   .branch-tab { padding: 12px 4px; font-size: 14px; font-weight: 700; }
 }
 
-/* 미니맵 — 슬라이더(44px)와 한몸: 위쪽만 라운드 */
+/* 미니맵 — 줌 슬라이더 위, 오른쪽 하단 */
 .react-flow__minimap {
-  border-radius: 12px 12px 0 0 !important;
+  border-radius: 12px !important;
   overflow: hidden;
-  box-shadow: none !important;
-  border: 1px solid #E4E6F0;
-  border-bottom: none !important;
-  bottom: 44px !important;
-  right: 8px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07) !important;
+  border: 1px solid #E4E6F0 !important;
+  bottom: 46px !important;
+  right: 4px !important;
+  left: auto !important;
   width: 148px !important;
   height: 100px !important;
   background: white !important;
@@ -76,9 +76,9 @@
 /* React Flow 배경 */
 .react-flow__background { background: #F4F5FA; }
 
-/* ── 줌 슬라이더 ────────────────────────────────────────────────────────── */
+/* ── 줌 슬라이더 — 미니맵과 독립, 오른쪽 하단 ─────────────────────────── */
 .zoom-controls-panel {
-  bottom: 0 !important;   /* 툴바에 딱 붙음 */
+  bottom: 8px !important;
   right: 8px !important;
   margin: 0 !important;
 }
@@ -88,13 +88,12 @@
   align-items: center;
   gap: 6px;
   background: white;
-  border-radius: 0 0 12px 12px;
+  border-radius: 12px;
   padding: 0 10px;
-  height: 44px;           /* 고정 높이: 미니맵 bottom 값과 동일 */
+  height: 34px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07);
   border: 1px solid #E4E6F0;
-  border-top: none;
-  width: 148px;           /* 미니맵과 동일 너비 */
+  width: 148px;
   box-sizing: border-box;
 }
 

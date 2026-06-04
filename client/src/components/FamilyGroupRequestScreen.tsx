@@ -54,6 +54,7 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
     e.preventDefault();
     if (!realName.trim()) { setError('실명을 입력해주세요.'); return; }
     if (!gender)          { setError('성별을 선택해주세요.'); return; }
+    if (loading) return;
     setLoading(true);
     await submitFamilyGroupRequest(
       realName.trim(), desc.trim(),

@@ -236,3 +236,67 @@
   color: #7f8c8d;
   padding: 20px 0;
 }
+
+/* 아바타 선택 */
+.avatar-selector-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.avatar-selector-btn {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px dashed #c0cdd8;
+  background: #f8fafc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+  padding: 0;
+  overflow: visible;
+}
+
+.avatar-selector-btn:hover { border-color: #2AABE2; background: #f0f9ff; }
+
+.avatar-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: white;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 날짜 + 음력 한 줄 */
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-row .date-input-wrap {
+  flex: 1;
+  min-width: 0;
+}

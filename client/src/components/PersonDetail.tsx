@@ -5,6 +5,8 @@ import { getChusu } from '../hooks/useTreeLayout';
 import { getRelationLabel } from '../utils/relationLabel';
 import { getManAge } from '../utils/age';
 import { DateInput } from './DateInput';
+import { AvatarPicker } from './AvatarPicker';
+import { LS } from '../lib/storageKeys';
 import './PersonDetail.css';
 
 interface Props {
@@ -14,9 +16,11 @@ interface Props {
 }
 
 export function PersonDetail({ person, onAddFamily, onClose }: Props) {
-  const { persons, relationships, updatePerson, deletePerson, createInvite,
-          isPersonMapped, loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest } = useFamilyStore();
-  const root = persons.find(p => p.is_root === 1)!;
+  const { persons, relationships, viewpointPersonId, updatePerson, deletePerson, createInvite,
+          isPersonMapped, loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
+          updateRelationship } = useFamilyStore();
+  const root       = persons.find(p => p.is_root === 1)!;
+  const chusuBase  = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
 
   const [alreadyMapped, setAlreadyMapped] = useState(false);
   const [infoRequests, setInfoRequests]   = useState<Array<{ id: string; requesterName: string; personId: string; createdAt: string }>>([]);
@@ -33,6 +37,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(person.name);
+  const [gender, setGender] = useState<'male' | 'female'>(person.gender ?? 'male');
   const [birthDate, setBirthDate] = useState(person.birth_date ?? '');
   const [birthLunar, setBirthLunar] = useState(person.birth_lunar ?? false);
   const [isDeceased, setIsDeceased] = useState(person.is_deceased ?? false);
@@ -41,16 +46,25 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [phone, setPhone] = useState(person.phone ?? '');
   const [email, setEmail] = useState(person.email ?? '');
   const [memo, setMemo]   = useState(person.memo ?? '');
+  const [photoUrl, setPhotoUrl]     = useState(person.photo_url ?? '');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState('');
 
-  const chusu = getChusu(person.id, root, relationships);
+  const spouseRel = relationships.find(
+    r => r.type === 'spouse' && (r.person1_id === person.id || r.person2_id === person.id)
+  ) ?? null;
+  const [marriageDate, setMarriageDate] = useState(spouseRel?.marriage_date ?? '');
+  const [marriageLunar, setMarriageLunar] = useState(spouseRel?.marriage_lunar ?? false);
+
+  const chusu = getChusu(person.id, chusuBase, relationships);
 
   const handleSave = async () => {
     setSaving(true);
     await updatePerson(person.id, {
       name,
+      gender,
       birth_date: birthDate || null,
       birth_lunar: birthLunar,
       is_deceased: isDeceased,
@@ -59,7 +73,14 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
       phone: phone.trim() || null,
       email: email.trim() || null,
       memo:  memo.trim()  || null,
+      photo_url: photoUrl || null,
     });
+    if (spouseRel) {
+      await updateRelationship(spouseRel.id, {
+        marriage_date: marriageDate || null,
+        marriage_lunar: marriageLunar,
+      });
+    }
     setSaving(false);
     setEditing(false);
   };
@@ -107,7 +128,9 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
   const handleInvite = async () => {
     const token = await createInvite(person.id);
-    setInviteLink(`${window.location.origin}/invite/${token}`);
+    const senderName = localStorage.getItem('familyTreeUser') ?? '';
+    const base = `${window.location.origin}/invite/${token}`;
+    setInviteLink(senderName ? `${base}?from=${encodeURIComponent(senderName)}` : base);
   };
 
   const handleCopy = async () => {
@@ -140,15 +163,17 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
   const currentUserAccount = localStorage.getItem('familyTreeAccountName') ?? localStorage.getItem('familyTreeUser');
 
-  // 편집 권한: 나 자신 | 내가 만든 노드 | 관리자 생성+미매핑(상관없음)
-  // 다른 사람에게 매핑된 노드는 숨김
+  const myPersonId = localStorage.getItem(LS.MY_PERSON_ID);
+
+  // 편집 권한: 나 자신 | 내가 만든 노드 | 관리자
+  const isAdmin = localStorage.getItem(LS.IS_ADMIN) === 'true' || localStorage.getItem(LS.ADMIN_RETURN) === 'true';
   const canEdit = (() => {
-    if (person.id === vpId) return true;                                     // 내 노드
+    if (isAdmin) return true;
+    if (person.id === vpId || person.id === myPersonId) return true;         // 내 노드
     if (person.created_by && person.created_by === currentUserAccount) return true; // 내가 만든 노드
-    if (alreadyMapped) return false;                                          // 다른 사람 매핑
-    return true;                                                              // 관리자 생성+미매핑
+    return false;
   })();
-  const relationName = root ? getRelationLabel(person.id, root, persons, relationships) : '';
+  const relationName = chusuBase ? getRelationLabel(person.id, chusuBase, persons, relationships) : '';
 
   // 촌수 배지: 0촌이면 나/배우자, 그 외엔 "N촌 (관계명)"
   const chusuLabel = chusu === 0
@@ -187,6 +212,9 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             {person.is_deceased && fmtDate(person.death_date, person.death_lunar) && (
               <span className="meta-chip deceased-chip">기일 {fmtDate(person.death_date, person.death_lunar)}</span>
             )}
+            {spouseRel?.marriage_date && (
+              <span className="meta-chip marriage-chip">💍 {fmtDate(spouseRel.marriage_date, !!spouseRel.marriage_lunar)}</span>
+            )}
             <span className="meta-chip accent">{chusuLabel}</span>
           </div>
           {(person.phone || person.email || person.memo) && (
@@ -214,44 +242,104 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
         </div>
       ) : (
         <div className="edit-form">
-          <input value={name} onChange={e => setName(e.target.value)} className="edit-input" placeholder="이름" />
+          <div className="avatar-selector-wrap">
+            <button type="button" className="avatar-selector-btn" onClick={() => setShowAvatarPicker(true)}>
+              {photoUrl
+                ? <img src={photoUrl} alt="아바타" className="avatar-preview" />
+                : <span className="avatar-placeholder">{name[0] ?? '?'}</span>}
+              <span className="avatar-edit-badge">✏️</span>
+            </button>
+            {photoUrl && (
+              <button type="button" className="edit-avatar-remove-link" onClick={() => setPhotoUrl('')}>
+                아바타 삭제
+              </button>
+            )}
+          </div>
 
-          <DateInput value={birthDate} onChange={setBirthDate}
-            max={new Date().toISOString().split('T')[0]} />
-          <label className="edit-lunar-check sub">
-            <input type="checkbox" checked={birthLunar} onChange={e => setBirthLunar(e.target.checked)} />
-            음력으로 입력
-          </label>
+          <div className="form-field">
+            <label>이름</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="이름" required />
+          </div>
 
-          <label className="edit-deceased-check">
-            <input type="checkbox" checked={isDeceased} onChange={e => setIsDeceased(e.target.checked)} />
-            고인 (사망)
-          </label>
+          <div className="form-field">
+            <label>성별</label>
+            <div className="gender-btns">
+              <button type="button" className={`gender-btn ${gender === 'male' ? 'active male' : ''}`}
+                onClick={() => setGender('male')}>남</button>
+              <button type="button" className={`gender-btn ${gender === 'female' ? 'active female' : ''}`}
+                onClick={() => setGender('female')}>여</button>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>생년월일 (선택)</label>
+            <div className="date-row">
+              <DateInput value={birthDate} onChange={setBirthDate}
+                max={new Date().toISOString().split('T')[0]} />
+              <label className="lunar-check">
+                <input type="checkbox" checked={birthLunar} onChange={e => setBirthLunar(e.target.checked)} />
+                음력
+              </label>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label className="deceased-check">
+              <input type="checkbox" checked={isDeceased} onChange={e => setIsDeceased(e.target.checked)} />
+              고인 (사망)
+            </label>
+          </div>
 
           {isDeceased && (
-            <>
-              <DateInput value={deathDate} onChange={setDeathDate}
-                max={new Date().toISOString().split('T')[0]} />
-              <label className="edit-lunar-check sub">
-                <input type="checkbox" checked={deathLunar} onChange={e => setDeathLunar(e.target.checked)} />
-                음력으로 입력
-              </label>
-            </>
+            <div className="form-field">
+              <label>기일 / 사망일 (선택)</label>
+              <div className="date-row">
+                <DateInput value={deathDate} onChange={setDeathDate}
+                  max={new Date().toISOString().split('T')[0]} />
+                <label className="lunar-check">
+                  <input type="checkbox" checked={deathLunar} onChange={e => setDeathLunar(e.target.checked)} />
+                  음력
+                </label>
+              </div>
+            </div>
+          )}
+
+          {spouseRel && (
+            <div className="form-field">
+              <label>💍 결혼기념일 (선택)</label>
+              <div className="date-row">
+                <DateInput value={marriageDate} onChange={setMarriageDate}
+                  max={new Date().toISOString().split('T')[0]} />
+                <label className="lunar-check">
+                  <input type="checkbox" checked={marriageLunar} onChange={e => setMarriageLunar(e.target.checked)} />
+                  음력
+                </label>
+              </div>
+            </div>
           )}
 
           <div className="edit-contact-group">
-            <input value={phone} onChange={e => setPhone(e.target.value)}
-              className="edit-input" placeholder="📱 휴대폰 번호" maxLength={20} />
-            <input value={email} onChange={e => setEmail(e.target.value)}
-              className="edit-input" placeholder="📧 이메일" maxLength={80} />
-            <textarea value={memo} onChange={e => setMemo(e.target.value)}
-              className="edit-input edit-memo" placeholder="📝 기타 사항" rows={3} maxLength={200} />
+            <div className="form-field">
+              <label>휴대폰</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)}
+                placeholder="휴대폰 번호" maxLength={20} />
+            </div>
+            <div className="form-field">
+              <label>이메일</label>
+              <input value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="이메일" maxLength={80} />
+            </div>
+            <div className="form-field">
+              <label>기타 사항</label>
+              <textarea value={memo} onChange={e => setMemo(e.target.value)}
+                className="edit-input edit-memo" placeholder="메모" rows={3} maxLength={200} />
+            </div>
           </div>
 
-          <div className="edit-actions">
-            <button onClick={() => setEditing(false)} className="btn-sm cancel">취소</button>
-            <button onClick={handleSave} disabled={saving} className="btn-sm save">
-              {saving ? '...' : '저장'}
+          <div className="modal-actions">
+            <button type="button" onClick={() => setEditing(false)} className="btn-cancel">취소</button>
+            <button type="button" onClick={handleSave} disabled={saving || !name.trim()} className="btn-save">
+              {saving ? '저장 중...' : '저장'}
             </button>
           </div>
         </div>
@@ -338,6 +426,14 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             </div>
           ))}
         </div>
+      )}
+
+      {showAvatarPicker && (
+        <AvatarPicker
+          current={photoUrl || null}
+          onSelect={url => setPhotoUrl(url ?? '')}
+          onClose={() => setShowAvatarPicker(false)}
+        />
       )}
     </div>
   );

@@ -1,0 +1,83 @@
+.avpick-backdrop {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+
+.avpick-panel {
+  background: white;
+  border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px;
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  animation: avpick-slide-up 0.22s ease;
+}
+@keyframes avpick-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.avpick-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  flex-shrink: 0;
+}
+.avpick-title { font-size: 16px; font-weight: 800; color: #1A1A2E; }
+.avpick-close {
+  background: #F1F5F9; border: none; border-radius: 50%;
+  width: 30px; height: 30px; font-size: 13px;
+  cursor: pointer; color: #64748B;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.avpick-body {
+  flex: 1; overflow-y: auto; padding: 14px 16px 32px;
+}
+
+.avpick-remove {
+  width: 100%; padding: 10px;
+  background: #FEF2F2; color: #EF4444;
+  border: 1px solid #FECACA; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.avpick-group { margin-bottom: 20px; }
+.avpick-group-label {
+  font-size: 12px; font-weight: 700; color: #94A3B8;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.avpick-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.avpick-item {
+  background: #F8FAFC;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+  aspect-ratio: 1;
+}
+.avpick-item:hover {
+  background: #EEF2FF;
+  border-color: #C7D2FE;
+  transform: scale(1.06);
+}
+.avpick-item.selected {
+  background: #EEF2FF;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 1px #4F46E5;
+}
+.avpick-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}

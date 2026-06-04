@@ -236,27 +236,24 @@ export function canSeeFull(
   relationships?: Relationship[]
 ): boolean {
   if (!currentUser) return true;
+
+  // 내 노드 — viewpointPersonId(비루트) 또는 MY_PERSON_ID(루트 포함) 로 판정
+  const myPersonId = localStorage.getItem('familyTreeMyPersonId');
+  if (person.id === viewpointPersonId) return true;
+  if (myPersonId && person.id === myPersonId) return true;
+
   // created_by가 계정 아이디와 일치
   if (person.created_by && person.created_by === currentUser) return true;
-  // created_by 없음 → root 소유자에게 공개
-  if (!person.created_by && root) {
-    const rootOwner = localStorage.getItem('familyTreeAccountName')
-      ?? localStorage.getItem('familyTreeUser');
-    if (rootOwner === currentUser) return true;
-  }
-  // 나(ME) 뷰포인트 인물
-  if (person.id === viewpointPersonId) return true;
-  // 루트 인물
-  if (person.is_root === 1) {
-    const rootOwner = localStorage.getItem('familyTreeAccountName')
-      ?? localStorage.getItem('familyTreeUser');
-    if (rootOwner === currentUser) return true;
-  }
+  // created_by 없음 → 내가 루트 소유자
+  if (!person.created_by && myPersonId && root && root.id === myPersonId) return true;
+
   if (grantedPersonIds?.has(person.id)) return true;
-  // 나(viewpoint)와 1촌(부모·자녀)은 기본 공개
-  if (viewpointPersonId && relationships) {
-    const chusu = getChusu(person.id, { id: viewpointPersonId } as Person, relationships);
-    if (chusu === 1) return true;
+
+  // 나(viewpoint 또는 myPersonId)로부터 2촌 이내는 기본 공개
+  const baseId = viewpointPersonId ?? myPersonId;
+  if (baseId && relationships) {
+    const chusu = getChusu(person.id, { id: baseId } as Person, relationships);
+    if (chusu !== null && chusu <= 2) return true;
   }
   return false;
 }
@@ -265,8 +262,8 @@ export function canSeeFull(
 const PERSON_W = 90;
 const COUPLE_W = 128;  // two 64px hexagons side by side, touching
 const NODE_H = 110;
-const H_GAP = 40;
-const V_GAP = 90;
+const H_GAP = 20;
+const V_GAP = 28;
 
 interface LayoutUnit {
   id: string;           // nodeId (personId or 'couple_X_Y')
@@ -631,7 +628,7 @@ export function useTreeLayout(
         source: srcId,
         target: tgtId,
         targetHandle,
-        type: 'smoothstep',
+        type: 'familyEdge',
         style: { stroke: '#2AABE2', strokeWidth: 2 },
       });
     }

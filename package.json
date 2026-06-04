@@ -1,6 +1,6 @@
 {
   "name": "familytree",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "scripts": {
     "dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
@@ -8,5 +8,9 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2"
+  },
+  "devDependencies": {
+    "jimp": "^1.6.1",
+    "playwright": "^1.60.0"
   }
 }

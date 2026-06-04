@@ -122,9 +122,9 @@ html, body, #root {
 }
 
 .header-username {
-  font-size: 13px; font-weight: 600;
-  color: var(--text-2);
-  max-width: 80px;
+  font-size: 15px; font-weight: 700;
+  color: var(--text);
+  max-width: 100px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -151,6 +151,54 @@ html, body, #root {
 }
 .header-logout:hover { border-color: var(--pri); color: var(--pri); }
 
+/* ── iOS 홈 화면 추가 안내 모달 ─────────────────────────────────────────────── */
+.ios-install-backdrop {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.ios-install-guide {
+  background: white;
+  border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px;
+  padding: 28px 28px calc(28px + env(safe-area-inset-bottom));
+  position: relative;
+  animation: avpick-slide-up 0.22s ease;
+}
+.ios-install-close {
+  position: absolute; top: 16px; right: 16px;
+  background: #F1F5F9; border: none; border-radius: 50%;
+  width: 30px; height: 30px; font-size: 13px;
+  cursor: pointer; color: #64748B;
+  display: flex; align-items: center; justify-content: center;
+}
+.ios-install-icon { font-size: 36px; text-align: center; margin-bottom: 10px; }
+.ios-install-title {
+  font-size: 18px; font-weight: 800; color: #1A1A2E;
+  text-align: center; margin-bottom: 20px;
+}
+.ios-install-steps {
+  list-style: none; counter-reset: step; padding: 0;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ios-install-steps li {
+  counter-increment: step;
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 15px; color: #334155; line-height: 1.5;
+}
+.ios-install-steps li::before {
+  content: counter(step);
+  min-width: 26px; height: 26px;
+  background: var(--pri); color: white;
+  border-radius: 50%; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ios-install-arrow-hint {
+  margin-top: 20px; text-align: center;
+  font-size: 13px; color: #94A3B8;
+}
+
 /* 뒤로가기 이중확인 토스트 */
 .back-exit-toast {
   position: fixed;
@@ -173,6 +221,7 @@ html, body, #root {
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+
 /* ── 메인 ─────────────────────────────────────────────────────────────────── */
 .app-main {
   flex: 1;
@@ -181,6 +230,26 @@ html, body, #root {
 }
 
 /* ── 로딩 ─────────────────────────────────────────────────────────────────── */
+.family-disabled-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; background: var(--bg);
+}
+.family-disabled-box {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  padding: 40px 28px; max-width: 320px; text-align: center;
+}
+.family-disabled-msg {
+  font-size: 15px; font-weight: 600; color: #e53e3e; line-height: 1.6; margin: 0;
+}
+.family-disabled-email {
+  font-size: 14px; color: #2AABE2; text-decoration: underline;
+}
+.family-disabled-logout {
+  margin-top: 8px; padding: 10px 28px;
+  background: #f0f4f8; border: 1.5px solid #e0e0e0; border-radius: 8px;
+  font-size: 14px; cursor: pointer;
+}
+
 .app-loading {
   display: flex;
   flex-direction: column;
@@ -215,7 +284,7 @@ html, body, #root {
   .logo-text { font-size: 16px; }
   .logo-symbol { width: 28px; height: 28px; border-radius: 7px; }
   .header-nav-buttons { display: none; }
-  .header-username { font-size: 12px; max-width: 70px; }
+  .header-username { font-size: 14px; font-weight: 700; max-width: 80px; }
   .header-logout { padding: 4px 8px; font-size: 11px; }
 
   .mobile-bottom-nav {
@@ -347,3 +416,45 @@ html, body, #root {
 .invite-person-name { color: var(--pri); font-weight: 700; }
 .invite-btn-group { display: flex; flex-direction: column; gap: 10px; }
 .invite-note { font-size: 11px; color: #aaa; margin-top: 12px; }
+
+.invite-inapp-warn {
+  background: #FFF7ED;
+  border: 1.5px solid #FED7AA;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.invite-inapp-warn p { font-size: 13px; color: #92400E; margin: 0 0 10px; line-height: 1.6; }
+.invite-inapp-warn strong { color: #78350F; }
+.invite-inapp-btn {
+  width: 100%;
+  padding: 10px;
+  background: #F97316;
+  color: white; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+}
+.invite-inapp-btn:active { opacity: 0.85; }
+.invite-inapp-hint { font-size: 11px; color: #B45309; margin: 0 !important; line-height: 1.7; }
+
+.invite-app-banner {
+  background: #EEF2FF;
+  border: 1.5px solid #C7D2FE;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.invite-app-open-btn {
+  width: 100%;
+  padding: 11px;
+  background: var(--pri);
+  color: white; border: none; border-radius: 10px;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+}
+.invite-app-open-btn:active { opacity: 0.85; }
+.invite-app-hint { font-size: 11px; color: #6366F1; margin: 0 !important; line-height: 1.7; }

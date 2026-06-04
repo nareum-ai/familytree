@@ -24,14 +24,9 @@ const app = initializeApp({
 
 const messaging = getMessaging(app);
 
-onBackgroundMessage(messaging, (payload) => {
-  const { title = '알림', body = '' } = payload.notification ?? {};
-  return self.registration.showNotification(title, {
-    body,
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
-    data: { url: payload.fcmOptions?.link ?? '/' },
-  });
+// notificationclick 핸들링을 위해 onBackgroundMessage 등록하되 알림 표시는 Chrome에 위임
+onBackgroundMessage(messaging, (_payload) => {
+  // Chrome이 FCM notification 페이로드를 자동으로 표시함 — 중복 방지를 위해 직접 showNotification 호출 생략
 });
 
 self.addEventListener('notificationclick', (event) => {

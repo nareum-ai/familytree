@@ -38,7 +38,7 @@ export function MyMenuView({ onClose }: Props) {
   const username = localStorage.getItem(LS.ACCOUNT_NAME)
     ?? localStorage.getItem(LS.USER_NAME) ?? '';
 
-  // 관리자 or 관리자 대리 접속 중에는 구글 탭 숨김
+  // 관리자 or 관리자 대리 접속 중에는 구글·알림 탭 숨김
   const isAdminContext =
     localStorage.getItem(LS.IS_ADMIN) === 'true' ||
     localStorage.getItem(LS.ADMIN_RETURN) === 'true';
@@ -51,15 +51,16 @@ export function MyMenuView({ onClose }: Props) {
       .finally(() => setReqLoading(false));
 
     // Firestore에서 google_email 로드
-    const loadGoogleEmail = async () => {
+    const loadMemberData = async () => {
       const memberId = localStorage.getItem(LS.MEMBER_ID);
       if (!memberId) return;
       const { getDoc, doc } = await import('firebase/firestore');
       const { db } = await import('../lib/firebase');
       const snap = await getDoc(doc(db, 'members', memberId));
-      setGoogleEmail((snap.data()?.google_email as string | null) ?? null);
+      const data = snap.data();
+      setGoogleEmail((data?.google_email as string | null) ?? null);
     };
-    loadGoogleEmail();
+    loadMemberData();
   }, []);
 
   const personName = (personId: string) =>

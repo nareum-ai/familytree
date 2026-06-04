@@ -5,20 +5,22 @@ import { InvitePage } from './components/InvitePage';
 import { InviteVerifyScreen } from './components/InviteVerifyScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { RegisterScreen } from './components/RegisterScreen';
+import { ForgotPasswordScreen } from './components/ForgotPasswordScreen';
+import { ResetPasswordScreen } from './components/ResetPasswordScreen';
 import { AnniversaryView } from './components/AnniversaryView';
 import { SearchView } from './components/SearchView';
 import { AdminView } from './components/AdminView';
 import { NewFamilyRequestView } from './components/NewFamilyRequestView';
 import { FamilyGroupRequestScreen } from './components/FamilyGroupRequestScreen';
 import { GoogleLinkScreen } from './components/GoogleLinkScreen';
+import { LandingPage } from './components/LandingPage';
 import { MyMenuView } from './components/MyMenuView';
 import { HelpView } from './components/HelpView';
 import { LS, SS } from './lib/storageKeys';
 import { useFCMToken } from './hooks/useFCMToken';
+import { useAdminEmail } from './hooks/useAdminEmail';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-}
 import type { Member } from './types';
 import './App.css';
 
@@ -30,24 +32,37 @@ const LS_MEMBER_ID    = LS.MEMBER_ID;
 export const LS_ACCOUNT_NAME = LS.ACCOUNT_NAME;
 
 function App() {
-  useFCMToken(); // PWA에서만 알림 권한 요청
+  useFCMToken();
 
   const {
     init, loading, persons, updatePerson,
     setViewpoint, viewpointPersonId, currentFamilyId,
-    loginMember, ensureAdminAccount, mapMemberToPerson,
+    loginMember, ensureAdminAccount, mapMemberToPerson, consumeInviteToken,
     loadInfoRequestsForMe,
     loginWithGoogle, linkGoogleToMember, registerWithGoogle,
-    recordLogin,
+    recordLogin, isFamilyDisabled,
+    selectedPersonId, selectPerson,
+    infoRequestPersonId, closeInfoRequest,
   } = useFamilyStore();
 
-  const [slowLoad,      setSlowLoad]      = useState(false);
-  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const adminEmail = useAdminEmail();
 
+  const [slowLoad,       setSlowLoad]       = useState(false);
+  const [showIOSInstall, setShowIOSInstall] = useState(false);
+
+  const isIOSSafari = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    && !/CriOS|FxiOS|OPiOS/i.test(navigator.userAgent)
+    && !window.matchMedia('(display-mode: standalone)').matches
+    && !(navigator as unknown as { standalone?: boolean }).standalone;
+
+  // URL 파라미터 정리 (register)
   useEffect(() => {
-    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('register')) {
+      params.delete('register');
+      const clean = window.location.pathname + (params.size ? '?' + params.toString() : '');
+      window.history.replaceState({}, '', clean);
+    }
   }, []);
   const [showAnniversary, setShowAnn]     = useState(false);
   const [showSearch,    setShowSearch]    = useState(false);
@@ -59,19 +74,48 @@ function App() {
   const [pendingRequestCount, setPendingCount] = useState(0);
   const [loginError,    setLoginError]    = useState('');
   const [loginLoading,  setLoginLoading]  = useState(false);
-  const [showRegister,  setShowRegister]  = useState(false);
+  const [showLanding, setShowLanding] = useState(() => {
+    const noUser   = !localStorage.getItem(LS_USER_KEY);
+    const notAdmin = localStorage.getItem(LS_IS_ADMIN) !== 'true';
+    const noRegister = !new URLSearchParams(window.location.search).has('register');
+    const noInvite = !sessionStorage.getItem(SS.INVITE_PERSON_ID);
+    return noUser && notAdmin && noRegister && noInvite;
+  });
+
+  const [showRegister,  setShowRegister]  = useState(() => {
+    const noUser    = !localStorage.getItem(LS_USER_KEY);
+    const notAdmin  = localStorage.getItem(LS_IS_ADMIN) !== 'true';
+    const hasInvite = !!(
+      sessionStorage.getItem(SS.INVITE_PERSON_ID) &&
+      sessionStorage.getItem(SS.INVITE_FAMILY_ID)
+    );
+    // 초대 컨텍스트가 있으면 기존 로그인 상태 무관하게 가입 화면 표시
+    return (noUser || hasInvite) && notAdmin && new URLSearchParams(window.location.search).has('register');
+  });
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [pendingNewName, setPendingNew]         = useState<string | null>(null);
   const [registerSuccess, setRegSuccess]        = useState<string | null>(null);
   const [pendingInviteMemberId, setPendingInviteMemberId] = useState<string | null>(null);
   const [showFamilyGroupRequest, setShowFamilyGroupRequest] = useState(false);
+  const [familyDisabled, setFamilyDisabled] = useState(false);
   const [googleLinkData, setGoogleLinkData] = useState<{
     uid: string; email: string; displayName: string;
   } | null>(null);
 
   const path        = window.location.pathname;
   const inviteMatch = path.match(/^\/invite\/(.+)$/);
+  const resetMatch  = path.match(/^\/reset\/(.+)$/);
 
   const isAdmin       = localStorage.getItem(LS_IS_ADMIN) === 'true';
+
+  // 앱 설치 후 서랍에서 열었을 때: 이전에 저장해 둔 초대 토큰이 있으면 invite 경로로 이동
+  // sessionStorage에 이미 invite 컨텍스트가 있으면 InvitePage를 거친 정상 흐름 중이므로 스킵
+  useEffect(() => {
+    if (inviteMatch || isAdmin) return;
+    const pending = localStorage.getItem(LS.PENDING_INVITE_TOKEN);
+    const alreadyInFlow = !!sessionStorage.getItem(SS.INVITE_PERSON_ID);
+    if (pending && !alreadyInFlow) window.location.replace(`/invite/${pending}`);
+  }, []);
   const isAdminReturn = localStorage.getItem(LS_ADMIN_RETURN) === 'true';
   const userName      = localStorage.getItem(LS_USER_KEY);
   const hasFamilyId   = !!localStorage.getItem(LS_FAMILY_ID);
@@ -99,7 +143,22 @@ function App() {
     return () => { unsub(); clearTimeout(timer); };
   }, [currentFamilyId]);
 
-  // 안드로이드 뒤로가기 이중 확인 (메인 화면에서만)
+  // 열린 모달을 우선순위 순서로 닫는 함수 — ref로 관리해 popstate 핸들러가 항상 최신 상태를 읽음
+  const closeTopModalRef = useRef<() => boolean>(() => false);
+  useEffect(() => {
+    closeTopModalRef.current = () => {
+      if (showHelp)        { setShowHelp(false);                            return true; }
+      if (showAnniversary) { setShowAnn(false);                             return true; }
+      if (showMyMenu)      { setShowMyMenu(false); setPendingCount(0);      return true; }
+      if (showSearch)      { setShowSearch(false);                          return true; }
+      if (infoRequestPersonId) { closeInfoRequest();                        return true; }
+      if (selectedPersonId)    { selectPerson(null);                        return true; }
+      return false;
+    };
+  }, [showHelp, showAnniversary, showMyMenu, showSearch, infoRequestPersonId, selectedPersonId,
+      closeInfoRequest, selectPerson]);
+
+  // 안드로이드 뒤로가기: 모달이 열려있으면 닫기, 없으면 이중 확인 후 종료
   useEffect(() => {
     const isMain = !needsLogin && !isAdmin && hasFamilyId;
     if (!isMain) return;
@@ -107,8 +166,14 @@ function App() {
     history.pushState(null, '', window.location.href);
 
     const onPopState = () => {
+      // 열린 모달이 있으면 닫고 히스토리 재삽입
+      if (closeTopModalRef.current()) {
+        history.pushState(null, '', window.location.href);
+        return;
+      }
+      // 모달 없음 → 이중 확인 후 종료
       if (!backPressedRef.current) {
-        history.pushState(null, '', window.location.href); // 다시 막기
+        history.pushState(null, '', window.location.href);
         backPressedRef.current = true;
         setShowBackToast(true);
         if (backTimerRef.current) clearTimeout(backTimerRef.current);
@@ -117,7 +182,6 @@ function App() {
           setShowBackToast(false);
         }, 2500);
       }
-      // 두 번째 뒤로가기는 막지 않음 → 브라우저/앱 종료
     };
 
     window.addEventListener('popstate', onPopState);
@@ -130,7 +194,8 @@ function App() {
   useEffect(() => {
     if (!userName || isAdmin) return;
     // family_id 자체가 없는 경우: hard refresh 해도 즉시 신청 화면으로
-    if (!hasFamilyId && !showFamilyGroupRequest) {
+    // pendingInviteMemberId가 있으면 초대 검증 중이므로 가족신청 화면으로 넘기지 않음
+    if (!hasFamilyId && !showFamilyGroupRequest && !pendingInviteMemberId) {
       setShowFamilyGroupRequest(true);
       return;
     }
@@ -155,6 +220,11 @@ function App() {
     const invitePersonName = sessionStorage.getItem(SS.INVITE_PERSON_NAME);
     const inviteFamilyId   = sessionStorage.getItem(SS.INVITE_FAMILY_ID);
 
+    if (member.family_id) {
+      const disabled = await isFamilyDisabled(member.family_id);
+      if (disabled) { setFamilyDisabled(true); return; }
+    }
+
     if (!member.family_id || !member.person_id) {
       await recordLogin(member.id).catch(() => {});
       if (invitePersonId && invitePersonName && inviteFamilyId) {
@@ -172,6 +242,7 @@ function App() {
     localStorage.setItem(LS_USER_KEY,      member.person_name ?? displayName ?? member.username);
     localStorage.setItem(LS_FAMILY_ID,     member.family_id);
     localStorage.setItem(LS_MEMBER_ID,     member.id);
+    localStorage.setItem(LS.MY_PERSON_ID,  member.person_id);
     localStorage.setItem(LS_ACCOUNT_NAME,  member.username);
     sessionStorage.setItem(SS.VIEWPOINT_PERSON_ID, member.person_id);
     await recordLogin(member.id).catch(() => {}); // reload 전에 완료 보장
@@ -227,6 +298,13 @@ function App() {
       if (member.status === 'suspended') { setLoginError('계정이 정지되었습니다. 관리자에게 문의하세요.'); return; }
 
       localStorage.setItem(LS.GOOGLE_EMAIL, googleEmail);
+      if (member.is_admin) {
+        localStorage.setItem(LS_IS_ADMIN, 'true');
+        localStorage.setItem(LS_USER_KEY, member.username);
+        localStorage.setItem(LS_MEMBER_ID, member.id);
+        window.location.reload();
+        return;
+      }
       applyMemberLogin(member, displayName);
     } catch {
       setLoginError('구글 로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
@@ -265,11 +343,26 @@ function App() {
     const invitePersonId   = sessionStorage.getItem(SS.INVITE_PERSON_ID)!;
     const invitePersonName = sessionStorage.getItem(SS.INVITE_PERSON_NAME)!;
     const inviteFamilyId   = sessionStorage.getItem(SS.INVITE_FAMILY_ID)!;
+    const inviteToken      = sessionStorage.getItem(SS.INVITE_TOKEN);
     const memberId         = localStorage.getItem(LS_MEMBER_ID)!;
-    await mapMemberToPerson(memberId, invitePersonId, inviteFamilyId, invitePersonName);
+    try {
+      await mapMemberToPerson(memberId, invitePersonId, inviteFamilyId, invitePersonName);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg === 'ALREADY_MAPPED') {
+        alert('이 초대 링크는 이미 다른 계정에서 사용되었습니다. 관리자에게 문의하세요.');
+      } else {
+        alert('계정 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+      return;
+    }
+    // 토큰 소비 — 재사용 방지
+    if (inviteToken) await consumeInviteToken(inviteToken).catch(() => {});
+    sessionStorage.removeItem(SS.INVITE_TOKEN);
     sessionStorage.removeItem(SS.INVITE_PERSON_ID);
     sessionStorage.removeItem(SS.INVITE_PERSON_NAME);
     sessionStorage.removeItem(SS.INVITE_FAMILY_ID);
+    localStorage.removeItem(LS.PENDING_INVITE_TOKEN);
     localStorage.setItem(LS_USER_KEY, invitePersonName);
     localStorage.setItem(LS_FAMILY_ID, inviteFamilyId);
     sessionStorage.setItem(SS.VIEWPOINT_PERSON_ID, invitePersonId);
@@ -283,15 +376,29 @@ function App() {
     localStorage.removeItem(LS_FAMILY_ID);
     localStorage.removeItem(LS_ADMIN_RETURN);
     localStorage.removeItem(LS_MEMBER_ID);
+    localStorage.removeItem(LS.MY_PERSON_ID);
     localStorage.removeItem(LS_ACCOUNT_NAME);
     localStorage.removeItem(LS.GOOGLE_EMAIL);
+    localStorage.removeItem(LS.PENDING_INVITE_TOKEN);
     sessionStorage.removeItem(SS.VIEWPOINT_PERSON_ID);
     window.location.reload();
   };
 
+  const isLoggedIn = !!(userName && hasFamilyId);
+  useIdleTimeout(handleLogout, isLoggedIn);
+
   // ── 라우팅 ────────────────────────────────────────────────────────────────────
+  if (resetMatch)  return <ResetPasswordScreen token={resetMatch[1]} />;
   if (inviteMatch) return <InvitePage token={inviteMatch[1]} />;
-  if (isAdmin) return <AdminView onLogout={handleLogout} />;
+  if (needsLogin && showLanding) return (
+    <LandingPage
+      onRegister={() => { setShowLanding(false); setShowRegister(true); }}
+      onLogin={() => setShowLanding(false)}
+    />
+  );
+  if (isAdmin) return (
+    <AdminView onLogout={handleLogout} />
+  );
   if (pendingNewName) return <NewFamilyRequestView requestedName={pendingNewName} onBack={() => setPendingNew(null)} />;
 
   if (googleLinkData) {
@@ -306,12 +413,17 @@ function App() {
     );
   }
 
-  if (showFamilyGroupRequest) {
+  if (familyDisabled) {
     return (
-      <FamilyGroupRequestScreen
-        memberUsername={localStorage.getItem(LS_USER_KEY) ?? ''}
-        onLogout={handleLogout}
-      />
+      <div className="family-disabled-screen">
+        <div className="family-disabled-box">
+          <p className="family-disabled-msg">가족 가계도가 관리자에 의해 접근이 금지되었습니다.</p>
+          {adminEmail && (
+            <a className="family-disabled-email" href={`mailto:${adminEmail}`}>{adminEmail}</a>
+          )}
+          <button className="family-disabled-logout" onClick={handleLogout}>로그아웃</button>
+        </div>
+      </div>
     );
   }
 
@@ -328,11 +440,36 @@ function App() {
     );
   }
 
+  if (showFamilyGroupRequest) {
+    return (
+      <FamilyGroupRequestScreen
+        memberUsername={localStorage.getItem(LS_USER_KEY) ?? ''}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (showForgotPassword) {
+    return <ForgotPasswordScreen onBack={() => setShowForgotPassword(false)} />;
+  }
+
   if (showRegister) {
     return (
       <RegisterScreen
-        onBack={() => { setShowRegister(false); setRegSuccess(null); }}
-        onSuccess={(name) => { setRegSuccess(name); setShowRegister(false); }}
+        onBack={() => { setShowRegister(false); setRegSuccess(null); setLoginError(''); }}
+        onSuccess={(name) => {
+          // Clear any active session so the newly registered user must log in fresh
+          localStorage.removeItem(LS_USER_KEY);
+          localStorage.removeItem(LS_FAMILY_ID);
+          localStorage.removeItem(LS_MEMBER_ID);
+          localStorage.removeItem(LS.MY_PERSON_ID);
+          localStorage.removeItem(LS_ACCOUNT_NAME);
+          setRegSuccess(name);
+          setShowRegister(false);
+        }}
+        onGoogleLogin={handleGoogleLogin}
+        googleError={loginError}
+        googleLoading={loginLoading}
       />
     );
   }
@@ -342,7 +479,8 @@ function App() {
       <LoginScreen
         onLogin={handleLogin}
         onGoogleLogin={handleGoogleLogin}
-        onRegister={() => setShowRegister(true)}
+        onRegister={() => { setShowRegister(true); setLoginError(''); }}
+        onForgotPassword={() => { setShowForgotPassword(true); setLoginError(''); }}
         success={registerSuccess ? '가입이 완료됐습니다. 아이디로 로그인하세요.' : undefined}
         error={loginError}
         loading={loginLoading}
@@ -414,11 +552,10 @@ function App() {
             <button className="header-ann-btn" onClick={() => setShowHelp(true)} title="사용 안내">❓</button>
           </div>
           <span className="header-username">{displayName}</span>
-          {installPrompt && (
-            <button className="header-install-btn" onClick={async () => {
-              (installPrompt as BeforeInstallPromptEvent).prompt();
-              setInstallPrompt(null);
-            }}>📲 설치</button>
+          {isIOSSafari && (
+            <button className="header-install-btn" onClick={() => setShowIOSInstall(true)}>
+              📲 설치
+            </button>
           )}
           <button className="header-logout" onClick={handleLogout}>로그아웃</button>
         </div>
@@ -452,6 +589,21 @@ function App() {
       {showHelp        && <HelpView        onClose={() => setShowHelp(false)} />}
       {showBackToast && (
         <div className="back-exit-toast">한 번 더 누르면 앱을 종료합니다</div>
+      )}
+      {showIOSInstall && (
+        <div className="ios-install-backdrop" onClick={() => setShowIOSInstall(false)}>
+          <div className="ios-install-guide" onClick={e => e.stopPropagation()}>
+            <button className="ios-install-close" onClick={() => setShowIOSInstall(false)}>✕</button>
+            <div className="ios-install-icon">📲</div>
+            <p className="ios-install-title">홈 화면에 추가</p>
+            <ol className="ios-install-steps">
+              <li>Safari 하단의 <strong>공유 버튼(□↑)</strong>을 누르세요</li>
+              <li>스크롤해서 <strong>홈 화면에 추가</strong>를 선택하세요</li>
+              <li>오른쪽 상단 <strong>추가</strong>를 눌러 완료하세요</li>
+            </ol>
+            <div className="ios-install-arrow-hint">↑ Safari 하단 공유 버튼</div>
+          </div>
+        </div>
       )}
     </div>
   );

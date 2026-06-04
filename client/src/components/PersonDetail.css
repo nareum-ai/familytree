@@ -117,44 +117,22 @@
 .edit-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
 }
 
-.edit-date-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.edit-date-row .edit-input {
-  flex: 1;
-}
-
-.edit-lunar-check {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.edit-avatar-remove-link {
+  display: block;
+  margin: 4px auto 0;
+  background: none;
+  border: none;
   font-size: 12px;
-  color: #4a5568;
-  white-space: nowrap;
+  color: #EF4444;
   cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  padding: 0;
 }
 
-.edit-lunar-check.sub {
-  margin-top: 6px;
-  color: #7f8c8d;
-  font-weight: 400;
-}
-
-.edit-deceased-check {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #4a5568;
-  cursor: pointer;
-}
 
 .deceased-mark {
   color: #555;
@@ -167,11 +145,19 @@
   color: #555;
 }
 
+.marriage-chip {
+  background: #FFF0F9;
+  color: #BE185D;
+}
+
+
 .detail-hex.deceased {
   filter: grayscale(60%);
 }
 
 .edit-input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 9px 12px;
   border: 1.5px solid #e0e0e0;
   border-radius: 8px;
@@ -191,10 +177,12 @@
 .edit-contact-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   border-top: 1px solid #f0f0f0;
-  padding-top: 12px;
-  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.edit-contact-group .form-field:last-child {
+  margin-bottom: 0;
 }
 
 .detail-contact {
@@ -232,33 +220,6 @@
   font-size: 14px;
 }
 
-.edit-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-sm {
-  flex: 1;
-  padding: 9px;
-  border-radius: 7px;
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-sm.cancel {
-  background: #f5f5f5;
-  color: #7f8c8d;
-}
-
-.btn-sm.save {
-  background: linear-gradient(135deg, #4F46E5, #7C3AED);
-  color: white;
-}
-
-.btn-sm.save:disabled { opacity: 0.5; }
 
 .detail-actions {
   display: flex;

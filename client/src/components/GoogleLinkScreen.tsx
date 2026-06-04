@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import type { Member } from '../types';
 import './GoogleLinkScreen.css';
+import './LoginScreen.css';
 
 interface Props {
   googleEmail: string;
@@ -66,9 +67,9 @@ export function GoogleLinkScreen({ googleEmail, displayName, onLinkedToExisting,
         ) : (
           <>
             <p className="glink-desc">기존 가계도 계정의 아이디와 비밀번호를 입력하세요.<br/>연결 후 구글로 로그인할 수 있습니다.</p>
-            <form className="glink-form" onSubmit={handleLink}>
+            <form className="login-form" onSubmit={handleLink}>
               <input
-                className="glink-input"
+                className="login-input"
                 type="text"
                 value={username}
                 onChange={e => setUser(e.target.value)}
@@ -77,14 +78,14 @@ export function GoogleLinkScreen({ googleEmail, displayName, onLinkedToExisting,
                 maxLength={30}
               />
               <input
-                className="glink-input"
+                className="login-input"
                 type="password"
                 value={password}
                 onChange={e => setPass(e.target.value)}
                 placeholder="비밀번호"
                 maxLength={50}
               />
-              {error && <p className="glink-error">{error}</p>}
+              {error && <p className="login-error">{error}</p>}
               <button
                 className="glink-btn primary"
                 type="submit"

@@ -4,12 +4,20 @@ import { getMessaging } from 'firebase-admin/messaging';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2';
+import { defineSecret } from 'firebase-functions/params';
+import * as nodemailer from 'nodemailer';
+
+const MAIL_USER = defineSecret('MAIL_USER');
+const MAIL_PASS = defineSecret('MAIL_PASS');
 
 initializeApp();
 setGlobalOptions({ region: 'asia-northeast3' });
 
 const db  = getFirestore();
 const fcm = getMessaging();
+
+const APP_URL  = 'https://familytree-3221b.web.app';
+const APP_NAME = '우리 가족 가계도';
 
 // ── FCM 전송 헬퍼 ─────────────────────────────────────────────────────────
 async function sendPush(token: string, title: string, body: string, link = '/') {
@@ -26,6 +34,99 @@ async function sendPush(token: string, title: string, body: string, link = '/') 
     // 만료 토큰 등 조용히 무시
   }
 }
+
+// ── 비밀번호 초기화 토큰 생성 → 이메일 자동 발송 ─────────────────────────────
+// contact_email 필드가 있으면 해당 주소로, 없으면 member.email로 발송
+// (자동: member.email 사용 / 관리자 승인: contact_email 사용)
+export const onPasswordResetTokenCreated = onDocumentCreated(
+  { document: 'password_reset_tokens/{docId}', secrets: [MAIL_USER, MAIL_PASS] },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    let toEmail = data.contact_email as string | undefined;
+    if (!toEmail) {
+      const memberSnap = await db.doc(`members/${data.member_id}`).get();
+      const personId = memberSnap.data()?.person_id as string | undefined;
+      if (personId) {
+        const personSnap = await db.doc(`persons/${personId}`).get();
+        toEmail = personSnap.data()?.email as string | undefined;
+      }
+    }
+    if (!toEmail) return;
+
+    const link = `${APP_URL}/reset/${data.token}`;
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: MAIL_USER.value(), pass: MAIL_PASS.value() },
+    });
+    await transporter.sendMail({
+      from:    `"${APP_NAME}" <${MAIL_USER.value()}>`,
+      to:      toEmail,
+      subject: `[${APP_NAME}] 비밀번호 초기화 링크`,
+      html:    `
+        <p>안녕하세요.</p>
+        <p>비밀번호 초기화 요청이 접수되었습니다.<br/>
+        아래 링크를 클릭하여 새 비밀번호를 설정하세요.</p>
+        <p><a href="${link}" style="color:#4F46E5;font-weight:bold">비밀번호 초기화하기</a></p>
+        <p>링크는 <strong>1시간</strong> 동안 유효합니다.<br/>
+        본인이 요청하지 않았다면 이 이메일을 무시하세요.</p>
+      `,
+    });
+  }
+);
+
+// 관리자 초기화 요청 → 관리자 FCM 알림
+export const onPasswordResetRequestCreated = onDocumentCreated(
+  'password_reset_requests/{docId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.status !== 'pending') return;
+
+    const adminsSnap = await db.collection('members')
+      .where('is_admin', '==', true)
+      .get();
+
+    const username = (data.username as string) ?? '누군가';
+    const sends = adminsSnap.docs
+      .map(d => d.data().fcm_token_admin as string | undefined)
+      .filter((t): t is string => !!t)
+      .map(token => sendPush(
+        token,
+        '🔑 비밀번호 초기화 요청',
+        `${username}님이 비밀번호 초기화를 요청했습니다.`,
+        '/'
+      ));
+
+    await Promise.all(sends);
+  }
+);
+
+// ── 가족그룹 신청 즉시 알림 (관리자) ─────────────────────────────────────────
+export const onApprovalRequestCreated = onDocumentCreated(
+  'approval_requests/{requestId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.status !== 'pending') return;
+
+    const adminsSnap = await db.collection('members')
+      .where('is_admin', '==', true)
+      .get();
+
+    const requesterName = (data.requested_name as string) ?? '누군가';
+    const sends = adminsSnap.docs
+      .map(d => d.data().fcm_token_admin as string | undefined)
+      .filter((t): t is string => !!t)
+      .map(token => sendPush(
+        token,
+        '📋 가족그룹 생성 신청',
+        `${requesterName}님이 가족그룹 생성을 신청했습니다.`,
+        '/'
+      ));
+
+    await Promise.all(sends);
+  }
+);
 
 // ── 정보공개 요청 즉시 알림 ─────────────────────────────────────────────────
 // Firestore 트리거: info_requests 문서 생성 시 1회 실행
@@ -87,36 +188,30 @@ function getChusu(personId: string, baseId: string, rels: Rel[]): number | null 
 
 // ── 기념일 알림 스케줄러 ──────────────────────────────────────────────────
 // 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
+// 개인 설정은 각 members 문서의 push_prefs 필드에서 읽음
 export const sendAnniversaryReminders = onSchedule(
   { schedule: '0 * * * *', timeZone: 'UTC' },
   async () => {
-    // ── 관리자 설정 로드 (없으면 기본값 사용) ─────────────────────────────
+    // 발송 시간만 전역 설정에서 읽음
     const settingsSnap = await db.doc('settings/push').get();
-    const cfg = settingsSnap.data() ?? {};
-    const sendHourKST: number   = typeof cfg.sendHourKST === 'number' ? cfg.sendHourKST : 8;
-    const offsets: number[]     = Array.isArray(cfg.offsets) ? cfg.offsets : [0, 1, 3, 7];
-    const maxChusu: number      = typeof cfg.maxChusu === 'number' ? cfg.maxChusu : 6;
-    const enableBirthday: boolean = cfg.enableBirthday !== false;
-    const enableDeathDay: boolean = cfg.enableDeathDay !== false;
+    const sendHourKST: number = typeof settingsSnap.data()?.sendHourKST === 'number'
+      ? (settingsSnap.data()!.sendHourKST as number) : 8;
 
-    // KST 기준 오늘 날짜
     const now = new Date();
     const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-
-    // 설정된 발송 시간이 아니면 종료
     if (kst.getUTCHours() !== sendHourKST) return;
 
     const todayY = kst.getUTCFullYear();
     const todayM = kst.getUTCMonth() + 1;
     const todayD = kst.getUTCDate();
 
-    // solarlunar로 각 offset의 음력 날짜 미리 계산
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const sl = require('solarlunar') as {
       solar2lunar: (y: number, m: number, d: number) => { lMonth: number; lDay: number };
     };
 
-    const checkDates = offsets.map(offset => {
+    // 가능한 4개 offset 전체 미리 계산
+    const allCheckDates = [0, 1, 3, 7].map(offset => {
       const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
       const m = d.getUTCMonth() + 1;
       const day = d.getUTCDate();
@@ -125,18 +220,36 @@ export const sendAnniversaryReminders = onSchedule(
       return { offset, solarM: m, solarD: day, lunarM: lunar.lMonth, lunarD: lunar.lDay };
     });
 
-    // FCM 토큰 있는 활성 일반 회원 목록 (가족별 그룹화)
-    const membersSnap = await db.collection('members')
-      .where('status', '==', 'active')
-      .get();
+    const DEFAULT_PREFS = {
+      enabled: true, offsets: [0, 1, 3, 7], maxChusu: 6,
+      enableBirthday: true, enableDeathDay: true,
+    };
 
-    // familyId → { memberId, personId, token }[]
-    const familyMap = new Map<string, { memberId: string; personId: string; token: string }[]>();
+    interface MemberEntry {
+      memberId: string; personId: string; token: string;
+      prefs: typeof DEFAULT_PREFS;
+    }
+
+    const membersSnap = await db.collection('members').where('status', '==', 'active').get();
+
+    const familyMap = new Map<string, MemberEntry[]>();
     for (const doc of membersSnap.docs) {
       const d = doc.data();
       if (!d.family_id || !d.fcm_token || !d.person_id || d.is_admin) continue;
+
+      // 개인 설정 읽기 (없으면 기본값)
+      const pp = (d.push_prefs as Record<string, unknown>) ?? {};
+      const prefs = {
+        enabled:       pp.enabled !== false,
+        offsets:       Array.isArray(pp.offsets) ? (pp.offsets as number[]) : DEFAULT_PREFS.offsets,
+        maxChusu:      typeof pp.maxChusu === 'number' ? pp.maxChusu : DEFAULT_PREFS.maxChusu,
+        enableBirthday: pp.enableBirthday !== false,
+        enableDeathDay: pp.enableDeathDay !== false,
+      };
+      if (!prefs.enabled) continue;
+
       const list = familyMap.get(d.family_id as string) ?? [];
-      list.push({ memberId: doc.id, personId: d.person_id as string, token: d.fcm_token as string });
+      list.push({ memberId: doc.id, personId: d.person_id as string, token: d.fcm_token as string, prefs });
       familyMap.set(d.family_id as string, list);
     }
 
@@ -145,7 +258,6 @@ export const sendAnniversaryReminders = onSchedule(
     const sends: Promise<void>[] = [];
 
     for (const [familyId, memberList] of familyMap) {
-      // 가족 인물 + 관계 로드
       const [personsSnap, relsSnap] = await Promise.all([
         db.collection('persons').where('family_id', '==', familyId).get(),
         db.collection('relationships').where('family_id', '==', familyId).get(),
@@ -154,8 +266,11 @@ export const sendAnniversaryReminders = onSchedule(
       const persons = personsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const rels    = relsSnap.docs.map(d => d.data() as Rel);
 
-      // 각 멤버 기준으로 6촌 이내 인물 필터 → 기념일 체크
       for (const member of memberList) {
+        const { prefs } = member;
+        const checkDates = allCheckDates.filter(cd => prefs.offsets.includes(cd.offset));
+        if (checkDates.length === 0) continue;
+
         for (const person of persons) {
           const p = person as {
             id: string; name: string;
@@ -164,20 +279,18 @@ export const sendAnniversaryReminders = onSchedule(
           };
 
           const chusu = getChusu(p.id, member.personId, rels);
-          if (chusu === null || chusu > maxChusu) continue;
+          if (chusu === null || chusu > prefs.maxChusu) continue;
 
           // ── 생일 체크 ────────────────────────────────────────────────────
-          if (enableBirthday && p.birth_date && !p.is_deceased) {
+          if (prefs.enableBirthday && p.birth_date && !p.is_deceased) {
             const [by, bm, bd] = p.birth_date.split('-').map(Number);
             for (const chk of checkDates) {
               const match = p.birth_lunar
                 ? (bm === chk.lunarM && bd === chk.lunarD)
                 : (bm === chk.solarM && bd === chk.solarD);
               if (!match) continue;
-
               const age = todayY - by;
-              let title = '';
-              let body  = '';
+              let title = '', body = '';
               if (chk.offset === 0) {
                 title = `🎂 ${p.name}님의 생일`;
                 body  = `오늘로 만 ${age}세! 가족들과 함께 축하해주세요.`;
@@ -193,16 +306,14 @@ export const sendAnniversaryReminders = onSchedule(
           }
 
           // ── 기일 체크 ────────────────────────────────────────────────────
-          if (enableDeathDay && p.death_date) {
+          if (prefs.enableDeathDay && p.death_date) {
             const [, dm, dd] = p.death_date.split('-').map(Number);
             for (const chk of checkDates) {
               const match = p.death_lunar
                 ? (dm === chk.lunarM && dd === chk.lunarD)
                 : (dm === chk.solarM && dd === chk.solarD);
               if (!match) continue;
-
-              let title = '';
-              let body  = '';
+              let title = '', body = '';
               if (chk.offset === 0) {
                 title = `🕯️ 오늘은 ${p.name}님의 기일`;
                 body  = '고인의 명복을 빕니다.';
@@ -225,9 +336,16 @@ export const sendAnniversaryReminders = onSchedule(
   }
 );
 
-// ── 접속 로그 정리 ───────────────────────────────────────────────────────────
-// 매월 1일 UTC 00:00 (KST 09:00) 실행
-// 1년(365일) 이전 login_logs 문서 일괄 삭제 — 배치 500개 제한 준수
+// ── 로그 정리 (접속 로그 + 활동 로그) ─────────────────────────────────────
+// 매월 1일 UTC 00:00 (KST 09:00) 실행 — 1년 이전 문서 일괄 삭제
+async function batchDelete(refs: FirebaseFirestore.DocumentReference[]) {
+  for (let i = 0; i < refs.length; i += 500) {
+    const batch = db.batch();
+    refs.slice(i, i + 500).forEach(r => batch.delete(r));
+    await batch.commit();
+  }
+}
+
 export const cleanupLoginLogs = onSchedule(
   { schedule: '0 0 1 * *', timeZone: 'UTC' },
   async () => {
@@ -235,30 +353,16 @@ export const cleanupLoginLogs = onSchedule(
     cutoff.setFullYear(cutoff.getFullYear() - 1);
     const cutoffIso = cutoff.toISOString();
 
-    const snap = await db.collection('login_logs')
-      .where('logged_in_at', '<', cutoffIso)
-      .get();
+    const [loginSnap, actSnap] = await Promise.all([
+      db.collection('login_logs').where('logged_in_at', '<', cutoffIso).get(),
+      db.collection('activity_logs').where('at', '<', cutoffIso).get(),
+    ]);
 
-    if (snap.empty) {
-      console.log('삭제할 오래된 접속 로그 없음');
-      return;
-    }
+    await Promise.all([
+      batchDelete(loginSnap.docs.map(d => d.ref)),
+      batchDelete(actSnap.docs.map(d => d.ref)),
+    ]);
 
-    // 500개 단위 배치 삭제
-    const chunks: FirebaseFirestore.DocumentReference[][] = [];
-    const refs = snap.docs.map(d => d.ref);
-    for (let i = 0; i < refs.length; i += 500) {
-      chunks.push(refs.slice(i, i + 500));
-    }
-
-    await Promise.all(
-      chunks.map(chunk => {
-        const batch = db.batch();
-        chunk.forEach(ref => batch.delete(ref));
-        return batch.commit();
-      })
-    );
-
-    console.log(`접속 로그 정리 완료: ${snap.size}건 삭제 (기준: ${cutoffIso})`);
+    console.log(`로그 정리 완료: 접속 ${loginSnap.size}건, 활동 ${actSnap.size}건 삭제`);
   }
 );

@@ -44,7 +44,7 @@ function HexAvatar({
       <div className="chex-shape-wrapper">
         <div className="chex-shape">
           {person.photo_url
-            ? <img src={person.photo_url} alt={person.name} className="chex-img" />
+            ? <div className="avatar-hex-inner"><img src={person.photo_url} alt={person.name} /></div>
             : <span className="chex-initial">{person.name[0]}</span>}
         </div>
       </div>

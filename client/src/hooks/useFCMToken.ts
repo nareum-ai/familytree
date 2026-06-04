@@ -1,40 +1,42 @@
 import { useEffect } from 'react';
-import { getToken, onMessage } from 'firebase/messaging';
+import { getToken } from 'firebase/messaging';
 import { getMessagingInstance } from '../lib/firebase';
 import { useFamilyStore } from '../store/familyStore';
 import { LS } from '../lib/storageKeys';
 
 const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
 
-/** PWA(홈 화면 설치)로 실행 중인지 감지 */
-function isPWA(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as { standalone?: boolean }).standalone === true
-  );
-}
 
 export function useFCMToken() {
   const { saveFcmToken } = useFamilyStore();
 
   // PWA에서만 알림 권한 요청 + 토큰 저장
   useEffect(() => {
-    const memberId = localStorage.getItem(LS.MEMBER_ID);
-    const isAdmin  = localStorage.getItem(LS.IS_ADMIN) === 'true';
-    if (!memberId || isAdmin || !isPWA()) return;
+    const memberId      = localStorage.getItem(LS.MEMBER_ID);
+    const isAdminReturn = localStorage.getItem(LS.ADMIN_RETURN) === 'true';
+    if (!memberId || isAdminReturn) return;
 
     const setup = async () => {
       const messaging = await getMessagingInstance();
       if (!messaging) return;
       try {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (Notification.permission === 'denied') return;
+        if (Notification.permission !== 'granted') {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') return;
+        }
         const swReg = await navigator.serviceWorker.ready;
         const token = await getToken(messaging, {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: swReg,
         });
-        if (token) await saveFcmToken(memberId, token);
+        if (!token) return;
+        const savedToken = localStorage.getItem(LS.FCM_TOKEN_SAVED);
+        if (savedToken === token) return;
+        const field = sessionStorage.getItem('_admin_pwa') === '1'
+          ? 'fcm_token_admin' : 'fcm_token';
+        await saveFcmToken(memberId, token, field);
+        localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
       } catch {
         // 지원 안되는 환경이거나 거부 — 조용히 무시
       }
@@ -45,19 +47,5 @@ export function useFCMToken() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 포그라운드 알림 (앱 열려있을 때)
-  useEffect(() => {
-    if (!isPWA()) return;
-    let unsub: (() => void) | undefined;
-    getMessagingInstance().then((messaging) => {
-      if (!messaging) return;
-      unsub = onMessage(messaging, (payload) => {
-        const { title = '알림', body = '' } = payload.notification ?? {};
-        if (Notification.permission === 'granted') {
-          new Notification(title, { body, icon: '/icons/icon-192.png' });
-        }
-      });
-    });
-    return () => unsub?.();
-  }, []);
+  // 포그라운드 알림 — 서비스워커가 처리하므로 별도 핸들러 불필요
 }

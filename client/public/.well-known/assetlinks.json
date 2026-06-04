@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.web.familytree_3221b.twa",
+    "sha256_cert_fingerprints": ["BF:02:6E:F2:B8:CF:AE:1F:6C:57:31:9E:19:5C:12:EF:2A:F1:E6:A1:81:94:83:74:94:E0:52:04:39:6F:1C:EF"]
+  }
+}]

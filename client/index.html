@@ -12,7 +12,55 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="우리가족가계도" />
-    <title>우리 가족 가계도</title>
+    <title>우리 가족 가계도 — 가족 관계를 한눈에</title>
+    <meta name="description" content="가족 관계를 한눈에 시각화하는 가계도 서비스. 생일·결혼기념일 자동 관리, 초대 링크로 가족 연결. 스마트폰에 앱처럼 설치해서 사용하세요." />
+    <meta name="keywords" content="가계도, 가족 가계도, 온라인 가계도, 가족 관계도, 족보, 가족 앱" />
+    <link rel="canonical" href="https://familytree-3221b.web.app/" />
+    <meta name="google-site-verification" content="HRC19aFfBBPijSyNlv3ChBy29C7hHW13cnE-p3fSOeQ" />
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://familytree-3221b.web.app/" />
+    <meta property="og:title"       content="우리 가족 가계도 — 가족 관계를 한눈에" />
+    <meta property="og:description" content="가족 관계를 한눈에 시각화하는 가계도 서비스. 생일·결혼기념일 자동 관리, 초대 링크로 가족 연결." />
+    <meta property="og:image"       content="https://familytree-3221b.web.app/icons/icon-512.png" />
+    <meta property="og:locale"      content="ko_KR" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="우리 가족 가계도 — 가족 관계를 한눈에" />
+    <meta name="twitter:description" content="가족 관계를 한눈에 시각화하는 가계도 서비스. 생일·결혼기념일 자동 관리, 초대 링크로 가족 연결." />
+    <meta name="twitter:image"       content="https://familytree-3221b.web.app/icons/icon-512.png" />
+    <!-- JSON-LD 구조화 데이터 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "우리 가족 가계도",
+      "url": "https://familytree-3221b.web.app/",
+      "description": "가족 관계를 한눈에 시각화하는 가계도 서비스. 생일·결혼기념일 자동 관리, 초대 링크로 가족 연결.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "inLanguage": "ko",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" }
+    }
+    </script>
+    <script>
+      // 관리자 PWA 감지 — manifest 교체 + sessionStorage 플래그 세팅
+      // React 모듈 로드 전에 실행되어야 함
+      (function() {
+        var isAdminPWA = new URLSearchParams(location.search).get('admin_pwa') === '1';
+        if (isAdminPWA) {
+          sessionStorage.setItem('_admin_pwa', '1');
+          var l = document.createElement('link');
+          l.rel = 'manifest'; l.href = '/admin-manifest.webmanifest';
+          document.head.appendChild(l);
+        } else if (sessionStorage.getItem('_admin_pwa') === '1') {
+          // 관리자 PWA에서 내부 탐색 중 (URL param 없어도 manifest 유지)
+          var l2 = document.createElement('link');
+          l2.rel = 'manifest'; l2.href = '/admin-manifest.webmanifest';
+          document.head.appendChild(l2);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

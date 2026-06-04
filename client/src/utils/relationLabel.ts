@@ -3,6 +3,20 @@ import { getGeneration } from '../hooks/useTreeLayout';
 
 type Gender = 'male' | 'female' | null;
 
+function ageCompare(a: Person, b: Person): 1 | -1 | 0 {
+  const ay = a.birth_year ?? (a.birth_date ? parseInt(a.birth_date) : 0);
+  const by_ = b.birth_year ?? (b.birth_date ? parseInt(b.birth_date) : 0);
+  if (ay && by_) {
+    if (ay < by_) return 1;
+    if (ay > by_) return -1;
+    if (a.birth_date && b.birth_date) {
+      if (a.birth_date < b.birth_date) return 1;
+      if (a.birth_date > b.birth_date) return -1;
+    }
+  }
+  return 0;
+}
+
 /** 나(base) 기준으로 target의 한국어 관계명 반환 */
 export function getRelationLabel(
   targetId: string,
@@ -81,9 +95,15 @@ export function getRelationLabel(
 
   // ── 형제자매 (같은 세대, 공통 부모) ───────────────────────────────────
   if (gen === 0 && sharedParent) {
-    return t === 'female'
-      ? (me === 'male' ? '누나/여동생' : '언니/여동생')
-      : (me === 'male' ? '형/남동생' : '오빠/남동생');
+    const cmp = ageCompare(target, base);
+    if (cmp < 0) return '동생'; // 나보다 어리면 성별 무관 동생
+    if (cmp > 0) {
+      if (t === 'female') return me === 'male' ? '누나' : '언니';
+      return me === 'female' ? '오빠' : '형';
+    }
+    // 나이 판별 불가 — 성별 기반 fallback
+    if (t === 'female') return me === 'male' ? '누나' : '언니';
+    return me === 'female' ? '오빠' : '형';
   }
 
   // ── 부모의 형제자매 (3촌: 삼촌/고모/이모/외삼촌) ───────────────────────
@@ -144,8 +164,65 @@ export function getRelationLabel(
     }
   }
 
+  // ── 형제자매의 배우자 (매형/매제/형부/제부/형수/제수/올케) ──────────────
+  if (gen === 0) {
+    const mySiblingIds = new Set(
+      myParentIds.flatMap(pid =>
+        rels.filter(r => r.type === 'parent_child' && r.person1_id === pid)
+            .map(r => r.person2_id)
+      ).filter(id => id !== base.id)
+    );
+    for (const sibId of mySiblingIds) {
+      const isSpouseOfSib = rels.some(r =>
+        r.type === 'spouse' && (
+          (r.person1_id === sibId && r.person2_id === targetId) ||
+          (r.person2_id === sibId && r.person1_id === targetId)
+        )
+      );
+      if (!isSpouseOfSib) continue;
+      const sib = persons.find(p => p.id === sibId);
+      if (!sib) continue;
+      const cmp = ageCompare(sib, base);
+      const sibOlder = cmp >= 0; // 나이 불명 시 연상으로 폴백
+      if (me === 'male') {
+        if (sib.gender === 'female' && t === 'male')   return sibOlder ? '매형' : '매제';
+        if (sib.gender === 'male'   && t === 'female') return sibOlder ? '형수' : '제수';
+      }
+      if (me === 'female') {
+        if (sib.gender === 'female' && t === 'male')   return sibOlder ? '형부' : '제부';
+        if (sib.gender === 'male'   && t === 'female') return '올케';
+      }
+    }
+  }
+
+  // ── 배우자의 형제자매 (처남/처제/처형/시아주버니/시동생/시누이) ─────────
+  if (gen === 0) {
+    const mySpouseIds = rels
+      .filter(r => r.type === 'spouse' && (r.person1_id === base.id || r.person2_id === base.id))
+      .map(r => r.person1_id === base.id ? r.person2_id : r.person1_id);
+    for (const sid of mySpouseIds) {
+      const spouseParentIds = rels
+        .filter(r => r.type === 'parent_child' && r.person2_id === sid)
+        .map(r => r.person1_id);
+      const isSpouseSibling = spouseParentIds.some(sp =>
+        rels.some(r => r.type === 'parent_child' && r.person1_id === sp && r.person2_id === targetId)
+      );
+      if (!isSpouseSibling) continue;
+      const spouse = persons.find(p => p.id === sid);
+      const cmp = ageCompare(target, spouse!);
+      if (me === 'male' && spouse?.gender === 'female') {
+        if (t === 'male') return '처남';
+        return cmp >= 0 ? '처형' : '처제';
+      }
+      if (me === 'female' && spouse?.gender === 'male') {
+        if (t === 'female') return '시누이';
+        return cmp >= 0 ? '시아주버니' : '시동생';
+      }
+    }
+  }
+
   // ── 세대 방향 힌트 폴백 ───────────────────────────────────────────────
   if (gen > 0) return `${gen}세대 위`;
   if (gen < 0) return `${-gen}세대 아래`;
-  return '동년배';
+  return '';
 }

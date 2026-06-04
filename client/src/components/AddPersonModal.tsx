@@ -2,11 +2,13 @@ import { useState } from 'react';
 import type { Person, AddRelationType } from '../types';
 import { useFamilyStore } from '../store/familyStore';
 import { DateInput } from './DateInput';
+import { AvatarPicker } from './AvatarPicker';
 import './AddPersonModal.css';
 
 interface Props {
   targetPerson: Person;
   onClose: () => void;
+  onDone?: () => void;
 }
 
 const ALL_OPTIONS: { type: AddRelationType; label: string; desc: string; genderHint?: 'male' | 'female' }[] = [
@@ -17,11 +19,13 @@ const ALL_OPTIONS: { type: AddRelationType; label: string; desc: string; genderH
   { type: 'child',   label: '자녀',     desc: '아들 / 딸' },
 ];
 
-export function AddPersonModal({ targetPerson, onClose }: Props) {
+export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
   const { persons, relationships, addPerson, addRelationship } = useFamilyStore();
 
   const [relationType, setRelationType] = useState<AddRelationType>('child');
   const [name, setName] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [birthDate, setBirthDate] = useState('');
   const [birthLunar, setBirthLunar] = useState(false);
   const [gender, setGender] = useState<'male' | 'female'>('male');
@@ -39,9 +43,13 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
     r.type === 'parent_child' && r.person2_id === targetPerson.id &&
     persons.find(p => p.id === r.person1_id)?.gender === 'female'
   );
-  const hasSpouse = relationships.some(r =>
-    r.type === 'spouse' && (r.person1_id === targetPerson.id || r.person2_id === targetPerson.id)
-  );
+  const hasSpouse = relationships.some(r => {
+    if (r.type !== 'spouse') return false;
+    if (r.person1_id !== targetPerson.id && r.person2_id !== targetPerson.id) return false;
+    // 배우자 person이 실제 존재할 때만 버튼 숨김 (삭제 후 고아 관계 문서 방어)
+    const spouseId = r.person1_id === targetPerson.id ? r.person2_id : r.person1_id;
+    return persons.some(p => p.id === spouseId);
+  });
   const hasParents = relationships.some(r =>
     r.type === 'parent_child' && r.person2_id === targetPerson.id
   );
@@ -64,6 +72,7 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
 
       const newPerson = await addPerson({
         name: name.trim(),
+        photo_url: photoUrl,
         birth_date: birthDate || null,
         birth_lunar: birthLunar,
         gender: resolvedGender,
@@ -133,7 +142,7 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
           await addRelationship({ person1_id: pid, person2_id: newPerson.id, type: 'parent_child' });
         }
       }
-      onClose();
+      (onDone ?? onClose)();
     } finally {
       setSaving(false);
     }
@@ -169,6 +178,15 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
               ))}
             </div>
 
+            <div className="avatar-selector-wrap">
+              <button type="button" className="avatar-selector-btn" onClick={() => setShowAvatarPicker(true)}>
+                {photoUrl
+                  ? <img src={photoUrl} alt="아바타" className="avatar-preview" />
+                  : <span className="avatar-placeholder">👤</span>}
+                <span className="avatar-edit-badge">✏️</span>
+              </button>
+            </div>
+
             <div className="form-field">
               <label>이름</label>
               <input
@@ -183,15 +201,17 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
 
             <div className="form-field">
               <label>생년월일 (선택)</label>
-              <DateInput
-                value={birthDate}
-                onChange={setBirthDate}
-                max={new Date().toISOString().split('T')[0]}
-              />
-              <label className="lunar-check sub">
-                <input type="checkbox" checked={birthLunar} onChange={e => setBirthLunar(e.target.checked)} />
-                음력으로 입력
-              </label>
+              <div className="date-row">
+                <DateInput
+                  value={birthDate}
+                  onChange={setBirthDate}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+                <label className="lunar-check">
+                  <input type="checkbox" checked={birthLunar} onChange={e => setBirthLunar(e.target.checked)} />
+                  음력
+                </label>
+              </div>
             </div>
 
             {showGenderPicker && (
@@ -216,15 +236,17 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
             {isDeceased && (
               <div className="form-field">
                 <label>기일 / 사망일 (선택)</label>
-                <DateInput
-                  value={deathDate}
-                  onChange={setDeathDate}
-                  max={new Date().toISOString().split('T')[0]}
-                />
-                <label className="lunar-check sub">
-                  <input type="checkbox" checked={deathLunar} onChange={e => setDeathLunar(e.target.checked)} />
-                  음력으로 입력
-                </label>
+                <div className="date-row">
+                  <DateInput
+                    value={deathDate}
+                    onChange={setDeathDate}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                  <label className="lunar-check">
+                    <input type="checkbox" checked={deathLunar} onChange={e => setDeathLunar(e.target.checked)} />
+                    음력
+                  </label>
+                </div>
               </div>
             )}
 
@@ -237,6 +259,13 @@ export function AddPersonModal({ targetPerson, onClose }: Props) {
           </form>
         )}
       </div>
+      {showAvatarPicker && (
+        <AvatarPicker
+          current={photoUrl}
+          onSelect={url => setPhotoUrl(url)}
+          onClose={() => setShowAvatarPicker(false)}
+        />
+      )}
     </div>
   );
 }

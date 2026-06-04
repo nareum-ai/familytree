@@ -99,17 +99,19 @@
   display: flex; flex-direction: column; gap: 8px;
 }
 .help-steps li {
-  display: flex; align-items: flex-start; gap: 10px;
+  position: relative;
+  padding-left: 32px;
   font-size: 13px; color: #4a5568; line-height: 1.6;
+  min-height: 24px;
 }
 .step-num {
-  flex-shrink: 0;
+  position: absolute;
+  left: 0; top: 1px;
   width: 22px; height: 22px;
   background: #4F46E5; color: white;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 800;
-  margin-top: 1px;
 }
 
 .help-tip {
@@ -133,6 +135,10 @@
   display: flex; gap: 12px; align-items: flex-start;
   margin: 10px 0;
 }
+.help-sub > div {
+  flex: 1;
+  min-width: 0;
+}
 .help-sub-icon {
   flex-shrink: 0;
   font-size: 20px;
@@ -141,26 +147,64 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 800; color: #4F46E5;
 }
-.help-sub b { font-size: 13px; color: #1a2e3b; display: block; margin-bottom: 3px; }
+.help-sub > div > b { font-size: 13px; color: #1a2e3b; display: block; margin-bottom: 3px; }
 .help-sub p { font-size: 12px; color: #6b7c93; line-height: 1.6; margin: 0; }
 
-/* 기념일 뱃지 샘플 */
-.badge-sample {
+/* 노드 색상 점 */
+.help-node-dot {
   display: inline-block;
-  padding: 1px 8px; border-radius: 20px;
-  font-size: 11px; font-weight: 700;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  vertical-align: middle;
   margin-right: 4px;
+  flex-shrink: 0;
 }
-.today-s  { background: #e53e3e; color: white; }
-.soon-s   { background: #f6ad55; color: white; }
-.near-s   { background: #68d391; color: white; }
+.help-node-dot.male     { background: #0EA5E9; }
+.help-node-dot.female   { background: #EC4899; }
+.help-node-dot.me       { background: #4F46E5; }
+.help-node-dot.deceased { background: #7BA8C0; filter: grayscale(65%) brightness(0.85); }
+.help-node-dot.anon     { background: linear-gradient(135deg, #CBD5E1, #94A3B8); }
 
-.badge-dot-sample {
+.help-node-badge {
   display: inline-block;
-  width: 10px; height: 10px;
-  background: #e53e3e; border-radius: 50%;
+  background: #F97316; color: white;
+  font-size: 9px; font-weight: 800;
+  border-radius: 50%; width: 16px; height: 16px;
+  line-height: 16px; text-align: center;
   vertical-align: middle; margin: 0 2px;
 }
+
+/* 소제목 */
+.help-label {
+  display: block;
+  font-size: 12px; font-weight: 700;
+  color: #4F46E5;
+  margin: 14px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* 기념일 뱃지 그리드 */
+.help-badge-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 8px 0 12px;
+}
+.help-badge-desc { font-size: 12px; color: #64748B; }
+
+/* 기념일 뱃지 샘플 — 실제 색상 */
+.badge-sample {
+  display: inline-block;
+  padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  white-space: nowrap;
+}
+.ann-today { background: #e74c3c; color: white; }
+.ann-soon  { background: #e67e22; color: white; }
+.ann-near  { background: #4F46E5; color: white; }
+.ann-far   { background: #f0f4f8; color: #64748B; }
 
 /* ── 푸터 ────────────────────────────────────────────────── */
 .help-footer {

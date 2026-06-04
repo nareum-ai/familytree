@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
-import { classifyBranch, getChusu } from '../hooks/useTreeLayout';
+import { classifyBranch, canSeeFull, getChusu } from '../hooks/useTreeLayout';
 import { getRelationLabel } from '../utils/relationLabel';
+import { LS } from '../lib/storageKeys';
 import type { BranchType } from '../types';
 import './SearchView.css';
 
@@ -10,11 +11,12 @@ interface Props {
 }
 
 export function SearchView({ onClose }: Props) {
-  const { persons, relationships, viewpointPersonId, requestFocus } = useFamilyStore();
+  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds } = useFamilyStore();
   const [query, setQuery] = useState('');
 
   const root     = persons.find(p => p.is_root === 1);
   const chusuBase = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
+  const currentUserName = localStorage.getItem(LS.ACCOUNT_NAME) ?? localStorage.getItem(LS.USER_NAME);
 
   // AnniversaryView와 동일: 접근 가능한 브랜치에 속한 사람만 표시
   const accessibleBranches = useMemo((): BranchType[] => {
@@ -29,9 +31,10 @@ export function SearchView({ onClose }: Props) {
   const visiblePersons = useMemo(() =>
     persons.filter(p => {
       const branches = classifyBranch(p.id, persons, relationships);
-      return branches.some(b => (accessibleBranches as string[]).includes(b));
+      if (!branches.some(b => (accessibleBranches as string[]).includes(b))) return false;
+      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships);
     }),
-  [persons, relationships, accessibleBranches]);
+  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds]);
 
   const results = useMemo(() => {
     const base = visiblePersons;

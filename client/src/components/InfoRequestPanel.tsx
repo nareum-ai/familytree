@@ -8,8 +8,7 @@ interface Props {
 }
 
 export function InfoRequestPanel({ personId, onClose }: Props) {
-  const { createInfoRequest, persons } = useFamilyStore();
-  const targetName = persons.find(p => p.id === personId)?.name ?? '이 인물';
+  const { createInfoRequest } = useFamilyStore();
   const [sent, setSent]     = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -44,8 +43,8 @@ export function InfoRequestPanel({ personId, onClose }: Props) {
             정보공개를 요청하면 권한자에게 알림이 전송됩니다.
           </p>
           <p className="irp-notice">
-            ℹ️ <strong>{targetName}</strong>의 정보를 공유받으면,<br />
-            나의 정보도 <strong>{targetName}</strong>에게 공유됩니다.
+            ℹ️ <strong>권한자</strong>의 정보를 공유받으면,<br />
+            나의 정보도 <strong>권한자</strong>에게 공유됩니다.
           </p>
           <button
             className="irp-request-btn"

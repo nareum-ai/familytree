@@ -19,6 +19,7 @@ import { parseKoreanName } from '../utils/nameParser';
 import { hashPassword } from '../utils/crypto';
 import type { Member } from '../types';
 import { LS } from '../lib/storageKeys';
+import { getChusu } from '../hooks/useTreeLayout';
 
 const LS_USER_KEY     = LS.USER_NAME;
 const LS_FAMILY_ID    = LS.FAMILY_ID;
@@ -46,6 +47,7 @@ interface FamilyState {
   updatePerson: (id: string, data: Partial<Person>) => Promise<Person>;
   deletePerson: (id: string) => Promise<void>;
   addRelationship: (data: { person1_id: string; person2_id: string; type: string }) => Promise<Relationship>;
+  updateRelationship: (id: string, data: Partial<Pick<Relationship, 'marriage_date' | 'marriage_lunar'>>) => Promise<void>;
   deleteRelationshipsByPerson: (personId: string) => Promise<void>;
   selectPerson: (id: string | null) => void;
   createInvite: (person_id: string) => Promise<string>;
@@ -66,8 +68,11 @@ interface FamilyState {
   registerWithGoogle: (googleUid: string, googleEmail: string, displayName: string) => Promise<Member>;
   linkGoogleToMember: (memberId: string, googleUid: string, googleEmail: string) => Promise<{ ok: boolean; error?: string }>;
   unlinkGoogleFromMember: (memberId: string) => Promise<void>;
-  saveFcmToken: (memberId: string, token: string) => Promise<void>;
+  saveFcmToken: (memberId: string, token: string, field?: string) => Promise<void>;
   recordLogin: (memberId: string) => Promise<void>;
+  requestPasswordReset: (username: string, personName: string, birthDate: string, email: string) => Promise<{ ok: boolean; notFound?: boolean }>;
+  resetPasswordWithToken: (token: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
+  requestAdminPasswordReset: (username: string, personName: string, contactEmail: string, message?: string) => Promise<void>;
 
   submitFamilyGroupRequest: (
     realName: string, description: string,
@@ -78,14 +83,19 @@ interface FamilyState {
 
   // 어드민 전용
   loadApprovalRequests: () => Promise<ApprovalRequest[]>;
+  loadPasswordResetRequests: () => Promise<import('../types').PasswordResetRequest[]>;
+  approvePasswordResetRequest: (requestId: string, username: string, contactEmail: string) => Promise<void>;
+  rejectPasswordResetRequest: (requestId: string) => Promise<void>;
   listMembers: () => Promise<Member[]>;
   mapMemberToPerson: (memberId: string, personId: string, familyId: string, personName: string) => Promise<void>;
+  consumeInviteToken: (token: string) => Promise<void>;
   deleteMember: (memberId: string) => Promise<void>;
   isPersonMapped: (personId: string) => Promise<boolean>;
   approveRequest: (requestId: string, requestedName: string) => Promise<string>;
   rejectRequest: (requestId: string) => Promise<void>;
-  listFamilies: () => Promise<Array<{ familyId: string; rootName: string; createdAt: string; disabled: boolean; rootPersonId: string }>>;
+  listFamilies: () => Promise<Array<{ familyId: string; rootName: string; createdAt: string; disabled: boolean; rootPersonId: string; personCount: number }>>;
   toggleFamilyStatus: (rootPersonId: string, disabled: boolean) => Promise<void>;
+  isFamilyDisabled: (familyId: string) => Promise<boolean>;
   deleteFamily: (familyId: string) => Promise<void>;
   switchToFamily: (familyId: string) => void;
 }
@@ -322,6 +332,11 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       memo:        personData.memo   ?? null,
     };
     const ref = await addDoc(collection(db, 'persons'), fields);
+    const actorName = localStorage.getItem(LS_USER_KEY) ?? '알 수 없음';
+    addDoc(collection(db, 'activity_logs'), {
+      at: new Date().toISOString(), action: 'add',
+      person_name: name, actor_name: actorName, family_id: familyId,
+    }).catch(() => {});
     return { ...fields, id: ref.id } as Person;
   },
 
@@ -339,16 +354,32 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   },
 
   deletePerson: async (id) => {
+    const person = get().persons.find(p => p.id === id);
     await deleteDoc(doc(db, 'persons', id));
     await get().deleteRelationshipsByPerson(id);
+    if (person) {
+      const actorName = localStorage.getItem(LS_USER_KEY) ?? '알 수 없음';
+      addDoc(collection(db, 'activity_logs'), {
+        at: new Date().toISOString(), action: 'delete',
+        person_name: person.name, actor_name: actorName,
+        family_id: get().currentFamilyId ?? 'main',
+      }).catch(() => {});
+    }
     set(s => ({ selectedPersonId: s.selectedPersonId === id ? null : s.selectedPersonId }));
   },
 
   deleteRelationshipsByPerson: async (personId) => {
-    const rels = get().relationships.filter(
+    // 로컬 상태 + Firestore 직접 쿼리 병행 — 타이밍 이슈로 로컬에 없는 관계도 삭제
+    const localRels = get().relationships.filter(
       r => r.person1_id === personId || r.person2_id === personId
     );
-    await Promise.all(rels.map(r => deleteDoc(doc(db, 'relationships', r.id))));
+    const [snap1, snap2] = await Promise.all([
+      getDocs(query(collection(db, 'relationships'), where('person1_id', '==', personId))),
+      getDocs(query(collection(db, 'relationships'), where('person2_id', '==', personId))),
+    ]);
+    const firestoreIds = new Set([...snap1.docs, ...snap2.docs].map(d => d.id));
+    localRels.forEach(r => firestoreIds.add(r.id));
+    await Promise.all([...firestoreIds].map(id => deleteDoc(doc(db, 'relationships', id))));
   },
 
   addRelationship: async (relData) => {
@@ -363,6 +394,10 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       type: relData.type as Relationship['type'],
       family_id: familyId,
     };
+  },
+
+  updateRelationship: async (id, data) => {
+    await updateDoc(doc(db, 'relationships', id), data as Record<string, unknown>);
   },
 
   requestFocus: (personId, branchId) => set({ focusRequest: { personId, branchId } }),
@@ -410,8 +445,31 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     const memberSnap = await getDoc(doc(db, 'members', memberId));
     const requesterPersonId = (memberSnap.data()?.person_id as string | null) ?? null;
 
-    const { persons } = get();
+    const { persons, relationships } = get();
     const target = persons.find(p => p.id === targetPersonId);
+
+    // 2촌 이내(배우자 포함) → 자동 승인
+    if (requesterPersonId) {
+      const requesterPerson = persons.find(p => p.id === requesterPersonId);
+      if (requesterPerson) {
+        const chusu = getChusu(targetPersonId, requesterPerson, relationships);
+        if (chusu !== null && chusu <= 2) {
+          const accessSnap = await getDocs(
+            query(collection(db, 'info_access'), where('requester_member_id', '==', memberId))
+          );
+          if (!accessSnap.docs.some(d => d.data().person_id === targetPersonId)) {
+            await addDoc(collection(db, 'info_access'), {
+              requester_member_id: memberId,
+              person_id:           targetPersonId,
+              granted_at:          new Date().toISOString(),
+            });
+            const { grantedPersonIds } = get();
+            set({ grantedPersonIds: new Set([...grantedPersonIds, targetPersonId]) });
+          }
+          return true;
+        }
+      }
+    }
 
     let holderMemberId: string | null = null;
     let holderName = '';
@@ -574,7 +632,6 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   // ── 회원 인증 ──────────────────────────────────────────────────────────────
 
   registerMember: async (username, password) => {
-    // 중복 체크
     const dup = await getDocs(
       query(collection(db, 'members'), where('username', '==', username))
     );
@@ -603,6 +660,69 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     if (snap.empty) return null;
     const d = snap.docs[0];
     return { id: d.id, ...(d.data() as Omit<Member, 'id'>) };
+  },
+
+  requestPasswordReset: async (username, personName, birthDate, email) => {
+    const snap = await getDocs(
+      query(collection(db, 'members'), where('username', '==', username))
+    );
+    if (snap.empty) return { ok: false, notFound: true };
+    const memberDoc = snap.docs[0];
+    const data = memberDoc.data();
+    const nameMatch = (data.person_name ?? '') === personName;
+    if (!nameMatch) return { ok: false, notFound: false };
+
+    // 생년월일/이메일은 연결된 persons 문서에서 확인
+    if (!data.person_id) return { ok: false, notFound: false };
+    const personSnap = await getDoc(doc(db, 'persons', data.person_id as string));
+    if (!personSnap.exists()) return { ok: false, notFound: false };
+    const pd = personSnap.data();
+    const bdMatch    = (pd.birth_date ?? '') === birthDate;
+    const emailMatch = (pd.email ?? '') === email;
+    if (!bdMatch || !emailMatch) return { ok: false, notFound: false };
+
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1시간
+    await addDoc(collection(db, 'password_reset_tokens'), {
+      member_id:  memberDoc.id,
+      token,
+      expires_at: expiresAt,
+      used:       false,
+      created_at: new Date().toISOString(),
+    });
+    // 이메일 발송은 Firebase Function이 Firestore 트리거로 처리
+    return { ok: true };
+  },
+
+  resetPasswordWithToken: async (token, newPassword) => {
+    const snap = await getDocs(
+      query(collection(db, 'password_reset_tokens'),
+        where('token', '==', token),
+        where('used', '==', false))
+    );
+    if (snap.empty) return { ok: false, error: '유효하지 않은 링크입니다.' };
+    const tokenDoc = snap.docs[0];
+    const data = tokenDoc.data();
+    if (new Date(data.expires_at as string) < new Date()) {
+      return { ok: false, error: '만료된 링크입니다. 다시 요청해주세요.' };
+    }
+    const pw = await hashPassword(newPassword);
+    await Promise.all([
+      updateDoc(doc(db, 'members', data.member_id as string), { password_hash: pw }),
+      updateDoc(tokenDoc.ref, { used: true }),
+    ]);
+    return { ok: true };
+  },
+
+  requestAdminPasswordReset: async (username, personName, contactEmail, message) => {
+    await addDoc(collection(db, 'password_reset_requests'), {
+      username,
+      person_name:   personName,
+      contact_email: contactEmail,
+      message:       message ?? null,
+      status:        'pending',
+      created_at:    new Date().toISOString(),
+    });
   },
 
   ensureAdminAccount: async () => {
@@ -682,8 +802,15 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     await updateDoc(doc(db, 'members', memberId), { google_uid: null, google_email: null });
   },
 
-  saveFcmToken: async (memberId, token) => {
-    await updateDoc(doc(db, 'members', memberId), { fcm_token: token });
+  saveFcmToken: async (memberId, token, field = 'fcm_token') => {
+    // 같은 토큰이 다른 멤버에 등록돼 있으면 제거
+    const dup = await getDocs(
+      query(collection(db, 'members'), where(field, '==', token))
+    );
+    for (const d of dup.docs) {
+      if (d.id !== memberId) await updateDoc(doc(db, 'members', d.id), { [field]: null });
+    }
+    await updateDoc(doc(db, 'members', memberId), { [field]: token });
   },
 
   recordLogin: async (memberId) => {
@@ -722,6 +849,17 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   submitFamilyGroupRequest: async (realName, description, gender, birthDate, birthLunar) => {
     const memberId       = localStorage.getItem(LS_MEMBER_ID);
     const memberUsername = localStorage.getItem(LS_USER_KEY);
+    if (!memberId) return;
+
+    // 이미 family_id가 있는 계정은 신청 불가 (루트 계정 포함)
+    const memberSnap = await getDoc(doc(db, 'members', memberId));
+    if (memberSnap.data()?.family_id) return;
+
+    // 대기 중인 신청이 있으면 중복 삽입 방지 (pending·approved 모두 포함)
+    const existing = await getDocs(query(collection(db, 'approval_requests'),
+      where('member_id', '==', memberId)
+    ));
+    if (existing.docs.some(d => ['pending', 'approved'].includes(d.data().status))) return;
     await addDoc(collection(db, 'approval_requests'), {
       requested_name:  realName,
       description,
@@ -742,6 +880,44 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       query(collection(db, 'approval_requests'), where('status', '==', 'pending'))
     );
     return snap.docs.map(d => ({ id: d.id, ...d.data() })) as ApprovalRequest[];
+  },
+
+  loadPasswordResetRequests: async () => {
+    const snap = await getDocs(
+      query(collection(db, 'password_reset_requests'), where('status', '==', 'pending'))
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })) as import('../types').PasswordResetRequest[];
+  },
+
+  approvePasswordResetRequest: async (requestId, username, contactEmail) => {
+    const memberSnap = await getDocs(
+      query(collection(db, 'members'), where('username', '==', username))
+    );
+    if (memberSnap.empty) throw new Error('member not found');
+    const memberId = memberSnap.docs[0].id;
+    const token    = uuidv4();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    await Promise.all([
+      addDoc(collection(db, 'password_reset_tokens'), {
+        member_id:     memberId,
+        token,
+        expires_at:    expiresAt,
+        used:          false,
+        contact_email: contactEmail,
+        created_at:    new Date().toISOString(),
+      }),
+      updateDoc(doc(db, 'password_reset_requests', requestId), {
+        status:      'approved',
+        reviewed_at: new Date().toISOString(),
+      }),
+    ]);
+  },
+
+  rejectPasswordResetRequest: async (requestId) => {
+    await updateDoc(doc(db, 'password_reset_requests', requestId), {
+      status:      'rejected',
+      reviewed_at: new Date().toISOString(),
+    });
   },
 
   approveRequest: async (requestId, requestedName) => {
@@ -813,6 +989,13 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   },
 
   mapMemberToPerson: async (memberId, personId, familyId, personName) => {
+    // 다른 계정이 이미 이 person_id에 매핑돼 있으면 거부
+    const existingSnap = await getDocs(
+      query(collection(db, 'members'), where('person_id', '==', personId))
+    );
+    const alreadyMapped = existingSnap.docs.some(d => d.id !== memberId);
+    if (alreadyMapped) throw new Error('ALREADY_MAPPED');
+
     await updateDoc(doc(db, 'members', memberId), {
       person_id:   personId,
       family_id:   familyId,
@@ -843,6 +1026,13 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     }
   },
 
+  consumeInviteToken: async (token: string) => {
+    const snap = await getDocs(
+      query(collection(db, 'invites'), where('token', '==', token))
+    );
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+  },
+
   deleteMember: async (memberId: string) => {
     await deleteDoc(doc(db, 'members', memberId));
   },
@@ -855,12 +1045,18 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   },
 
   listFamilies: async () => {
-    const snap = await getDocs(
-      query(collection(db, 'persons'), where('is_root', '==', 1))
-    );
+    const [rootSnap, allSnap] = await Promise.all([
+      getDocs(query(collection(db, 'persons'), where('is_root', '==', 1))),
+      getDocs(collection(db, 'persons')),
+    ]);
+    const countByFamily = new Map<string, number>();
+    for (const d of allSnap.docs) {
+      const fid = (d.data().family_id as string) ?? 'main';
+      countByFamily.set(fid, (countByFamily.get(fid) ?? 0) + 1);
+    }
     const seen = new Set<string>();
-    const result: Array<{ familyId: string; rootName: string; createdAt: string; disabled: boolean; rootPersonId: string }> = [];
-    for (const d of snap.docs) {
+    const result: Array<{ familyId: string; rootName: string; createdAt: string; disabled: boolean; rootPersonId: string; personCount: number }> = [];
+    for (const d of rootSnap.docs) {
       const fid = (d.data().family_id as string) ?? 'main';
       if (!seen.has(fid)) {
         seen.add(fid);
@@ -870,6 +1066,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
           createdAt: d.data().created_at as string,
           disabled: !!(d.data().family_disabled),
           rootPersonId: d.id,
+          personCount: countByFamily.get(fid) ?? 0,
         });
       }
     }
@@ -878,6 +1075,16 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
 
   toggleFamilyStatus: async (rootPersonId: string, disabled: boolean) => {
     await updateDoc(doc(db, 'persons', rootPersonId), { family_disabled: disabled });
+  },
+
+  isFamilyDisabled: async (familyId: string): Promise<boolean> => {
+    const snap = await getDocs(
+      query(collection(db, 'persons'),
+        where('family_id', '==', familyId),
+        where('is_root', '==', 1))
+    );
+    if (snap.empty) return false;
+    return !!(snap.docs[0].data().family_disabled);
   },
 
   deleteFamily: async (familyId: string) => {

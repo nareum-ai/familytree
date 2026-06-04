@@ -175,6 +175,47 @@
 .my-google-unlink-btn:hover:not(:disabled) { background: #fee2e2; }
 .my-google-unlink-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* 알림 설정 */
+.my-push-section { display: flex; flex-direction: column; gap: 18px; }
+
+.my-push-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.my-push-toggle-row { padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; }
+
+.my-push-label { font-size: 13px; font-weight: 600; color: #1a2e3b; flex-shrink: 0; }
+
+.my-push-toggle {
+  padding: 5px 16px; border-radius: 20px; border: 2px solid #e0e0e0;
+  background: #f1f5f9; color: #94a3b8; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.my-push-toggle.on {
+  background: #4F46E5; border-color: #4F46E5; color: white;
+}
+
+.my-push-group { display: flex; flex-direction: column; gap: 8px; }
+
+.my-push-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.my-push-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: #f1f5f9; border: 1.5px solid #e0e0e0;
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 13px; font-weight: 600; color: #64748b;
+  cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.my-push-chip.on { background: #EEF2FF; border-color: #4F46E5; color: #4F46E5; }
+.my-push-chip.dim { opacity: 0.4; cursor: not-allowed; }
+.my-push-chip input { display: none; }
+
+.my-push-select {
+  padding: 7px 10px; border: 1.5px solid #e0e0e0; border-radius: 8px;
+  font-size: 13px; background: white; cursor: pointer; outline: none;
+}
+.my-push-select:focus { border-color: #4F46E5; }
+.my-push-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* 탈퇴·문의 푸터 */
 .my-contact-footer {
   border-top: 1px solid #F1F5F9;
@@ -204,3 +245,19 @@
   display: inline-block;
 }
 .my-contact-email:hover { text-decoration: underline; }
+
+.my-fcm-debug {
+  margin-top: 20px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.8;
+}
+.my-fcm-debug-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #1a2e3b;
+}

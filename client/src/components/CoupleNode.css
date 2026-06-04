@@ -86,15 +86,16 @@
 }
 
 .chex-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #2c3e50;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1A2E;
   margin-top: 6px;
   text-align: center;
   max-width: 64px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: 'Pretendard Variable', sans-serif;
 }
 
 .chex-age {

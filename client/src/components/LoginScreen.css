@@ -170,3 +170,51 @@
   font-family: inherit;
 }
 .login-register-btn:hover { color: #3730A3; text-decoration: underline; }
+
+.login-forgot-btn {
+  background: none; border: none;
+  color: #6B7280; font-size: 12px;
+  cursor: pointer; padding: 4px 0;
+  font-family: inherit;
+}
+.login-forgot-btn:hover { color: #374151; text-decoration: underline; }
+
+.login-desc {
+  font-size: 14px; color: #6B7280;
+  line-height: 1.6; margin-bottom: 16px;
+  text-align: center;
+}
+
+.reg-optional-label {
+  font-size: 12px; color: #9CA3AF;
+  margin: 4px 0 2px; text-align: left;
+}
+
+/* 인앱브라우저 경고 배너 */
+.inapp-banner {
+  background: #FFF7ED;
+  border: 1.5px solid #FED7AA;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.inapp-banner-msg {
+  font-size: 13px; color: #92400E; margin: 0 0 10px;
+  line-height: 1.6;
+}
+.inapp-banner-msg strong { color: #78350F; }
+.inapp-open-btn {
+  width: 100%;
+  padding: 10px;
+  background: #F97316;
+  color: white; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+}
+.inapp-open-btn:active { opacity: 0.85; }
+.inapp-banner-hint {
+  font-size: 11px; color: #B45309; margin: 0;
+  line-height: 1.7;
+}

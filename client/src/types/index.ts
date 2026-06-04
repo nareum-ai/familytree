@@ -31,6 +31,8 @@ export interface Relationship {
   person2_id: string;
   type: RelationshipType;
   family_id: string;   // 가족집단 식별자
+  marriage_date?: string | null;   // "YYYY-MM-DD", spouse 관계에만 해당
+  marriage_lunar?: boolean;
 }
 
 export type BranchType = '친가' | '외가' | '처가' | '처외가';
@@ -57,6 +59,28 @@ export interface Member {
   google_email?: string | null;
   fcm_token?: string | null;
   last_login_at?: string | null;
+}
+
+// 비밀번호 초기화 토큰
+export interface PasswordResetToken {
+  id: string;
+  member_id: string;
+  token: string;
+  expires_at: string;
+  used: boolean;
+  created_at: string;
+}
+
+// 관리자 경유 비밀번호 초기화 요청
+export interface PasswordResetRequest {
+  id: string;
+  username: string;
+  person_name: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  contact_email: string;
+  message?: string | null;
+  created_at: string;
+  reviewed_at?: string;
 }
 
 // 새 가족집단 생성 승인 요청

@@ -49,7 +49,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
       <div className="hex-wrapper">
         <div className="hex-shape">
           {person.photo_url
-            ? <img src={person.photo_url} alt={person.name} className="avatar-img" />
+            ? <div className="avatar-hex-inner"><img src={person.photo_url} alt={person.name} /></div>
             : <div className="avatar-initial">{initial}</div>}
           </div>
       </div>
