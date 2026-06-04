@@ -260,7 +260,7 @@ const features = [
   },
   {
     icon: '👫',
-    title: '부부 및 가족 구성원이 함께 완성',
+    title: '양가 가계도를 함께 완성',
     desc: '초대 받은 구성원이 각자의 가족을 직접 채워 양가의 가계도를 함께 완성합니다.',
     mockup: <MockupCollab />,
   },
