@@ -529,13 +529,27 @@ export function AdminView({ onLogout }: Props) {
         <section className="admin-section">
           <div className="member-header">
             <h2>👤 회원 관리 ({members.length}명)</h2>
-            <input
-              className="member-search"
-              type="text"
-              value={memberFilter}
-              onChange={e => { setMemberFilter(e.target.value); setMemberPage(0); }}
-              placeholder="아이디 / 이름 검색"
-            />
+            <div className="member-header-right">
+              <button
+                className="btn-copy-emails"
+                onClick={async () => {
+                  const emails = members.filter(m => m.google_email).map(m => m.google_email!);
+                  if (!emails.length) { flash('이메일 정보가 없습니다.'); return; }
+                  await navigator.clipboard.writeText(emails.join('\n'));
+                  flash(`📋 이메일 ${emails.length}개 복사됨`);
+                }}
+                title="Google 계정 이메일 목록을 클립보드에 복사"
+              >
+                📋 이메일 복사 ({members.filter(m => m.google_email).length})
+              </button>
+              <input
+                className="member-search"
+                type="text"
+                value={memberFilter}
+                onChange={e => { setMemberFilter(e.target.value); setMemberPage(0); }}
+                placeholder="아이디 / 이름 검색"
+              />
+            </div>
           </div>
 
           {loading ? <p className="admin-empty">불러오는 중...</p> :
@@ -554,7 +568,10 @@ export function AdminView({ onLogout }: Props) {
                 {pagedMembers.map((m, idx) => (
                   <div key={m.id} className="admin-member-row">
                     <span className="col-idx">{memberPage * MEMBER_PAGE_SIZE + idx + 1}</span>
-                    <span className="col-id member-id">{m.username}</span>
+                    <span className="col-id member-id">
+                      {m.username}
+                      {m.google_email && <span className="google-badge">G</span>}
+                    </span>
                     <span className="col-map">
                       {m.person_name
                         ? <span className="member-mapped">✓ {m.person_name}</span>

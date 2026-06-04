@@ -155,12 +155,28 @@
   gap: 12px; margin-bottom: 12px;
 }
 .member-header h2 { margin: 0; }
+.member-header-right {
+  display: flex; align-items: center; gap: 8px;
+}
 .member-search {
   flex: 1; max-width: 200px; padding: 7px 10px;
   border: 1.5px solid #e0e0e0; border-radius: 8px;
   font-size: 13px; outline: none;
 }
 .member-search:focus { border-color: #2AABE2; }
+.btn-copy-emails {
+  padding: 6px 10px; border: 1.5px solid #e0e0e0; border-radius: 8px;
+  background: white; font-size: 12px; font-weight: 600; color: #4a5568;
+  cursor: pointer; white-space: nowrap; font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-copy-emails:hover { border-color: #2AABE2; color: #2AABE2; background: #f0f9ff; }
+.google-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 5px; width: 16px; height: 16px;
+  background: #EA4335; color: white; border-radius: 3px;
+  font-size: 10px; font-weight: 800; flex-shrink: 0; vertical-align: middle;
+}
 
 /* 테이블 컬럼 — col-date(가입일) 제거, 5열 */
 .member-table-head, .admin-member-row {
@@ -698,7 +714,9 @@
 
   /* 회원 검색 – 전체 너비 */
   .member-header { flex-direction: column; align-items: stretch; }
+  .member-header-right { flex-direction: column; align-items: stretch; }
   .member-search { max-width: 100%; }
+  .btn-copy-emails { width: 100%; }
 
   /* 회원 테이블 → 한 줄 레이아웃 */
   .member-table-head { display: none; }
