@@ -122,6 +122,99 @@ function MockupAnniversary() {
   );
 }
 
+function MockupCollab() {
+  const hp = (cx: number, cy: number, r: number) => {
+    const pts: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 3 * i - Math.PI / 2;
+      pts.push(`${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`);
+    }
+    return pts.join(' ');
+  };
+
+  const Node = (cx: number, cy: number, g: 'clgm' | 'clgf', label: string, badge?: { color: string; text: string }, id = 0, sm = false) => {
+    const r = sm ? 9 : 12;
+    return (
+      <g key={id}>
+        <polygon points={hp(cx, cy, r)} fill={`url(#${g})`} />
+        <text x={cx} y={cy + 4} textAnchor="middle" fontSize={sm ? 6 : 7} fontWeight="800" fill="white">{label}</text>
+        {badge && (
+          <>
+            <circle cx={cx + r - 3} cy={cy - r + 3} r={5} fill={badge.color} />
+            <text x={cx + r - 3} y={cy - r + 6} textAnchor="middle" fontSize="4" fontWeight="900" fill="white">{badge.text}</text>
+          </>
+        )}
+      </g>
+    );
+  };
+
+  const S = '#C7D2FE';
+
+  return (
+    <div className="feature-mockup mockup-collab">
+      <svg viewBox="0 0 260 162" width="100%" height="100%">
+        <defs>
+          <linearGradient id="clgm" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#0EA5E9"/><stop offset="100%" stopColor="#0369A1"/>
+          </linearGradient>
+          <linearGradient id="clgf" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#EC4899"/><stop offset="100%" stopColor="#DB2777"/>
+          </linearGradient>
+        </defs>
+
+        {/* 친가 레이블 */}
+        <text x="66" y="12" textAnchor="middle" fontSize="7" fill="#6366F1" fontWeight="700">친가</text>
+        {/* 처가 레이블 */}
+        <text x="194" y="12" textAnchor="middle" fontSize="7" fill="#EC4899" fontWeight="700">처가</text>
+
+        {/* 중앙 구분선 */}
+        <line x1="130" y1="6" x2="130" y2="78" stroke="#E0E7FF" strokeWidth="1" strokeDasharray="3 4"/>
+
+        {/* 친가 → 나 연결 */}
+        <line x1="66" y1="42" x2="66" y2="60" stroke={S} strokeWidth="1.2"/>
+        <line x1="66" y1="60" x2="100" y2="60" stroke={S} strokeWidth="1.2"/>
+        <line x1="100" y1="60" x2="100" y2="70" stroke={S} strokeWidth="1.2"/>
+        {/* 처가 → 배우자 연결 */}
+        <line x1="194" y1="42" x2="194" y2="60" stroke={S} strokeWidth="1.2"/>
+        <line x1="194" y1="60" x2="160" y2="60" stroke={S} strokeWidth="1.2"/>
+        <line x1="160" y1="60" x2="160" y2="70" stroke={S} strokeWidth="1.2"/>
+
+        {/* 부부 연결 */}
+        <line x1="112" y1="82" x2="148" y2="82" stroke="#A5B4FC" strokeWidth="1.5" strokeDasharray="4 3"/>
+        <text x="130" y="86" textAnchor="middle" fontSize="8">💑</text>
+
+        {/* 자녀 연결 */}
+        <line x1="130" y1="95" x2="130" y2="115" stroke={S} strokeWidth="1.2"/>
+        <line x1="110" y1="115" x2="150" y2="115" stroke={S} strokeWidth="1.2"/>
+        <line x1="110" y1="115" x2="110" y2="124" stroke={S} strokeWidth="1.2"/>
+        <line x1="150" y1="115" x2="150" y2="124" stroke={S} strokeWidth="1.2"/>
+
+        {/* 친가 부모 */}
+        {Node(54, 28, 'clgm', '父', undefined, 1, true)}
+        {Node(78, 28, 'clgf', '母', undefined, 2, true)}
+        {/* 처가 부모 */}
+        {Node(182, 28, 'clgm', '父', undefined, 3, true)}
+        {Node(206, 28, 'clgf', '母', undefined, 4, true)}
+
+        {/* 나 + 배우자 */}
+        {Node(100, 82, 'clgm', '나', { color: '#F97316', text: '나' }, 5)}
+        {Node(160, 82, 'clgf', '배', { color: '#7C3AED', text: '배' }, 6)}
+
+        {/* 자녀 */}
+        {Node(110, 136, 'clgm', '子', undefined, 7, true)}
+        {Node(150, 136, 'clgf', '女', undefined, 8, true)}
+      </svg>
+
+      <div className="mockup-collab-footer">
+        <span className="mockup-collab-chip me">나</span>
+        <span className="mockup-collab-sep">+</span>
+        <span className="mockup-collab-chip spouse">배우자</span>
+        <span className="mockup-collab-label">함께 완성하는 가계도</span>
+      </div>
+    </div>
+  );
+}
+
 function MockupInvite() {
   return (
     <div className="feature-mockup mockup-invite">
@@ -168,6 +261,12 @@ const features = [
     title: '한눈에 보는 가계도',
     desc: '복잡한 가족 관계를 직관적인 트리로 시각화합니다. 몇 세대를 거슬러 올라가도 한 화면에서 확인할 수 있어요.',
     mockup: <MockupTree />,
+  },
+  {
+    icon: '👫',
+    title: '친가·처가 함께 완성',
+    desc: '남편과 아내가 각자의 가계를 직접 채워 양가 가계도를 함께 완성합니다. 초대 링크로 배우자를 연결하면 바로 시작할 수 있어요.',
+    mockup: <MockupCollab />,
   },
   {
     icon: '🎂',
