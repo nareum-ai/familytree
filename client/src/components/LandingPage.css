@@ -440,47 +440,9 @@
 
 
 .mockup-collab {
-  background: #F8F7FF;
-  border-bottom: 1px solid #EEF2FF;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  padding: 6px 0 0;
-  gap: 0;
+  background: #F0F4FF;
   height: 200px;
-}
-
-.mockup-collab-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 0 8px;
-  border-top: 1px solid #EEF2FF;
-  background: white;
-  flex-shrink: 0;
-}
-
-.mockup-collab-chip {
-  font-size: 9px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 12px;
-  color: white;
-}
-.mockup-collab-chip.me      { background: #F97316; }
-.mockup-collab-chip.spouse  { background: #7C3AED; }
-
-.mockup-collab-sep {
-  font-size: 10px;
-  color: #94A3B8;
-  font-weight: 700;
-}
-
-.mockup-collab-label {
-  font-size: 9px;
-  color: #64748B;
-  font-weight: 600;
+  padding: 4px 0 0;
 }
 
 .landing-feature-icon {
