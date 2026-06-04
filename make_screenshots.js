@@ -196,87 +196,137 @@ function makeTreeHTML() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 스크린샷 2: 기념일
+// 스크린샷 2: 기념일 (실제 사이드 패널 레이아웃)
 // ══════════════════════════════════════════════════════════════════════════
 function makeAnnHTML() {
-  const items = [
-    { chip:'오늘', chipBg:'#10B981', chipColor:'white', hex:'gm', initial:'김', name:'김민준', rel:'1촌 · 아버지', type:'생일', meta:'만 55세 생일', metatype:'birthday' },
-    { chip:'D-3',  chipBg:'#F97316', chipColor:'white', hex:'gf', initial:'박', name:'박혜경', rel:'1촌 · 어머니', type:'생일', meta:'만 52세 생일', metatype:'birthday' },
-    { chip:'D-12', chipBg:'#4F46E5', chipColor:'white', hex:'💍', initial:'💍', name:'결혼기념일', rel:'아버지 · 어머니', type:'기념일', meta:'28주기', metatype:'wedding' },
-    { chip:'D-28', chipBg:'#E2E8F0', chipColor:'#64748B', hex:'gf', initial:'이', name:'이순희', rel:'2촌 · 할머니', type:'생일', meta:'만 73세 생일', metatype:'birthday' },
-    { chip:'D-41', chipBg:'#E2E8F0', chipColor:'#64748B', hex:'gm', initial:'김', name:'김진우', rel:'2촌 · 조카', type:'생일', meta:'만 28세 생일', metatype:'birthday' },
+  // chip 클래스: today=빨강, soon(≤7)=주황, near(≤30)=보라, far=회색
+  const rows = [
+    { chip:'오늘', chipClass:'today', name:'김민준',   chusu:'1촌',  type:'생일',      typeClass:'birthday', date:'6월 4일',  count:'만 55세' },
+    { chip:'D-3',  chipClass:'soon',  name:'박혜경',   chusu:'1촌',  type:'생일',      typeClass:'birthday', date:'6월 7일',  count:'만 52세' },
+    { chip:'D-8',  chipClass:'soon',  name:'결혼기념일', chusu:'',    type:'결혼기념일', typeClass:'wedding',  date:'6월 12일', count:'28주년' },
+    { chip:'D-19', chipClass:'near',  name:'이복순',   chusu:'2촌',  type:'생일',      typeClass:'birthday', date:'6월 23일', count:'만 73세' },
+    { chip:'D-34', chipClass:'near',  name:'김진우',   chusu:'2촌',  type:'생일',      typeClass:'birthday', date:'7월 8일',  count:'만 28세' },
+    { chip:'D-41', chipClass:'near',  name:'김지아',   chusu:'2촌',  type:'생일',      typeClass:'birthday', date:'7월 15일', count:'만 25세' },
+    { chip:'D-55', chipClass:'near',  name:'김하율',   chusu:'3촌',  type:'생일',      typeClass:'birthday', date:'7월 29일', count:'만 17세' },
+    { chip:'D-63', chipClass:'near',  name:'김성진',   chusu:'나',   type:'생일',      typeClass:'birthday', date:'8월 6일',  count:'만 51세' },
+    { chip:'D-72', chipClass:'near',  name:'김대수',   chusu:'2촌',  type:'기일',      typeClass:'memorial', date:'8월 15일', count:'5주기' },
+    { chip:'D-89', chipClass:'near',  name:'김하준',   chusu:'3촌',  type:'생일',      typeClass:'birthday', date:'9월 1일',  count:'만 14세' },
   ];
 
-  const cards = items.map((it,i) => {
-    const hexBg = it.hex==='gm'
-      ? 'linear-gradient(135deg,#0EA5E9,#0369A1)'
-      : it.hex==='gf'
-      ? 'linear-gradient(135deg,#EC4899,#DB2777)'
-      : 'linear-gradient(135deg,#F59E0B,#D97706)';
-    const isFirst = i===0;
-    return `
-    <div style="background:white; border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px;
-                box-shadow:${isFirst?'0 4px 20px rgba(16,185,129,0.15)':'0 2px 8px rgba(0,0,0,0.06)'};
-                border:${isFirst?'1.5px solid #10B981':'1.5px solid #f0f0f0'};">
-      <div style="width:44px;height:50px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
-                  background:${hexBg};flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                  font-size:18px;font-weight:800;color:white;">
-        ${it.hex==='💍'?'💍':it.initial}
+  const rowsHTML = rows.map(r => `
+    <div class="ann-row ${r.typeClass==='memorial'?'memorial':''} ${r.typeClass==='wedding'?'wedding':''}">
+      <span class="day-chip ${r.chipClass}">${r.chip}</span>
+      <div class="ann-info">
+        <span class="ann-name">${r.name}</span>
+        ${r.chusu ? `<span class="ann-chusu">${r.chusu}</span>` : ''}
+        <span class="ann-type ${r.typeClass}">${r.type}</span>
       </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:16px;font-weight:700;color:#1a2e3b;">${it.name}</div>
-        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">${it.rel}</div>
-        <div style="font-size:11px;color:#64748B;margin-top:3px;">${it.meta}</div>
+      <div class="ann-date">
+        <span class="ann-date-main">${r.date}</span>
+        <span class="ann-count">${r.count}</span>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
-        <div style="background:${it.chipBg};color:${it.chipColor};
-                    padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;">
-          ${it.chip}
-        </div>
-        <div style="font-size:10px;color:#94A3B8;background:#f8f9fa;padding:2px 8px;border-radius:10px;">${it.type}</div>
-      </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
   <style>
     ${BASE_CSS}
-    .ann-section-title {
-      font-size:13px; font-weight:700; color:#4F46E5;
-      display:flex; align-items:center; gap:6px;
-      padding:14px 16px 8px;
+    body { background: rgba(0,0,0,0.45); }
+    /* 실제 ann-panel 스타일 그대로 */
+    .scene {
+      width:${W}px; height:${H}px; position:relative; overflow:hidden;
+      display:flex;
+    }
+    /* 왼쪽: 트리 배경 (흐릿하게) */
+    .tree-behind {
+      flex:1; background:#EEF2FF;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0.4;
+    }
+    /* 오른쪽: 실제 패널 */
+    .ann-panel {
+      width: 360px; height:100%;
+      background: white;
+      display: flex; flex-direction: column;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+      flex-shrink:0;
+    }
+    .ann-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:52px 20px 16px;
+      border-bottom:1px solid #e8f0f5; flex-shrink:0;
+    }
+    .ann-header h2 { font-size:17px; font-weight:700; color:#1a2e3b; margin:0; }
+    .ann-header-actions { display:flex; align-items:center; gap:4px; }
+    .ann-settings-btn { background:none; border:none; font-size:18px; padding:4px 6px; border-radius:6px; opacity:0.5; cursor:pointer; }
+    .ann-close { background:none; border:none; font-size:18px; cursor:pointer; color:#aaa; padding:4px; }
+    .ann-list { flex:1; overflow:hidden; padding:8px 0; }
+    .ann-section-label {
+      font-size:11px; font-weight:700; color:#94a3b8;
       text-transform:uppercase; letter-spacing:0.5px;
+      padding:12px 20px 6px;
     }
-    .notify-banner {
-      margin:12px 16px 0;
-      background:linear-gradient(135deg,#EEF2FF,#E0E7FF);
-      border:1.5px solid #C7D2FE; border-radius:14px;
-      padding:14px 16px;
+    .ann-row {
       display:flex; align-items:center; gap:12px;
+      padding:10px 20px; border-bottom:1px solid #f5f5f5;
     }
-    .notify-icon { font-size:24px; flex-shrink:0; }
-    .notify-text { font-size:12px; color:#4F46E5; font-weight:600; line-height:1.5; }
+    .ann-row.memorial { background:#fafafa; }
+    .ann-row.wedding:hover { background:#FFF0F9; }
+    .day-chip {
+      min-width:52px; padding:4px 8px; border-radius:20px;
+      font-size:12px; font-weight:700; text-align:center; flex-shrink:0;
+    }
+    .day-chip.today { background:#e74c3c; color:white; }
+    .day-chip.soon  { background:#e67e22; color:white; }
+    .day-chip.near  { background:#4F46E5; color:white; }
+    .day-chip.far   { background:#f0f4f8; color:#7f8c8d; }
+    .ann-info { flex:1; display:flex; align-items:center; gap:6px; min-width:0; }
+    .ann-name { font-size:14px; font-weight:600; color:#1a2e3b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ann-chusu { font-size:11px; font-weight:700; color:#4F46E5; background:#EEF2FF; padding:1px 6px; border-radius:10px; flex-shrink:0; }
+    .ann-type { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; flex-shrink:0; }
+    .ann-type.birthday { background:#EEF2FF; color:#4F46E5; }
+    .ann-type.memorial { background:#f5f5f5; color:#777; }
+    .ann-type.wedding  { background:#FFF0F9; color:#BE185D; }
+    .ann-date { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; }
+    .ann-date-main { color:#4a5568; font-size:12px; }
+    .ann-count { font-size:11px; color:#aaa; margin-top:1px; }
   </style>
   </head><body>
-  <div class="app">
-    <div class="header">
-      <div>
-        <div class="header-title">🎂 다가오는 기념일</div>
-        <div class="header-sub">이번 달 · 다음 달</div>
-      </div>
-      <div class="header-icon">🔔</div>
+  <div class="scene">
+    <div class="tree-behind">
+      <svg width="180" height="300" viewBox="0 0 180 300" opacity="0.6">
+        <defs>
+          <linearGradient id="gm2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0369A1"/></linearGradient>
+          <linearGradient id="gf2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#EC4899"/><stop offset="100%" stop-color="#DB2777"/></linearGradient>
+        </defs>
+        <line x1="90" y1="48" x2="90" y2="72" stroke="#2AABE2" stroke-width="1.5"/>
+        <line x1="45" y1="72" x2="135" y2="72" stroke="#2AABE2" stroke-width="1.5"/>
+        <line x1="45" y1="72" x2="45" y2="96" stroke="#2AABE2" stroke-width="1.5"/>
+        <line x1="135" y1="72" x2="135" y2="96" stroke="#2AABE2" stroke-width="1.5"/>
+        <polygon points="75,18 90,9 105,18 105,36 90,45 75,36" fill="url(#gm2)"/>
+        <text x="90" y="30" text-anchor="middle" font-size="10" font-weight="800" fill="white">김</text>
+        <polygon points="105,18 120,9 135,18 135,36 120,45 105,36" fill="url(#gf2)"/>
+        <text x="120" y="30" text-anchor="middle" font-size="10" font-weight="800" fill="white">이</text>
+        <polygon points="30,96 45,87 60,96 60,114 45,123 30,114" fill="url(#gm2)"/>
+        <text x="45" y="108" text-anchor="middle" font-size="10" font-weight="800" fill="white">김</text>
+        <polygon points="120,96 135,87 150,96 150,114 135,123 120,114" fill="url(#gm2)"/>
+        <text x="135" y="108" text-anchor="middle" font-size="10" font-weight="800" fill="white">김</text>
+        <circle cx="135" cy="87" r="9" fill="#F97316"/>
+        <text x="135" y="90" text-anchor="middle" font-size="7" font-weight="900" fill="white">나</text>
+      </svg>
     </div>
-    <div class="content" style="overflow-y:hidden;">
-      <div class="ann-section-title">📅 이번 달 기념일</div>
-      <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px;">
-        ${cards}
+    <div class="ann-panel">
+      <div class="ann-header">
+        <h2>📅 다가오는 기념일</h2>
+        <div class="ann-header-actions">
+          <button class="ann-settings-btn">🔔</button>
+          <button class="ann-close">✕</button>
+        </div>
       </div>
-      <div class="notify-banner">
-        <div class="notify-icon">🔔</div>
-        <div class="notify-text">기념일 알림을 설정하면<br>당일·1일 전·3일 전·7일 전 알림을 받아요</div>
+      <div class="ann-list">
+        <div class="ann-section-label">90일 이내</div>
+        ${rowsHTML}
       </div>
     </div>
-    ${navBar('ann')}
   </div>
   </body></html>`;
 }
