@@ -568,10 +568,7 @@ export function AdminView({ onLogout }: Props) {
                 {pagedMembers.map((m, idx) => (
                   <div key={m.id} className="admin-member-row">
                     <span className="col-idx">{memberPage * MEMBER_PAGE_SIZE + idx + 1}</span>
-                    <span className="col-id member-id">
-                      {m.username}
-                      {m.google_email && <span className="google-badge">G</span>}
-                    </span>
+                    <span className="col-id member-id">{m.username}</span>
                     <span className="col-map">
                       {m.person_name
                         ? <span className="member-mapped">✓ {m.person_name}</span>

@@ -171,12 +171,6 @@
   transition: all 0.15s;
 }
 .btn-copy-emails:hover { border-color: #2AABE2; color: #2AABE2; background: #f0f9ff; }
-.google-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  margin-left: 5px; width: 16px; height: 16px;
-  background: #EA4335; color: white; border-radius: 3px;
-  font-size: 10px; font-weight: 800; flex-shrink: 0; vertical-align: middle;
-}
 
 /* 테이블 컬럼 — col-date(가입일) 제거, 5열 */
 .member-table-head, .admin-member-row {
