@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import type { Person, Relationship } from '../types';
+import { getChusu } from '../hooks/useTreeLayout';
 import './InheritanceView.css';
 
 const GEMINI_KEY = 'REMOVED_SECRET';
@@ -129,22 +130,36 @@ const SYSTEM_PROMPT = `아래 가족 관계와 상속재산 정보를 바탕으�
 숫자는 한국식(억/만원)으로 표기하고, 간결하되 정확하게 작성하세요.`;
 
 export function InheritanceView({ onClose }: Props) {
-  const { persons, relationships } = useFamilyStore();
+  const { persons, relationships, viewpointPersonId } = useFamilyStore();
   const [selectedId, setSelectedId] = useState<string>('');
   const [assetInput, setAssetInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
 
-  const sortedPersons = useMemo(() =>
-    [...persons].sort((a, b) => a.name.localeCompare(b.name, 'ko')),
-    [persons]
+  // 본인 기준 2촌 이내 인물만 표시
+  const basePerson = useMemo(() =>
+    (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null)
+    ?? persons.find(p => p.is_root === 1),
+    [persons, viewpointPersonId]
   );
 
+  const closePersons = useMemo(() => {
+    if (!basePerson) return persons;
+    return persons
+      .filter(p => {
+        if (p.id === basePerson.id) return true;
+        const chusu = getChusu(p.id, basePerson, relationships);
+        return chusu !== null && chusu <= 2;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [persons, relationships, basePerson]);
+
+  // 천만원 단위 입력 → 원 단위 변환
   const assetValue = useMemo(() => {
     const raw = assetInput.replace(/,/g, '').trim();
     const n = Number(raw);
-    return isNaN(n) ? 0 : n;
+    return isNaN(n) ? 0 : n * 10_000_000;
   }, [assetInput]);
 
   const assetDisplay = useMemo(() =>
@@ -215,7 +230,7 @@ export function InheritanceView({ onClose }: Props) {
               onChange={e => { setSelectedId(e.target.value); setResult(''); setError(''); }}
             >
               <option value="">-- 인물을 선택하세요 --</option>
-              {sortedPersons.map(p => (
+              {closePersons.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name}{p.is_deceased ? ' (고인)' : ''}
                 </option>
@@ -224,13 +239,13 @@ export function InheritanceView({ onClose }: Props) {
           </div>
 
           <div className="inherit-field">
-            <label className="inherit-label">상속재산 총액 (원)</label>
+            <label className="inherit-label">상속재산 총액 (천만원 단위)</label>
             <div className="inherit-asset-wrap">
               <input
                 className="inherit-input"
                 type="text"
                 inputMode="numeric"
-                placeholder="예: 1000000000"
+                placeholder="예: 1000 = 100억원"
                 value={assetInput}
                 onChange={e => {
                   const v = e.target.value.replace(/[^0-9]/g, '');
@@ -239,7 +254,7 @@ export function InheritanceView({ onClose }: Props) {
                   setError('');
                 }}
               />
-              {assetDisplay && <span className="inherit-asset-label">{assetDisplay}</span>}
+              {assetDisplay && <span className="inherit-asset-label">= {assetDisplay}</span>}
             </div>
           </div>
 
