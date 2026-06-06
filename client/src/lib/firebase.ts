@@ -4,12 +4,13 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getMessaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
-  projectId: 'familytree-3221b',
-  appId: '1:237404804989:web:2493070fb784a7f1b79e14',
-  storageBucket: 'familytree-3221b.firebasestorage.app',
   apiKey: 'AIzaSyCMwRlXqDZxatmpe4fZKLyfYBi_hv4Udtw',
   authDomain: 'familytree-3221b.firebaseapp.com',
+  projectId: 'familytree-3221b',
+  storageBucket: 'familytree-3221b.firebasestorage.app',
   messagingSenderId: '237404804989',
+  appId: '1:237404804989:web:2493070fb784a7f1b79e14',
+  measurementId: 'G-TB4SGCZPY1',
 };
 
 export const app = initializeApp(firebaseConfig);
