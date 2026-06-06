@@ -667,6 +667,32 @@
 .push-save-msg.ok { color: #16a34a; }
 .push-save-msg.err { color: #e53e3e; }
 
+.push-input {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.push-input:focus { border-color: #2AABE2; }
+
+.push-textarea {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 56px;
+}
+.push-textarea:focus { border-color: #2AABE2; }
+
+.push-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* 활동 로그 */
 .act-log-list { display: flex; flex-direction: column; gap: 0; margin-top: 4px; }
 

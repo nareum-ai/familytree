@@ -63,6 +63,7 @@ import type { ApprovalRequest, Member, Person, Relationship } from '../types';
 import { LS, SS } from '../lib/storageKeys';
 import { exportFamilyToCSV, downloadCSV } from '../utils/csvExport';
 import { BulkUploadView } from './BulkUploadView';
+import { FcmDebugPanel } from './FcmDebugPanel';
 import './AdminView.css';
 
 const LS_USER_KEY     = LS.USER_NAME;
@@ -133,6 +134,12 @@ export function AdminView({ onLogout }: Props) {
   const [pushSettings, setPushSettings] = useState<{ sendHourKST: number }>({ sendHourKST: 8 });
   const [pushLoading,  setPushLoading]  = useState(true);
   const [pushSaveMsg,  setPushSaveMsg]  = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const [broadcastTitle,   setBroadcastTitle]   = useState('');
+  const [broadcastBody,    setBroadcastBody]    = useState('');
+  const [broadcastTarget,  setBroadcastTarget]  = useState<string>('all');
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastMsg,     setBroadcastMsg]     = useState<{ ok: boolean; msg: string } | null>(null);
 
   // 활동 로그
   interface ActivityLog { id: string; at: string; action: 'add' | 'delete'; person_name: string; actor_name: string; }
@@ -248,6 +255,34 @@ export function AdminView({ onLogout }: Props) {
       setPushSaveMsg({ ok: false, msg: '❌ 저장 중 오류가 발생했습니다.' });
     }
     setTimeout(() => setPushSaveMsg(null), 3000);
+  };
+
+  const sendBroadcastPush = async () => {
+    if (!broadcastTitle.trim()) return;
+    setBroadcastLoading(true);
+    setBroadcastMsg(null);
+    try {
+      const { addDoc, collection: col } = await import('firebase/firestore');
+      const { db: fdb } = await import('../lib/firebase');
+      const memberId = localStorage.getItem(LS.MEMBER_ID);
+      await addDoc(col(fdb, 'push_broadcasts'), {
+        title:            broadcastTitle.trim(),
+        body:             broadcastBody.trim(),
+        member_id:        memberId,
+        target_member_id: broadcastTarget === 'all' ? null : broadcastTarget,
+        sent:             false,
+        created_at:       new Date().toISOString(),
+      });
+      setBroadcastMsg({ ok: true, msg: '✅ 발송 요청됐습니다. 수 초 내 전달됩니다.' });
+      setBroadcastTitle('');
+      setBroadcastBody('');
+      setBroadcastTarget('all');
+    } catch {
+      setBroadcastMsg({ ok: false, msg: '❌ 발송 요청 중 오류가 발생했습니다.' });
+    } finally {
+      setBroadcastLoading(false);
+      setTimeout(() => setBroadcastMsg(null), 4000);
+    }
   };
 
   const loadActLogs = async () => {
@@ -689,6 +724,54 @@ export function AdminView({ onLogout }: Props) {
               <AdminPager current={familyPage} total={totalFamilyPages} onChange={setFamilyPage} />
             </>
           )}
+        </section>
+        {/* 공지 푸시 발송 */}
+        <section className="admin-section">
+          <h2>📢 공지 푸시 발송</h2>
+          <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 12px' }}>
+            앱을 설치한 회원에게만 전달됩니다.
+          </p>
+          <div className="push-settings">
+            <div className="push-row">
+              <label className="push-label">수신 대상</label>
+              <select className="push-select" value={broadcastTarget}
+                onChange={e => setBroadcastTarget(e.target.value)}>
+                <option value="all">
+                  전체 ({members.filter(m => m.fcm_token && m.status === 'active').length}명)
+                </option>
+                {members.filter(m => m.fcm_token && m.status === 'active').map(m => (
+                  <option key={m.id} value={m.id}>{m.person_name || m.username}</option>
+                ))}
+              </select>
+            </div>
+            <div className="push-row">
+              <label className="push-label">제목</label>
+              <input className="push-input" value={broadcastTitle}
+                onChange={e => setBroadcastTitle(e.target.value)}
+                placeholder="알림 제목" maxLength={50} />
+            </div>
+            <div className="push-row">
+              <label className="push-label">내용</label>
+              <textarea className="push-textarea" value={broadcastBody}
+                onChange={e => setBroadcastBody(e.target.value)}
+                placeholder="알림 내용 (선택)" rows={2} maxLength={200} />
+            </div>
+            {broadcastMsg && (
+              <p className={`push-save-msg ${broadcastMsg.ok ? 'ok' : 'err'}`}>{broadcastMsg.msg}</p>
+            )}
+            <button className="push-save-btn" onClick={sendBroadcastPush}
+              disabled={broadcastLoading || !broadcastTitle.trim()}>
+              {broadcastLoading ? '발송 중...' : '발송'}
+            </button>
+          </div>
+        </section>
+        {/* 관리자 알림 진단 */}
+        <section className="admin-section">
+          <h2>🔧 관리자 알림 진단</h2>
+          <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 12px' }}>
+            관리자 앱(PWA)에서 알림을 받으려면 토큰을 등록하세요.
+          </p>
+          <FcmDebugPanel field="fcm_token_admin" />
         </section>
         {/* 알림 발송 시간 (전역) */}
         <section className="admin-section">

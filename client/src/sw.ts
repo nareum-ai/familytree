@@ -24,9 +24,18 @@ const app = initializeApp({
 
 const messaging = getMessaging(app);
 
-// notificationclick 핸들링을 위해 onBackgroundMessage 등록하되 알림 표시는 Chrome에 위임
-onBackgroundMessage(messaging, (_payload) => {
-  // Chrome이 FCM notification 페이로드를 자동으로 표시함 — 중복 방지를 위해 직접 showNotification 호출 생략
+// data-only 메시지 — Chrome 자동 표시 없이 서비스 워커가 직접 showNotification
+onBackgroundMessage(messaging, (payload) => {
+  const d     = (payload.data ?? {}) as Record<string, string>;
+  const title = d['title'] || '우리 가족 가계도';
+  const body  = d['body']  || '';
+  const link  = d['link']  || 'https://familytree-3221b.web.app/';
+
+  return self.registration.showNotification(title, {
+    body,
+    icon: 'https://familytree-3221b.web.app/icons/icon-192.png',
+    data: { url: link },
+  });
 });
 
 self.addEventListener('notificationclick', (event) => {

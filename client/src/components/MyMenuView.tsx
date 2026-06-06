@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import { useAdminEmail } from '../hooks/useAdminEmail';
 import { LS } from '../lib/storageKeys';
+import { FcmDebugPanel } from './FcmDebugPanel';
+import { NotifBlockedModal } from './NotifBlockedModal';
+import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import './MyMenuView.css';
+import './NotifBlockedModal.css';
 
 interface Props { onClose: () => void; }
 
@@ -15,9 +19,12 @@ interface RequestItem {
   createdAt: string;
 }
 
+const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
+
 export function MyMenuView({ onClose }: Props) {
   const { loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
-          persons, loginMember, linkGoogleToMember, unlinkGoogleFromMember } = useFamilyStore();
+          persons, loginMember, linkGoogleToMember, unlinkGoogleFromMember,
+          saveFcmToken } = useFamilyStore();
   const [tab, setTab]           = useState<Tab>('requests');
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [reqLoading, setReqLoading] = useState(true);
@@ -34,6 +41,19 @@ export function MyMenuView({ onClose }: Props) {
   const [googleMsg, setGoogleMsg]     = useState<{ ok: boolean; msg: string } | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const adminEmail = useAdminEmail();
+
+  // PWA 설치
+  const [installDismissed, setInstallDismissed] = useState(
+    localStorage.getItem('pwa_install_dismissed') === 'true'
+  );
+  const [hasInstallPrompt, setHasInstallPrompt] = useState(!!getInstallPrompt());
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  // 알림 ON/OFF
+  const [notifEnabled, setNotifEnabled] = useState<boolean | null>(null);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [showNotifBlocked, setShowNotifBlocked] = useState(false);
+  const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
   const username = localStorage.getItem(LS.ACCOUNT_NAME)
     ?? localStorage.getItem(LS.USER_NAME) ?? '';
@@ -59,8 +79,17 @@ export function MyMenuView({ onClose }: Props) {
       const snap = await getDoc(doc(db, 'members', memberId));
       const data = snap.data();
       setGoogleEmail((data?.google_email as string | null) ?? null);
+      const pp = data?.push_prefs as { enabled?: boolean } | undefined;
+      setNotifEnabled(pp?.enabled !== false);
     };
     loadMemberData();
+  }, []);
+
+  // beforeinstallprompt: 전역에서 이미 캡처됨, 혹시 늦게 발생하면 여기서도 반영
+  useEffect(() => {
+    const handler = () => setHasInstallPrompt(true);
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const personName = (personId: string) =>
@@ -147,6 +176,50 @@ export function MyMenuView({ onClose }: Props) {
       setGoogleLoading(false);
     }
   };
+
+  const handleInstall = async () => {
+    const accepted = await triggerInstall();
+    if (accepted) setHasInstallPrompt(false);
+  };
+
+  const handleNotifToggle = async () => {
+    if (notifLoading || notifEnabled === null) return;
+    const memberId = localStorage.getItem(LS.MEMBER_ID);
+    if (!memberId) return;
+    const turningOn = !notifEnabled;
+    setNotifLoading(true);
+    try {
+      if (turningOn) {
+        if (Notification.permission === 'denied') {
+          setShowNotifBlocked(true);
+          return;
+        }
+        if (Notification.permission !== 'granted') {
+          const result = await Notification.requestPermission();
+          if (result !== 'granted') return;
+        }
+        const { getMessagingInstance } = await import('../lib/firebase');
+        const { getToken } = await import('firebase/messaging');
+        const messaging = await getMessagingInstance();
+        if (messaging) {
+          const swReg = await navigator.serviceWorker.ready;
+          const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+          if (token) {
+            await saveFcmToken(memberId, token, 'fcm_token');
+            localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
+          }
+        }
+      }
+      const { updateDoc, doc } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      await updateDoc(doc(db, 'members', memberId), { 'push_prefs.enabled': turningOn });
+      setNotifEnabled(turningOn);
+    } catch { /* ignore */ } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const showInstallBanner = hasInstallPrompt && !isStandalone && !installDismissed;
 
   return (
     <div className="my-backdrop" onClick={onClose}>
@@ -267,6 +340,65 @@ export function MyMenuView({ onClose }: Props) {
             </div>
           )}
         </div>
+
+        {/* 빠른 설정 */}
+        {!isAdminContext && (
+          <div className="my-quick-settings">
+            {showInstallBanner && (
+              <div className="my-install-row">
+                <div className="my-install-info">
+                  <span className="my-install-icon">📲</span>
+                  <div>
+                    <p className="my-install-title">앱 설치</p>
+                    <p className="my-install-desc">홈 화면에 추가하면 더 편리해요</p>
+                  </div>
+                </div>
+                <div className="my-install-actions">
+                  <button className="my-install-btn" onClick={handleInstall}>설치</button>
+                  <button className="my-install-dismiss" onClick={() => {
+                    localStorage.setItem('pwa_install_dismissed', 'true');
+                    setInstallDismissed(true);
+                  }}>✕</button>
+                </div>
+              </div>
+            )}
+
+            {(notifEnabled !== null || notifDenied) && (
+              <div className="my-notif-row">
+                <div className="my-notif-info">
+                  <span className="my-notif-icon">
+                    {notifDenied ? '🔕' : '🔔'}
+                  </span>
+                  <span className="my-notif-label">
+                    기념일 알림
+                    {notifDenied && (
+                      <span className="my-notif-blocked-hint">차단됨</span>
+                    )}
+                  </span>
+                </div>
+                {!notifDenied && (
+                  <button
+                    className={`my-notif-toggle ${notifEnabled ? 'on' : ''}`}
+                    onClick={handleNotifToggle}
+                    disabled={notifLoading || notifEnabled === null}
+                  >
+                    {notifLoading || notifEnabled === null ? '...' : notifEnabled ? 'ON' : 'OFF'}
+                  </button>
+                )}
+                {notifDenied && (
+                  <button className="my-notif-toggle" onClick={() => setShowNotifBlocked(true)}>
+                    {isStandalone ? '안내' : '설치'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 알림 진단 */}
+            <FcmDebugPanel />
+          </div>
+        )}
+
+        {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} onInstall={hasInstallPrompt ? handleInstall : undefined} />}
 
         {/* 문의 · 탈퇴 안내 */}
         <div className="my-contact-footer">

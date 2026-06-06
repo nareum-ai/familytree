@@ -21,17 +21,18 @@ const APP_NAME = '우리 가족 가계도';
 
 // ── FCM 전송 헬퍼 ─────────────────────────────────────────────────────────
 async function sendPush(token: string, title: string, body: string, link = '/') {
+  const absoluteLink = link.startsWith('http') ? link : `${APP_URL}${link}`;
   try {
-    await fcm.send({
+    const messageId = await fcm.send({
       token,
-      notification: { title, body },
       webpush: {
-        notification: { icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' },
-        fcmOptions: { link },
+        headers: { Urgency: 'high' },
+        data: { title, body, link: absoluteLink },
       },
     });
-  } catch {
-    // 만료 토큰 등 조용히 무시
+    console.log(`FCM 전송 성공: ${messageId}`);
+  } catch (err) {
+    console.error('FCM 전송 실패:', (err as Error).message ?? err);
   }
 }
 
@@ -333,6 +334,46 @@ export const sendAnniversaryReminders = onSchedule(
 
     await Promise.all(sends);
     console.log(`기념일 알림 완료: ${sends.length}건`);
+  }
+);
+
+// ── 관리자 수동 공지 푸시 ────────────────────────────────────────────────────
+// push_broadcasts 문서 생성 시 트리거 — 전체 또는 특정 회원에게 발송
+export const onBroadcastPushCreated = onDocumentCreated(
+  'push_broadcasts/{docId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.sent) return;
+
+    const memberId = data.member_id as string | undefined;
+    if (!memberId) return;
+
+    const memberSnap = await db.doc(`members/${memberId}`).get();
+    if (!memberSnap.data()?.is_admin) return;
+
+    const title = ((data.title as string) ?? '').trim();
+    const body  = ((data.body  as string) ?? '').trim();
+    if (!title) return;
+
+    const targetMemberId = data.target_member_id as string | null;
+    let count = 0;
+
+    if (targetMemberId) {
+      const targetSnap = await db.doc(`members/${targetMemberId}`).get();
+      const token = targetSnap.data()?.fcm_token as string | undefined;
+      if (token) { await sendPush(token, title, body); count = 1; }
+    } else {
+      const snap = await db.collection('members').where('status', '==', 'active').get();
+      const sends = snap.docs
+        .map(d => d.data().fcm_token as string | undefined)
+        .filter((t): t is string => !!t)
+        .map(token => sendPush(token, title, body));
+      await Promise.all(sends);
+      count = sends.length;
+    }
+
+    await event.data!.ref.update({ sent: true, sent_at: new Date().toISOString(), sent_count: count });
+    console.log(`공지 푸시 발송 완료: ${count}명`);
   }
 );
 

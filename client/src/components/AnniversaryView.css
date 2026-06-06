@@ -50,6 +50,8 @@
 }
 .ann-settings-btn:hover { opacity: 1; background: #f0f4f8; }
 .ann-settings-btn.active { opacity: 1; background: #EEF2FF; }
+.ann-settings-btn.blocked { opacity: 1; color: #e53e3e; }
+.ann-settings-btn.blocked:hover { background: #fff5f5; }
 
 .ann-header h2 {
   font-size: 17px;

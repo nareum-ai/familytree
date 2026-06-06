@@ -26,13 +26,20 @@ export function useFCMToken() {
           if (permission !== 'granted') return;
         }
         const swReg = await navigator.serviceWorker.ready;
+
+        // 기존 push 구독 해제 후 재등록 (TWA permission-blocked 우회)
+        const prevToken = localStorage.getItem(LS.FCM_TOKEN_SAVED);
+        if (!prevToken) {
+          const existingSub = await swReg.pushManager.getSubscription();
+          if (existingSub) await existingSub.unsubscribe();
+        }
+
         const token = await getToken(messaging, {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: swReg,
         });
         if (!token) return;
-        const savedToken = localStorage.getItem(LS.FCM_TOKEN_SAVED);
-        if (savedToken === token) return;
+        if (prevToken === token) return;
         const field = sessionStorage.getItem('_admin_pwa') === '1'
           ? 'fcm_token_admin' : 'fcm_token';
         await saveFcmToken(memberId, token, field);

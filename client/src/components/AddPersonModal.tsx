@@ -182,13 +182,14 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
               <button type="button" className="avatar-selector-btn" onClick={() => setShowAvatarPicker(true)}>
                 {photoUrl
                   ? <img src={photoUrl} alt="아바타" className="avatar-preview" />
-                  : <span className="avatar-placeholder">👤</span>}
-                <span className="avatar-edit-badge">✏️</span>
+                  : <span className={`avatar-initial-circle ${gender === 'female' ? 'female' : 'male'}`}>
+                      {name[0] || '?'}
+                    </span>}
               </button>
+              <span className="avatar-selector-label">아바타 설정</span>
             </div>
 
-            <div className="form-field">
-              <label>이름</label>
+            <div className="form-field name-gender-row">
               <input
                 type="text"
                 value={name}
@@ -197,6 +198,14 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
                 autoFocus
                 required
               />
+              {showGenderPicker && (
+                <div className="gender-btns-inline">
+                  <button type="button" className={`gender-btn ${gender === 'male' ? 'active male' : ''}`}
+                    onClick={() => setGender('male')}>남</button>
+                  <button type="button" className={`gender-btn ${gender === 'female' ? 'active female' : ''}`}
+                    onClick={() => setGender('female')}>여</button>
+                </div>
+              )}
             </div>
 
             <div className="form-field">
@@ -214,17 +223,6 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
               </div>
             </div>
 
-            {showGenderPicker && (
-              <div className="form-field">
-                <label>성별</label>
-                <div className="gender-btns">
-                  <button type="button" className={`gender-btn ${gender === 'male' ? 'active male' : ''}`}
-                    onClick={() => setGender('male')}>남</button>
-                  <button type="button" className={`gender-btn ${gender === 'female' ? 'active female' : ''}`}
-                    onClick={() => setGender('female')}>여</button>
-                </div>
-              </div>
-            )}
 
             <div className="form-field">
               <label className="deceased-check">

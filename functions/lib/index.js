@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanupLoginLogs = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
+exports.cleanupLoginLogs = exports.onBroadcastPushCreated = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const messaging_1 = require("firebase-admin/messaging");
@@ -19,18 +19,20 @@ const APP_URL = 'https://familytree-3221b.web.app';
 const APP_NAME = '우리 가족 가계도';
 // ── FCM 전송 헬퍼 ─────────────────────────────────────────────────────────
 async function sendPush(token, title, body, link = '/') {
+    var _a;
+    const absoluteLink = link.startsWith('http') ? link : `${APP_URL}${link}`;
     try {
-        await fcm.send({
+        const messageId = await fcm.send({
             token,
-            notification: { title, body },
             webpush: {
-                notification: { icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' },
-                fcmOptions: { link },
+                headers: { Urgency: 'high' },
+                data: { title, body, link: absoluteLink },
             },
         });
+        console.log(`FCM 전송 성공: ${messageId}`);
     }
-    catch (_a) {
-        // 만료 토큰 등 조용히 무시
+    catch (err) {
+        console.error('FCM 전송 실패:', (_a = err.message) !== null && _a !== void 0 ? _a : err);
     }
 }
 // ── 비밀번호 초기화 토큰 생성 → 이메일 자동 발송 ─────────────────────────────
@@ -283,6 +285,45 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
     }
     await Promise.all(sends);
     console.log(`기념일 알림 완료: ${sends.length}건`);
+});
+// ── 관리자 수동 공지 푸시 ────────────────────────────────────────────────────
+// push_broadcasts 문서 생성 시 트리거 — 전체 또는 특정 회원에게 발송
+exports.onBroadcastPushCreated = (0, firestore_2.onDocumentCreated)('push_broadcasts/{docId}', async (event) => {
+    var _a, _b, _c, _d, _e;
+    const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
+    if (!data || data.sent)
+        return;
+    const memberId = data.member_id;
+    if (!memberId)
+        return;
+    const memberSnap = await db.doc(`members/${memberId}`).get();
+    if (!((_b = memberSnap.data()) === null || _b === void 0 ? void 0 : _b.is_admin))
+        return;
+    const title = ((_c = data.title) !== null && _c !== void 0 ? _c : '').trim();
+    const body = ((_d = data.body) !== null && _d !== void 0 ? _d : '').trim();
+    if (!title)
+        return;
+    const targetMemberId = data.target_member_id;
+    let count = 0;
+    if (targetMemberId) {
+        const targetSnap = await db.doc(`members/${targetMemberId}`).get();
+        const token = (_e = targetSnap.data()) === null || _e === void 0 ? void 0 : _e.fcm_token;
+        if (token) {
+            await sendPush(token, title, body);
+            count = 1;
+        }
+    }
+    else {
+        const snap = await db.collection('members').where('status', '==', 'active').get();
+        const sends = snap.docs
+            .map(d => d.data().fcm_token)
+            .filter((t) => !!t)
+            .map(token => sendPush(token, title, body));
+        await Promise.all(sends);
+        count = sends.length;
+    }
+    await event.data.ref.update({ sent: true, sent_at: new Date().toISOString(), sent_count: count });
+    console.log(`공지 푸시 발송 완료: ${count}명`);
 });
 // ── 로그 정리 (접속 로그 + 활동 로그) ─────────────────────────────────────
 // 매월 1일 UTC 00:00 (KST 09:00) 실행 — 1년 이전 문서 일괄 삭제

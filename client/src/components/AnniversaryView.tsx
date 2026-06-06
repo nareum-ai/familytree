@@ -4,7 +4,10 @@ import { classifyBranch, canSeeFull } from '../hooks/useTreeLayout';
 import { buildAnniversaries, formatDate, type AnniversaryItem } from '../utils/anniversary';
 import type { BranchType } from '../types';
 import { LS } from '../lib/storageKeys';
+import { NotifBlockedModal } from './NotifBlockedModal';
+import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import './AnniversaryView.css';
+import './NotifBlockedModal.css';
 
 interface PushPrefs {
   enabled: boolean;
@@ -88,6 +91,12 @@ export function AnniversaryView({ onClose }: Props) {
   const [pushLoading, setPushLoading] = useState(true);
   const [pushSaving, setPushSaving]   = useState(false);
   const [pushSaveMsg, setPushSaveMsg] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [showNotifBlocked, setShowNotifBlocked] = useState(false);
+  const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+
+  const handleInstall = async () => {
+    await triggerInstall();
+  };
 
   // 뷰포인트 접근 가능 브랜치
   const accessibleBranches = useMemo((): BranchType[] => {
@@ -178,6 +187,7 @@ export function AnniversaryView({ onClose }: Props) {
   const later    = items.filter(i => i.daysUntil > 90);
 
   return (
+    <>
     <div className="ann-backdrop" onClick={onClose}>
       <div className="ann-panel" onClick={e => e.stopPropagation()}>
         <div className="ann-header">
@@ -185,11 +195,11 @@ export function AnniversaryView({ onClose }: Props) {
           <div className="ann-header-actions">
             {!isAdminContext && hasPersonId && mode === 'list' && (
               <button
-                className="ann-settings-btn"
-                onClick={() => setMode('settings')}
-                title="알림 설정"
+                className={`ann-settings-btn ${notifDenied ? 'blocked' : ''}`}
+                onClick={() => notifDenied ? setShowNotifBlocked(true) : setMode('settings')}
+                title={notifDenied ? '알림이 차단되어 있어요' : '알림 설정'}
               >
-                🔔
+                {notifDenied ? '🔕' : '🔔'}
               </button>
             )}
             <button className="ann-close" onClick={mode === 'settings' ? () => setMode('list') : onClose}>
@@ -205,7 +215,18 @@ export function AnniversaryView({ onClose }: Props) {
                 <span className="ann-push-label">알림 사용</span>
                 <button
                   className={`ann-push-toggle ${pushPrefs.enabled ? 'on' : ''}`}
-                  onClick={() => setPushPrefs(p => ({ ...p, enabled: !p.enabled }))}>
+                  onClick={async () => {
+                    const turningOn = !pushPrefs.enabled;
+                    if (turningOn && Notification.permission !== 'granted') {
+                      if (Notification.permission === 'denied') {
+                        setShowNotifBlocked(true);
+                        return;
+                      }
+                      const result = await Notification.requestPermission();
+                      if (result !== 'granted') return;
+                    }
+                    setPushPrefs(p => ({ ...p, enabled: !p.enabled }));
+                  }}>
                   {pushPrefs.enabled ? 'ON' : 'OFF'}
                 </button>
               </div>
@@ -295,5 +316,7 @@ export function AnniversaryView({ onClose }: Props) {
         )}
       </div>
     </div>
+    {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} onInstall={getInstallPrompt() ? handleInstall : undefined} />}
+    </>
   );
 }

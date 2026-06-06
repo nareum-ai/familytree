@@ -18,7 +18,7 @@ interface Props {
 export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const { persons, relationships, viewpointPersonId, updatePerson, deletePerson, createInvite,
           isPersonMapped, loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
-          updateRelationship } = useFamilyStore();
+          updateRelationship, addRelationship } = useFamilyStore();
   const root       = persons.find(p => p.is_root === 1)!;
   const chusuBase  = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
 
@@ -86,7 +86,10 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   };
 
   const handleDelete = async () => {
-    // 이 인물을 제거했을 때 root에서 단절되는 인물 탐색
+    const deletingSpouseId = spouseRel
+      ? (spouseRel.person1_id === person.id ? spouseRel.person2_id : spouseRel.person1_id)
+      : null;
+
     const root = persons.find(p => p.is_root === 1);
     if (root) {
       const filteredRels = relationships.filter(
@@ -109,8 +112,19 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
       const orphaned = relationships
         .filter(r => r.person1_id === person.id || r.person2_id === person.id)
         .map(r => r.person1_id === person.id ? r.person2_id : r.person1_id)
-        .filter((pid, i, arr) => arr.indexOf(pid) === i) // 중복 제거
-        .filter(pid => pid !== root.id && !canReach(pid));
+        .filter((pid, i, arr) => arr.indexOf(pid) === i)
+        .filter(pid => {
+          if (pid === root.id) return false;
+          if (canReach(pid)) return false;
+          // 배우자가 root에 연결돼 있고, 이 인물이 삭제 대상의 자녀면 고아 아님
+          if (deletingSpouseId && canReach(deletingSpouseId)) {
+            const isChild = relationships.some(
+              r => r.type === 'parent_child' && r.person1_id === person.id && r.person2_id === pid
+            );
+            if (isChild) return false;
+          }
+          return true;
+        });
 
       if (orphaned.length > 0) {
         const names = orphaned
@@ -122,6 +136,22 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
     }
 
     if (!confirm(`${person.name}을(를) 삭제하시겠습니까?`)) return;
+
+    // 배우자가 있으면, 삭제 전에 나의 자녀를 배우자에게도 연결
+    if (deletingSpouseId) {
+      const myChildren = relationships
+        .filter(r => r.type === 'parent_child' && r.person1_id === person.id)
+        .map(r => r.person2_id);
+      for (const childId of myChildren) {
+        const alreadyLinked = relationships.some(
+          r => r.type === 'parent_child' && r.person1_id === deletingSpouseId && r.person2_id === childId
+        );
+        if (!alreadyLinked) {
+          await addRelationship({ person1_id: deletingSpouseId, person2_id: childId, type: 'parent_child' });
+        }
+      }
+    }
+
     await deletePerson(person.id);
     onClose();
   };
@@ -157,6 +187,26 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
     window.open(`sms:?body=${body}`);
   };
 
+  const buildInviteLink = async () => {
+    const token = await createInvite(person.id);
+    const senderName = localStorage.getItem('familyTreeUser') ?? '';
+    const base = `${window.location.origin}/invite/${token}`;
+    return senderName ? `${base}?from=${encodeURIComponent(senderName)}` : base;
+  };
+
+  const handleDirectSMSInvite = async () => {
+    const link = await buildInviteLink();
+    const body = encodeURIComponent(`이 링크를 눌러 가입하면 ${person.name}으로 바로 가족 가계도에 등록됩니다.\n${link}`);
+    window.open(`sms:${person.phone ?? ''}?body=${body}`);
+  };
+
+  const handleDirectEmailInvite = async () => {
+    const link = await buildInviteLink();
+    const subject = encodeURIComponent('가족 가계도 초대');
+    const body = encodeURIComponent(`이 링크를 눌러 가입하면 ${person.name}으로 바로 가족 가계도에 등록됩니다.\n${link}`);
+    window.open(`mailto:${person.email ?? ''}?subject=${subject}&body=${body}`);
+  };
+
   const genderLabel = person.gender === 'male' ? '남성' : person.gender === 'female' ? '여성' : '-';
   const { viewpointPersonId: vpId } = useFamilyStore();
   const mePersonId  = vpId ?? root?.id;
@@ -165,12 +215,13 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
   const myPersonId = localStorage.getItem(LS.MY_PERSON_ID);
 
-  // 편집 권한: 나 자신 | 내가 만든 노드 | 관리자
+  // 편집 권한: 나 자신 | 관리자 | (주인 없는 노드만) 내가 만든 노드
   const isAdmin = localStorage.getItem(LS.IS_ADMIN) === 'true' || localStorage.getItem(LS.ADMIN_RETURN) === 'true';
   const canEdit = (() => {
     if (isAdmin) return true;
     if (person.id === vpId || person.id === myPersonId) return true;         // 내 노드
-    if (person.created_by && person.created_by === currentUserAccount) return true; // 내가 만든 노드
+    if (alreadyMapped) return false;                                          // 주인 있는 노드는 본인만
+    if (person.created_by && person.created_by === currentUserAccount) return true; // 내가 만든 노드 (주인 없을 때만)
     return false;
   })();
   const relationName = chusuBase ? getRelationLabel(person.id, chusuBase, persons, relationships) : '';
@@ -191,9 +242,11 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   return (
     <div className="detail-panel">
       <div className="detail-header">
-        <div className={`detail-hex ${person.gender === 'male' ? 'male' : 'female'} ${person.is_root ? 'root' : ''} ${person.is_deceased ? 'deceased' : ''}`}>
-          {person.photo_url ? <img src={person.photo_url} alt={person.name} /> : <span>{person.name[0]}</span>}
-        </div>
+        {!editing && (
+          <div className={`detail-hex ${person.gender === 'male' ? 'male' : 'female'} ${person.is_root ? 'root' : ''} ${person.is_deceased ? 'deceased' : ''}`}>
+            {person.photo_url ? <img src={person.photo_url} alt={person.name} /> : <span>{person.name[0]}</span>}
+          </div>
+        )}
         <button className="close-btn" onClick={onClose}>✕</button>
       </div>
 
@@ -220,14 +273,24 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
           {(person.phone || person.email || person.memo) && (
             <div className="detail-contact">
               {person.phone && (
-                <a className="contact-row" href={`tel:${person.phone}`}>
-                  <span className="contact-icon">📱</span>{person.phone}
-                </a>
+                <div className="contact-row-wrap">
+                  <a className="contact-row" href={`tel:${person.phone}`}>
+                    <span className="contact-icon">📱</span>{person.phone}
+                  </a>
+                  {!alreadyMapped && !person.is_deceased && (
+                    <button className="btn-contact-invite" onClick={handleDirectSMSInvite}>SMS 초대</button>
+                  )}
+                </div>
               )}
               {person.email && (
-                <a className="contact-row" href={`mailto:${person.email}`}>
-                  <span className="contact-icon">📧</span>{person.email}
-                </a>
+                <div className="contact-row-wrap">
+                  <a className="contact-row" href={`mailto:${person.email}`}>
+                    <span className="contact-icon">📧</span>{person.email}
+                  </a>
+                  {!alreadyMapped && !person.is_deceased && (
+                    <button className="btn-contact-invite email" onClick={handleDirectEmailInvite}>이메일 초대</button>
+                  )}
+                </div>
               )}
               {person.memo && (
                 <div className="contact-row contact-memo">
@@ -237,7 +300,12 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             </div>
           )}
           {canEdit && (
-            <button className="btn-edit" onClick={() => setEditing(true)}>편집</button>
+            <div className="detail-btn-row">
+              <button className="btn-edit" onClick={() => setEditing(true)}>편집</button>
+              {!person.is_root && !alreadyMapped && (
+                <button className="btn-delete-sm" onClick={handleDelete}>삭제</button>
+              )}
+            </div>
           )}
         </div>
       ) : (
@@ -246,9 +314,11 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             <button type="button" className="avatar-selector-btn" onClick={() => setShowAvatarPicker(true)}>
               {photoUrl
                 ? <img src={photoUrl} alt="아바타" className="avatar-preview" />
-                : <span className="avatar-placeholder">{name[0] ?? '?'}</span>}
-              <span className="avatar-edit-badge">✏️</span>
+                : <span className={`avatar-initial-circle ${gender === 'female' ? 'female' : 'male'}`}>
+                    {name[0] || '?'}
+                  </span>}
             </button>
+            <span className="avatar-selector-label">아바타 설정</span>
             {photoUrl && (
               <button type="button" className="edit-avatar-remove-link" onClick={() => setPhotoUrl('')}>
                 아바타 삭제
@@ -256,14 +326,9 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             )}
           </div>
 
-          <div className="form-field">
-            <label>이름</label>
+          <div className="form-field name-gender-row">
             <input value={name} onChange={e => setName(e.target.value)} placeholder="이름" required />
-          </div>
-
-          <div className="form-field">
-            <label>성별</label>
-            <div className="gender-btns">
+            <div className="gender-btns-inline">
               <button type="button" className={`gender-btn ${gender === 'male' ? 'active male' : ''}`}
                 onClick={() => setGender('male')}>남</button>
               <button type="button" className={`gender-btn ${gender === 'female' ? 'active female' : ''}`}
@@ -347,7 +412,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
       <div className="detail-actions">
         <button className="action-btn primary" onClick={onAddFamily}>
-          <span className="action-icon">+</span>가족 추가
+          <span className="action-icon">+</span>{person.name}의 가족 추가하기
         </button>
         {person.is_deceased ? null : alreadyMapped ? (
           <div className="action-mapped-notice">
@@ -355,11 +420,8 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
           </div>
         ) : (
           <button className="action-btn secondary" onClick={handleInvite}>
-            <span className="action-icon">🔗</span>초대 링크 만들기
+            <span className="action-icon">🔗</span>{person.name} 님을 가계도로 초대하기
           </button>
-        )}
-        {!person.is_root && !alreadyMapped && (
-          <button className="action-btn danger" onClick={handleDelete}>삭제</button>
         )}
       </div>
 

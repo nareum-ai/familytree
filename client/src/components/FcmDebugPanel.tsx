@@ -6,10 +6,16 @@ import { LS } from '../lib/storageKeys';
 
 const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
 
-export function FcmDebugPanel() {
+
+interface FcmDebugProps {
+  field?: 'fcm_token' | 'fcm_token_admin';
+}
+
+export function FcmDebugPanel({ field = 'fcm_token' }: FcmDebugProps) {
   const { saveFcmToken } = useFamilyStore();
   const [log, setLog] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const add = (msg: string) => setLog(prev => [...prev, msg]);
 
@@ -40,6 +46,15 @@ export function FcmDebugPanel() {
       const swReg = await navigator.serviceWorker.ready;
       add(`✅ SW 스코프: ${swReg.scope}`);
 
+      add('기존 구독 초기화 중...');
+      const existingSub = await swReg.pushManager.getSubscription();
+      if (existingSub) {
+        await existingSub.unsubscribe();
+        add('✅ 기존 구독 해제 완료');
+      } else {
+        add('기존 구독 없음');
+      }
+
       add('토큰 요청 중...');
       const token = await getToken(messaging, {
         vapidKey: VAPID_KEY,
@@ -52,7 +67,7 @@ export function FcmDebugPanel() {
       const memberId = localStorage.getItem(LS.MEMBER_ID);
       if (!memberId) { add('❌ memberId 없음'); return; }
 
-      await saveFcmToken(memberId, token, 'fcm_token');
+      await saveFcmToken(memberId, token, field);
       localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
       add('✅ Firestore 저장 완료!');
     } catch (e: unknown) {
@@ -64,23 +79,27 @@ export function FcmDebugPanel() {
 
   return (
     <div className="my-fcm-debug">
-      <p className="my-fcm-debug-title">🔧 알림 진단</p>
-      <p>FCM 토큰: <b>{localStorage.getItem(LS.FCM_TOKEN_SAVED) ? '✅ 저장됨' : '❌ 없음'}</b></p>
-      <button
-        onClick={runTest}
-        disabled={running}
-        style={{
-          marginTop: 8, padding: '8px 16px',
-          background: '#2AABE2', color: 'white',
-          border: 'none', borderRadius: 8,
-          fontSize: 13, cursor: 'pointer', width: '100%',
-        }}
-      >
-        {running ? '진단 중...' : '🔍 토큰 등록 테스트'}
+      <button className="my-fcm-debug-header" onClick={() => setOpen(o => !o)}>
+        <span>🔧 알림 진단</span>
+        <span className="my-fcm-debug-chevron">{open ? '▲' : '▼'}</span>
       </button>
-      {log.length > 0 && (
-        <div style={{ marginTop: 10, fontSize: 12, lineHeight: 1.8, wordBreak: 'break-all' }}>
-          {log.map((l, i) => <p key={i}>{l}</p>)}
+      {open && (
+        <div className="my-fcm-debug-body">
+          <p className="my-fcm-debug-token">
+            FCM 토큰: <b>{localStorage.getItem(LS.FCM_TOKEN_SAVED) ? '✅ 저장됨' : '❌ 없음'}</b>
+          </p>
+          <button
+            onClick={runTest}
+            disabled={running}
+            className="my-fcm-debug-btn"
+          >
+            {running ? '진단 중...' : '🔍 토큰 등록 테스트'}
+          </button>
+          {log.length > 0 && (
+            <div className="my-fcm-debug-log">
+              {log.map((l, i) => <p key={i}>{l}</p>)}
+            </div>
+          )}
         </div>
       )}
     </div>

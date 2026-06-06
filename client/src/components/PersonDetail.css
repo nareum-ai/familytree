@@ -99,8 +99,14 @@
   font-weight: 700;
 }
 
+.detail-btn-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
 .btn-edit {
-  align-self: flex-start;
   background: none;
   border: 1.5px solid #e0e0e0;
   border-radius: 6px;
@@ -109,10 +115,21 @@
   cursor: pointer;
   color: #4a5568;
   transition: all 0.15s;
-  margin-top: 4px;
 }
 
 .btn-edit:hover { border-color: #4F46E5; color: #4F46E5; }
+
+.btn-delete-sm {
+  background: none;
+  border: 1.5px solid #fca5a5;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #e53e3e;
+  transition: all 0.15s;
+}
+.btn-delete-sm:hover { background: #fff5f5; border-color: #e53e3e; }
 
 .edit-form {
   display: flex;
@@ -195,6 +212,13 @@
   border: 1px solid #e8f0f5;
 }
 
+.contact-row-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
 .contact-row {
   display: flex;
   align-items: flex-start;
@@ -203,9 +227,28 @@
   color: #2AABE2;
   text-decoration: none;
   line-height: 1.4;
+  flex: 1;
+  min-width: 0;
 }
 
 .contact-row:hover { text-decoration: underline; }
+
+.btn-contact-invite {
+  flex-shrink: 0;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.btn-contact-invite:hover { opacity: 0.82; }
+.btn-contact-invite.email { background: #0EA5E9; }
 
 .contact-memo {
   color: #4a5568;
@@ -302,13 +345,6 @@
   text-align: center;
 }
 
-.action-btn.danger {
-  background: #fff5f5;
-  color: #e53e3e;
-  border: 1.5px solid #fca5a5;
-}
-
-.action-btn.danger:hover { background: #fee2e2; }
 
 .invite-box {
   background: linear-gradient(135deg, #EEF2FF, #E0E7FF);

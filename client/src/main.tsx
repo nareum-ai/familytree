@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { setAdminPWAMode } from './lib/storageKeys.ts'
+import { initInstallPromptListener } from './lib/installPrompt.ts'
+
+initInstallPromptListener();
 
 // URL 파라미터 → sessionStorage 플래그 (React 렌더링 전, URL 정리 전에 실행)
 if (new URLSearchParams(window.location.search).get('admin_pwa') === '1') {
