@@ -552,7 +552,6 @@ function App() {
             </button>
             <button className="header-ann-btn" onClick={() => setShowSearch(true)} title="검색">🔍</button>
             <button className="header-ann-btn" onClick={() => setShowAnn(true)} title="기념일">📅</button>
-            <button className="header-ann-btn" onClick={() => setShowInheritance(true)} title="상속 계산기">⚖️</button>
             <button className="header-ann-btn" onClick={() => setShowHelp(true)} title="사용 안내">❓</button>
           </div>
           <span className="header-username">{displayName}</span>
@@ -581,10 +580,6 @@ function App() {
         <button className="mobile-nav-btn" onClick={() => setShowAnn(true)}>
           <span className="mobile-nav-icon">📅</span>
           <span className="mobile-nav-label">기념일</span>
-        </button>
-        <button className="mobile-nav-btn" onClick={() => setShowInheritance(true)}>
-          <span className="mobile-nav-icon">⚖️</span>
-          <span className="mobile-nav-label">상속계산</span>
         </button>
         <button className="mobile-nav-btn" onClick={() => setShowHelp(true)}>
           <span className="mobile-nav-icon">❓</span>

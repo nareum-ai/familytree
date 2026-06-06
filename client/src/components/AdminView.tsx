@@ -141,6 +141,43 @@ export function AdminView({ onLogout }: Props) {
   const [broadcastLoading, setBroadcastLoading] = useState(false);
   const [broadcastMsg,     setBroadcastMsg]     = useState<{ ok: boolean; msg: string } | null>(null);
 
+  // Gemini 채팅
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
+  const [chatInput,    setChatInput]    = useState('');
+  const [chatLoading,  setChatLoading]  = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const handleChatSend = async () => {
+    const msg = chatInput.trim();
+    if (!msg || chatLoading) return;
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setChatLoading(true);
+    try {
+      const GEMINI_KEY = 'REMOVED_SECRET';
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: msg }] }],
+          }),
+        }
+      );
+      const data = await resp.json();
+      const text: string = resp.ok
+        ? (data.candidates?.[0]?.content?.parts?.[0]?.text ?? '응답 없음')
+        : (data?.error?.message ?? `HTTP ${resp.status}`);
+      setChatMessages(prev => [...prev, { role: 'ai', text }]);
+    } catch (e) {
+      setChatMessages(prev => [...prev, { role: 'ai', text: `오류: ${e instanceof Error ? e.message : '알 수 없음'}` }]);
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    }
+  };
+
   // 활동 로그
   interface ActivityLog { id: string; at: string; action: 'add' | 'delete'; person_name: string; actor_name: string; }
   const [actLogs,       setActLogs]       = useState<ActivityLog[]>([]);
@@ -836,6 +873,44 @@ export function AdminView({ onLogout }: Props) {
               />
             </>
           )}
+        </section>
+
+        {/* Gemini 채팅 */}
+        <section className="admin-section admin-chat-section">
+          <h2>🤖 AI 채팅 (Gemini)</h2>
+          <div className="admin-chat-messages">
+            {chatMessages.length === 0 && (
+              <p className="admin-chat-empty">메시지를 입력하세요.</p>
+            )}
+            {chatMessages.map((m, i) => (
+              <div key={i} className={`admin-chat-bubble ${m.role}`}>
+                <pre className="admin-chat-text">{m.text}</pre>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="admin-chat-bubble ai">
+                <span className="admin-chat-typing">●●●</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          <div className="admin-chat-input-row">
+            <textarea
+              className="admin-chat-input"
+              rows={2}
+              placeholder="메시지 입력..."
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSend(); }
+              }}
+            />
+            <button
+              className="admin-chat-send"
+              onClick={handleChatSend}
+              disabled={!chatInput.trim() || chatLoading}
+            >전송</button>
+          </div>
         </section>
       </div>
 
