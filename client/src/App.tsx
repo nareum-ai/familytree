@@ -16,6 +16,7 @@ import { GoogleLinkScreen } from './components/GoogleLinkScreen';
 import { LandingPage } from './components/LandingPage';
 import { MyMenuView } from './components/MyMenuView';
 import { HelpView } from './components/HelpView';
+import { InheritanceView } from './components/InheritanceView';
 import { LS, SS } from './lib/storageKeys';
 import { useFCMToken } from './hooks/useFCMToken';
 import { useAdminEmail } from './hooks/useAdminEmail';
@@ -64,10 +65,11 @@ function App() {
       window.history.replaceState({}, '', clean);
     }
   }, []);
-  const [showAnniversary, setShowAnn]     = useState(false);
-  const [showSearch,    setShowSearch]    = useState(false);
-  const [showMyMenu,    setShowMyMenu]    = useState(false);
-  const [showHelp,      setShowHelp]      = useState(false);
+  const [showAnniversary, setShowAnn]         = useState(false);
+  const [showSearch,    setShowSearch]        = useState(false);
+  const [showMyMenu,    setShowMyMenu]        = useState(false);
+  const [showHelp,      setShowHelp]          = useState(false);
+  const [showInheritance, setShowInheritance] = useState(false);
   const [showBackToast, setShowBackToast] = useState(false);
   const backPressedRef = useRef(false);
   const backTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -148,6 +150,7 @@ function App() {
   useEffect(() => {
     closeTopModalRef.current = () => {
       if (showHelp)        { setShowHelp(false);                            return true; }
+      if (showInheritance) { setShowInheritance(false);                     return true; }
       if (showAnniversary) { setShowAnn(false);                             return true; }
       if (showMyMenu)      { setShowMyMenu(false); setPendingCount(0);      return true; }
       if (showSearch)      { setShowSearch(false);                          return true; }
@@ -155,7 +158,7 @@ function App() {
       if (selectedPersonId)    { selectPerson(null);                        return true; }
       return false;
     };
-  }, [showHelp, showAnniversary, showMyMenu, showSearch, infoRequestPersonId, selectedPersonId,
+  }, [showHelp, showInheritance, showAnniversary, showMyMenu, showSearch, infoRequestPersonId, selectedPersonId,
       closeInfoRequest, selectPerson]);
 
   // 안드로이드 뒤로가기: 모달이 열려있으면 닫기, 없으면 이중 확인 후 종료
@@ -549,6 +552,7 @@ function App() {
             </button>
             <button className="header-ann-btn" onClick={() => setShowSearch(true)} title="검색">🔍</button>
             <button className="header-ann-btn" onClick={() => setShowAnn(true)} title="기념일">📅</button>
+            <button className="header-ann-btn" onClick={() => setShowInheritance(true)} title="상속 계산기">⚖️</button>
             <button className="header-ann-btn" onClick={() => setShowHelp(true)} title="사용 안내">❓</button>
           </div>
           <span className="header-username">{displayName}</span>
@@ -578,6 +582,10 @@ function App() {
           <span className="mobile-nav-icon">📅</span>
           <span className="mobile-nav-label">기념일</span>
         </button>
+        <button className="mobile-nav-btn" onClick={() => setShowInheritance(true)}>
+          <span className="mobile-nav-icon">⚖️</span>
+          <span className="mobile-nav-label">상속계산</span>
+        </button>
         <button className="mobile-nav-btn" onClick={() => setShowHelp(true)}>
           <span className="mobile-nav-icon">❓</span>
           <span className="mobile-nav-label">도움말</span>
@@ -586,6 +594,7 @@ function App() {
       {showMyMenu      && <MyMenuView      onClose={() => { setShowMyMenu(false); setPendingCount(0); }} />}
       {showSearch      && <SearchView      onClose={() => setShowSearch(false)} />}
       {showAnniversary && <AnniversaryView onClose={() => setShowAnn(false)} />}
+      {showInheritance && <InheritanceView onClose={() => setShowInheritance(false)} />}
       {showHelp        && <HelpView        onClose={() => setShowHelp(false)} />}
       {showBackToast && (
         <div className="back-exit-toast">한 번 더 누르면 앱을 종료합니다</div>
