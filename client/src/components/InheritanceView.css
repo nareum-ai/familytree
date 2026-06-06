@@ -118,6 +118,24 @@
   padding-left: 4px;
 }
 
+.inherit-hello-btn {
+  padding: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+.inherit-hello-btn:hover:not(:disabled) { background: #e2e8f0; }
+.inherit-hello-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .inherit-calc-btn {
   padding: 13px;
   background: linear-gradient(135deg, #2AABE2, #0e86c5);

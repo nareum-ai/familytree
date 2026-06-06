@@ -179,6 +179,20 @@ export function InheritanceView({ onClose }: Props) {
     [persons, selectedId]
   );
 
+  const handleHello = async () => {
+    setLoading(true);
+    setResult('');
+    setError('');
+    try {
+      const text = await callGemini('헬로~!');
+      setResult(text);
+    } catch (e: unknown) {
+      setError(`오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCalculate = async () => {
     if (!selectedPerson || assetValue <= 0) return;
     setLoading(true);
@@ -250,6 +264,14 @@ export function InheritanceView({ onClose }: Props) {
               {assetDisplay && <span className="inherit-asset-label">{assetDisplay}</span>}
             </div>
           </div>
+
+          <button
+            className="inherit-hello-btn"
+            onClick={handleHello}
+            disabled={loading}
+          >
+            {loading ? <span className="inherit-spinner" /> : '🤖 AI 연결 테스트 (헬로~!)'}
+          </button>
 
           <button
             className="inherit-calc-btn"
