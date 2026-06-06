@@ -1,9 +1,29 @@
 import { useState, useMemo } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import type { Person, Relationship } from '../types';
-import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
-import { app } from '../lib/firebase';
 import './InheritanceView.css';
+
+const GEMINI_API_KEY = 'AIzaSyCMwRlXqDZxatmpe4fZKLyfYBi_hv4Udtw';
+
+async function callGemini(prompt: string): Promise<string> {
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2 },
+      }),
+    }
+  );
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '결과를 받지 못했습니다.';
+}
 
 interface Props {
   onClose: () => void;
@@ -169,10 +189,8 @@ export function InheritanceView({ onClose }: Props) {
       const ctx = buildFamilyContext(selectedPerson, persons, relationships);
       const userMsg = `${ctx}\n상속재산 총액: ${formatKrw(assetValue)}\n\n위 정보를 바탕으로 상속 지분과 상속세를 계산해주세요.`;
 
-      const aiInst = getAI(app, { backend: new GoogleAIBackend() });
-      const model = getGenerativeModel(aiInst, { model: 'gemini-2.0-flash' });
-      const resp = await model.generateContent(`${SYSTEM_PROMPT}\n\n${userMsg}`);
-      setResult(resp.response.text());
+      const text = await callGemini(`${SYSTEM_PROMPT}\n\n${userMsg}`);
+      setResult(text);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '알 수 없는 오류';
       if (msg.includes('API_NOT_ENABLED') || msg.includes('not been used') || msg.includes('403')) {
