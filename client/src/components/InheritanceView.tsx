@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import type { Person, Relationship } from '../types';
-import { geminiFlash } from '../lib/ai';
+import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
+import { app } from '../lib/firebase';
 import './InheritanceView.css';
 
 interface Props {
@@ -168,10 +169,12 @@ export function InheritanceView({ onClose }: Props) {
       const ctx = buildFamilyContext(selectedPerson, persons, relationships);
       const userMsg = `${ctx}\n상속재산 총액: ${formatKrw(assetValue)}\n\n위 정보를 바탕으로 상속 지분과 상속세를 계산해주세요.`;
 
-      const chat = geminiFlash.startChat({
+      const aiInst = getAI(app, { backend: new GoogleAIBackend() });
+      const model = getGenerativeModel(aiInst, {
+        model: 'gemini-2.0-flash',
         systemInstruction: SYSTEM_PROMPT,
       });
-      const resp = await chat.sendMessage(userMsg);
+      const resp = await model.generateContent(userMsg);
       setResult(resp.response.text());
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '알 수 없는 오류';
