@@ -296,7 +296,6 @@ export function canSeeFull(
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 const PERSON_W = 90;
-const COUPLE_W = 128;  // two 64px hexagons side by side, touching
 const NODE_H = 110;
 const H_GAP = 20;
 const V_GAP = 28;

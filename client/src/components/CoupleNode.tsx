@@ -77,7 +77,7 @@ export const CoupleNode = memo(({ data }: { data: unknown }) => {
 
   return (
     <div className="couple-node">
-      {persons.map((p, i) => (
+      {persons.map((_p, i) => (
         <Handle key={i} type="target" id={`p${i}`} position={Position.Top}
           style={{ opacity: 0, left: `${((i + 0.5) / n) * 100}%` }} />
       ))}
