@@ -123,6 +123,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     const timeout = setTimeout(() => set({ loading: false }), 8000);
     let personsReady = false;
     let relsReady = false;
+    let hasFixed = false;  // 픽스 함수는 초기 로드 1회만 실행
     let unsub1: () => void = () => {};
     let unsub2: () => void = () => {};
 
@@ -130,10 +131,50 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       if (personsReady && relsReady) {
         clearTimeout(timeout);
         set({ loading: false });
-        fixMissingSpouseRels();
-        fixMissingParentChildFromSpouse();
-        fixMissingNameParts();
+        if (!hasFixed) {
+          hasFixed = true;
+          fixOrphanedRelationships()
+            .then(() => fixMissingSpouseRels())
+            .then(() => fixMissingParentChildFromSpouse())
+            .then(() => fixPrimarySpouse())
+            .then(() => fixMissingNameParts());
+        }
         get().loadGrantedAccess();
+      }
+    };
+
+    // ── 고아 관계 정리: 삭제된 인물을 참조하는 관계 제거 ─────────────────────
+    // 인물 삭제 중 스냅샷이 부분 상태로 발화되면 race condition으로 잔여 관계가
+    // 남을 수 있다. 초기 로드 시 한 번 정리한다.
+    const fixOrphanedRelationships = async () => {
+      const { persons, relationships } = get();
+      const personIds = new Set(persons.map(p => p.id));
+      const orphaned = relationships.filter(
+        r => !personIds.has(r.person1_id) || !personIds.has(r.person2_id)
+      );
+      if (orphaned.length === 0) return;
+      await Promise.all(orphaned.map(r => deleteDoc(doc(db, 'relationships', r.id)).catch(() => {})));
+    };
+
+    // ── is_primary 복구: 단독 배우자인데 is_primary가 없는 경우 ──────────────
+    const fixPrimarySpouse = async () => {
+      const { persons, relationships } = get();
+      const personIds = new Set(persons.map(p => p.id));
+      for (const person of persons) {
+        const spouseRels = relationships.filter(r =>
+          r.type === 'spouse' &&
+          (r.person1_id === person.id || r.person2_id === person.id) &&
+          personIds.has(r.person1_id) && personIds.has(r.person2_id)
+        );
+        if (spouseRels.length === 0) continue;
+        const hasPrimary = spouseRels.some(r => r.is_primary === true);
+        if (!hasPrimary) {
+          // 첫 번째 배우자를 대표로 지정
+          try {
+            await updateDoc(doc(db, 'relationships', spouseRels[0].id), { is_primary: true });
+          } catch {}
+          break; // 이 사람은 처리됨, 반대쪽도 같은 rel을 보기 때문에 중복 업데이트 방지
+        }
       }
     };
 
