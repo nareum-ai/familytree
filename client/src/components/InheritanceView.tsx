@@ -1,30 +1,13 @@
 import { useState, useMemo } from 'react';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useFamilyStore } from '../store/familyStore';
 import type { Person, Relationship } from '../types';
 import { getChusu } from '../hooks/useTreeLayout';
+import { app } from '../lib/firebase';
 import './InheritanceView.css';
 
-const GEMINI_KEY = 'REMOVED_SECRET';
-
-async function callGemini(prompt: string): Promise<string> {
-  const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2 },
-      }),
-    }
-  );
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err?.error?.message ?? `HTTP ${resp.status}`);
-  }
-  const data = await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '결과를 받지 못했습니다.';
-}
+const functions = getFunctions(app);
+const callAiLogicTemplate = httpsCallable(functions, 'callAiLogicTemplate');
 
 interface Props {
   onClose: () => void;
@@ -42,32 +25,32 @@ function formatKrw(value: number): string {
   return parts.join(' ') + '원';
 }
 
-function buildFamilyContext(
+function fmtPerson(p: Person) {
+  return {
+    name: p.name,
+    gender: p.gender ?? '불명',
+    birth_date: p.birth_date ?? (p.birth_year ? `${p.birth_year}` : null),
+    is_deceased: p.is_deceased,
+  };
+}
+
+function buildFamilyJson(
   deceased: Person,
   persons: Person[],
   relationships: Relationship[],
-): string {
-  const fmt = (p: Person) => {
-    const g = p.gender === 'male' ? '남' : p.gender === 'female' ? '여' : '성별불명';
-    const b = p.birth_date ? `${p.birth_date} 출생` : p.birth_year ? `${p.birth_year}년생` : '생년불명';
-    const s = p.is_deceased ? '사망' : '생존';
-    return `${p.name} (${g}, ${b}, ${s})`;
-  };
-
+  assetWon: number,
+) {
   const spouseIds = [...new Set(relationships
     .filter(r => r.type === 'spouse' && (r.person1_id === deceased.id || r.person2_id === deceased.id))
     .map(r => r.person1_id === deceased.id ? r.person2_id : r.person1_id))];
-  const spouses = spouseIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
   const childIds = [...new Set(relationships
     .filter(r => r.type === 'parent_child' && r.person1_id === deceased.id)
     .map(r => r.person2_id))];
-  const children = childIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
   const parentIds = [...new Set(relationships
     .filter(r => r.type === 'parent_child' && r.person2_id === deceased.id)
     .map(r => r.person1_id))];
-  const parents = parentIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
   const siblingSet = new Set<string>();
   for (const pid of parentIds) {
@@ -75,59 +58,30 @@ function buildFamilyContext(
       .filter(r => r.type === 'parent_child' && r.person1_id === pid && r.person2_id !== deceased.id)
       .forEach(r => siblingSet.add(r.person2_id));
   }
-  const siblings = [...siblingSet].map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
-  let ctx = `피상속인: ${fmt(deceased)}\n\n가족 관계:\n`;
+  const children = childIds
+    .map(id => persons.find(p => p.id === id))
+    .filter(Boolean) as Person[];
 
-  if (spouses.length > 0) {
-    ctx += spouses.map(s => `- 배우자: ${fmt(s)}`).join('\n') + '\n';
-  } else {
-    ctx += '- 배우자: 없음\n';
-  }
-
-  if (children.length > 0) {
-    for (let i = 0; i < children.length; i++) {
-      const c = children[i];
-      ctx += `- 자녀 ${i + 1}: ${fmt(c)}\n`;
-      if (c.is_deceased) {
-        const gcIds = relationships
-          .filter(r => r.type === 'parent_child' && r.person1_id === c.id)
-          .map(r => r.person2_id);
-        const gcs = gcIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
-        if (gcs.length > 0) {
-          ctx += gcs.map(gc => `  └ ${c.name}의 자녀(대습상속인): ${fmt(gc)}`).join('\n') + '\n';
-        }
-      }
-    }
-  } else {
-    ctx += '- 자녀: 없음\n';
-  }
-
-  if (parents.length > 0) {
-    ctx += parents.map(p => `- 부/모: ${fmt(p)}`).join('\n') + '\n';
-  } else {
-    ctx += '- 부모: 모두 사망 또는 미등록\n';
-  }
-
-  if (siblings.length > 0) {
-    ctx += siblings.map(s => `- 형제자매: ${fmt(s)}`).join('\n') + '\n';
-  } else {
-    ctx += '- 형제자매: 없음\n';
-  }
-
-  return ctx;
+  return {
+    deceased: fmtPerson(deceased),
+    spouses: spouseIds.map(id => persons.find(p => p.id === id)).filter(Boolean).map(p => fmtPerson(p!)),
+    children: children.map(c => ({
+      ...fmtPerson(c),
+      grandchildren: c.is_deceased
+        ? relationships
+            .filter(r => r.type === 'parent_child' && r.person1_id === c.id)
+            .map(r => persons.find(p => p.id === r.person2_id))
+            .filter(Boolean)
+            .map(p => fmtPerson(p!))
+        : [],
+    })),
+    parents: parentIds.map(id => persons.find(p => p.id === id)).filter(Boolean).map(p => fmtPerson(p!)),
+    siblings: [...siblingSet].map(id => persons.find(p => p.id === id)).filter(Boolean).map(p => fmtPerson(p!)),
+    asset_won: assetWon,
+    asset_formatted: formatKrw(assetWon),
+  };
 }
-
-const SYSTEM_PROMPT = `아래 가족 관계와 상속재산 정보를 바탕으로 현행 한국 상속법에 따라 계산해주세요.
-
-결과 형식:
-① 법정 상속인 확정
-② 상속 지분표 (분수 + 퍼센트 + 금액)
-③ 상속공제 계산
-④ 상속세 계산
-⑤ 주의사항 (한두 줄)
-
-숫자는 한국식(억/만원)으로 표기하고, 간결하되 정확하게 작성하세요.`;
 
 export function InheritanceView({ onClose }: Props) {
   const { persons, relationships, viewpointPersonId } = useFamilyStore();
@@ -177,8 +131,13 @@ export function InheritanceView({ onClose }: Props) {
     setResult('');
     setError('');
     try {
-      const text = await callGemini('헬로~!');
-      setResult(text);
+      const res = await callAiLogicTemplate({
+        templateId: 'familytree',
+        vars: { family_data: JSON.stringify({ test: '헬로~!' }) },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const d = res.data as any;
+      setResult(typeof d === 'string' ? d : (d?.text ?? d?.result ?? JSON.stringify(d)));
     } catch (e: unknown) {
       setError(`오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`);
     } finally {
@@ -193,18 +152,16 @@ export function InheritanceView({ onClose }: Props) {
     setError('');
 
     try {
-      const ctx = buildFamilyContext(selectedPerson, persons, relationships);
-      const userMsg = `${ctx}\n상속재산 총액: ${formatKrw(assetValue)}\n\n위 정보를 바탕으로 상속 지분과 상속세를 계산해주세요.`;
-
-      const text = await callGemini(`${SYSTEM_PROMPT}\n\n${userMsg}`);
-      setResult(text);
+      const familyData = buildFamilyJson(selectedPerson, persons, relationships, assetValue);
+      const res = await callAiLogicTemplate({
+        templateId: 'familytree',
+        vars: { family_data: JSON.stringify(familyData) },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const d = res.data as any;
+      setResult(typeof d === 'string' ? d : (d?.text ?? d?.result ?? JSON.stringify(d)));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '알 수 없는 오류';
-      if (msg.includes('API_NOT_ENABLED') || msg.includes('not been used') || msg.includes('403')) {
-        setError('Firebase AI Logic이 이 프로젝트에 활성화되어 있지 않습니다.\nFirebase 콘솔 → AI Logic에서 활성화해주세요.');
-      } else {
-        setError(`AI 계산 중 오류가 발생했습니다:\n${msg}`);
-      }
+      setError(`AI 계산 중 오류가 발생했습니다:\n${e instanceof Error ? e.message : '알 수 없는 오류'}`);
     } finally {
       setLoading(false);
     }
