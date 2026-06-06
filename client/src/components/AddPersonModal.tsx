@@ -33,6 +33,7 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
   const [deathDate, setDeathDate] = useState('');
   const [deathLunar, setDeathLunar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [polyConfirmed, setPolyConfirmed] = useState(false);
 
   // Check existing relations
   const hasFather = relationships.some(r =>
@@ -43,10 +44,16 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
     r.type === 'parent_child' && r.person2_id === targetPerson.id &&
     persons.find(p => p.id === r.person1_id)?.gender === 'female'
   );
-  const hasSpouse = relationships.some(r => {
+  const hasPrimarySpouse = relationships.some(r => {
     if (r.type !== 'spouse') return false;
     if (r.person1_id !== targetPerson.id && r.person2_id !== targetPerson.id) return false;
-    // 배우자 person이 실제 존재할 때만 버튼 숨김 (삭제 후 고아 관계 문서 방어)
+    if (!r.is_primary) return false;
+    const spouseId = r.person1_id === targetPerson.id ? r.person2_id : r.person1_id;
+    return persons.some(p => p.id === spouseId);
+  });
+  const hasAnySpouse = relationships.some(r => {
+    if (r.type !== 'spouse') return false;
+    if (r.person1_id !== targetPerson.id && r.person2_id !== targetPerson.id) return false;
     const spouseId = r.person1_id === targetPerson.id ? r.person2_id : r.person1_id;
     return persons.some(p => p.id === spouseId);
   });
@@ -54,10 +61,32 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
     r.type === 'parent_child' && r.person2_id === targetPerson.id
   );
 
+  // 다부다처 방지: 배우자 네트워크(BFS) 에서 남/녀 수 계산
+  // 추가 후 남 >= 2 && 여 >= 2 가 되는 경우 차단
+  const spouseNetwork = (() => {
+    const net = new Set<string>([targetPerson.id]);
+    const q = [targetPerson.id];
+    while (q.length > 0) {
+      const curr = q.shift()!;
+      for (const r of relationships) {
+        if (r.type !== 'spouse') continue;
+        const other = r.person1_id === curr ? r.person2_id
+          : r.person2_id === curr ? r.person1_id : null;
+        if (other && !net.has(other)) { net.add(other); q.push(other); }
+      }
+    }
+    return net;
+  })();
+  const networkMales   = [...spouseNetwork].filter(id => persons.find(p => p.id === id)?.gender === 'male').length;
+  const networkFemales = [...spouseNetwork].filter(id => persons.find(p => p.id === id)?.gender === 'female').length;
+  const wouldCreatePolyamory = relationType === 'spouse' && polyConfirmed && (
+    (networkMales   + (gender === 'male'   ? 1 : 0)) > 1 &&
+    (networkFemales + (gender === 'female' ? 1 : 0)) > 1
+  );
+
   const availableOptions = ALL_OPTIONS.filter(opt => {
     if (opt.type === 'father' && hasFather) return false;
     if (opt.type === 'mother' && hasMother) return false;
-    if (opt.type === 'spouse' && hasSpouse) return false;
     if (opt.type === 'sibling' && !hasParents) return false;
     return true;
   });
@@ -106,7 +135,13 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
       } else if (relationType === 'child') {
         await addRelationship({ person1_id: targetPerson.id, person2_id: newPerson.id, type: 'parent_child' });
       } else if (relationType === 'spouse') {
-        await addRelationship({ person1_id: targetPerson.id, person2_id: newPerson.id, type: 'spouse' });
+        // 기존 배우자가 없거나 대표 배우자가 없으면 첫 배우자를 대표로 자동 지정
+        await addRelationship({
+          person1_id: targetPerson.id,
+          person2_id: newPerson.id,
+          type: 'spouse',
+          is_primary: !hasAnySpouse || !hasPrimarySpouse,
+        });
 
         // 배우자 추가 시 상대방의 기존 자녀에게도 부모 관계 생성
         // 예) 전중섭에게 이인자를 배우자로 추가 → 이인자가 전중섭의 자녀(전현숙 등)의 어머니가 됨
@@ -170,6 +205,7 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
                   onClick={() => {
                     setRelationType(opt.type);
                     if (opt.genderHint) setGender(opt.genderHint);
+                    if (opt.type !== 'spouse') setPolyConfirmed(false);
                   }}
                 >
                   <span className="rel-label">{opt.label}</span>
@@ -178,6 +214,21 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
               ))}
             </div>
 
+            {relationType === 'spouse' && hasAnySpouse && !polyConfirmed && (
+              <div className="poly-confirm-box">
+                <p className="poly-confirm-msg">
+                  <strong>{targetPerson.name}</strong>에게 이미 배우자가 있습니다.<br />
+                  두 번째 배우자를 추가하면 다처·다부 관계가 됩니다.<br />
+                  계속 추가하시겠습니까?
+                </p>
+                <div className="poly-confirm-btns">
+                  <button type="button" className="btn-cancel" onClick={onClose}>취소</button>
+                  <button type="button" className="btn-save" onClick={() => setPolyConfirmed(true)}>계속 추가</button>
+                </div>
+              </div>
+            )}
+
+            <div className={`poly-form-area ${relationType === 'spouse' && hasAnySpouse && !polyConfirmed ? 'poly-hidden' : ''}`}>
             <div className="avatar-selector-wrap">
               <button type="button" className="avatar-selector-btn" onClick={() => setShowAvatarPicker(true)}>
                 {photoUrl
@@ -248,12 +299,23 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
               </div>
             )}
 
+            {wouldCreatePolyamory && (
+              <div className="poly-error-box">
+                <p className="poly-error-msg">
+                  연결된 배우자 그룹에 남성·여성이 이미 각각 있어<br />
+                  이 성별을 추가하면 <strong>다부다처</strong> 관계가 됩니다.<br />
+                  성별을 바꾸거나 다른 방식을 선택해 주세요.
+                </p>
+              </div>
+            )}
+
             <div className="modal-actions">
               <button type="button" className="btn-cancel" onClick={onClose}>취소</button>
-              <button type="submit" className="btn-save" disabled={saving || !name.trim()}>
+              <button type="submit" className="btn-save" disabled={saving || !name.trim() || wouldCreatePolyamory}>
                 {saving ? '저장 중...' : '추가'}
               </button>
             </div>
+            </div>{/* poly-form-area */}
           </form>
         )}
       </div>

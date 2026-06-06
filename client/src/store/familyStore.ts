@@ -46,8 +46,8 @@ interface FamilyState {
   addPerson: (data: Partial<Person>) => Promise<Person>;
   updatePerson: (id: string, data: Partial<Person>) => Promise<Person>;
   deletePerson: (id: string) => Promise<void>;
-  addRelationship: (data: { person1_id: string; person2_id: string; type: string }) => Promise<Relationship>;
-  updateRelationship: (id: string, data: Partial<Pick<Relationship, 'marriage_date' | 'marriage_lunar'>>) => Promise<void>;
+  addRelationship: (data: { person1_id: string; person2_id: string; type: string; is_primary?: boolean }) => Promise<Relationship>;
+  updateRelationship: (id: string, data: Partial<Pick<Relationship, 'marriage_date' | 'marriage_lunar' | 'is_primary'>>) => Promise<void>;
   deleteRelationshipsByPerson: (personId: string) => Promise<void>;
   selectPerson: (id: string | null) => void;
   createInvite: (person_id: string) => Promise<string>;
@@ -393,6 +393,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       person2_id: relData.person2_id,
       type: relData.type as Relationship['type'],
       family_id: familyId,
+      is_primary: relData.is_primary,
     };
   },
 

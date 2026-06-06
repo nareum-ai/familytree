@@ -52,13 +52,23 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState('');
 
-  const spouseRel = relationships.find(
+  const spouseRels = relationships.filter(
     r => r.type === 'spouse' && (r.person1_id === person.id || r.person2_id === person.id)
-  ) ?? null;
+  );
+  const primarySpouseRel = spouseRels.find(r => r.is_primary === true) ?? spouseRels[0] ?? null;
+  const spouseRel = primarySpouseRel;
   const [marriageDate, setMarriageDate] = useState(spouseRel?.marriage_date ?? '');
   const [marriageLunar, setMarriageLunar] = useState(spouseRel?.marriage_lunar ?? false);
 
   const chusu = getChusu(person.id, chusuBase, relationships);
+
+  const handleSetPrimary = async (relId: string) => {
+    await Promise.all(
+      spouseRels.map(r =>
+        updateRelationship(r.id, { is_primary: r.id === relId })
+      )
+    );
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -265,10 +275,22 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
             {person.is_deceased && fmtDate(person.death_date, person.death_lunar) && (
               <span className="meta-chip deceased-chip">기일 {fmtDate(person.death_date, person.death_lunar)}</span>
             )}
-            {spouseRel?.marriage_date && (
-              <span className="meta-chip marriage-chip">💍 {fmtDate(spouseRel.marriage_date, !!spouseRel.marriage_lunar)}</span>
-            )}
             <span className="meta-chip accent">{chusuLabel}</span>
+            {spouseRels.map(r => {
+              const spId = r.person1_id === person.id ? r.person2_id : r.person1_id;
+              const sp = persons.find(p => p.id === spId);
+              if (!sp) return null;
+              const isPrimary = r.is_primary === true || (spouseRels.length === 1);
+              return (
+                <span key={r.id} className={`meta-chip marriage-chip ${isPrimary ? 'marriage-primary' : 'marriage-secondary'}`}>
+                  💍 {sp.name}
+                  {r.marriage_date && <span className="marriage-date">({fmtDate(r.marriage_date, !!r.marriage_lunar)})</span>}
+                  {canEdit && spouseRels.length > 1 && !isPrimary && (
+                    <button className="btn-set-primary" onClick={() => handleSetPrimary(r.id)}>대표 지정</button>
+                  )}
+                </span>
+              );
+            })}
           </div>
           {(person.phone || person.email || person.memo) && (
             <div className="detail-contact">

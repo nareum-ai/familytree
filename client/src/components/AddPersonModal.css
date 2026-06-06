@@ -237,6 +237,44 @@
   padding: 20px 0;
 }
 
+.poly-confirm-box {
+  background: #FFF8E1;
+  border: 1.5px solid #F59E0B;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 12px 0;
+  text-align: center;
+}
+.poly-confirm-msg {
+  font-size: 14px;
+  color: #92400E;
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+.poly-confirm-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.poly-hidden {
+  display: none;
+}
+
+.poly-error-box {
+  background: #FEF2F2;
+  border: 1.5px solid #EF4444;
+  border-radius: 10px;
+  padding: 14px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+.poly-error-msg {
+  font-size: 13px;
+  color: #991B1B;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* 아바타 선택 */
 .avatar-selector-wrap {
   display: flex;

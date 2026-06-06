@@ -163,8 +163,42 @@
 }
 
 .marriage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.marriage-primary {
   background: #FFF0F9;
   color: #BE185D;
+  border: 1.5px solid #BE185D;
+}
+
+.marriage-secondary {
+  background: #F3F4F6;
+  color: #6B7280;
+  border: 1.5px solid #D1D5DB;
+}
+
+.marriage-date {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.btn-set-primary {
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid #9CA3AF;
+  color: #6B7280;
+  border-radius: 4px;
+  padding: 1px 5px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-set-primary:hover {
+  border-color: #BE185D;
+  color: #BE185D;
+  background: #FFF0F9;
 }
 
 
