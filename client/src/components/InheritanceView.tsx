@@ -132,7 +132,7 @@ export function InheritanceView({ onClose }: Props) {
     setError('');
     try {
       const res = await callAiLogicTemplate({
-        templateId: 'familytree',
+        templateId: 'template-8pwn',
         vars: { family_data: JSON.stringify({ test: '헬로~!' }) },
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,7 +154,7 @@ export function InheritanceView({ onClose }: Props) {
     try {
       const familyData = buildFamilyJson(selectedPerson, persons, relationships, assetValue);
       const res = await callAiLogicTemplate({
-        templateId: 'familytree',
+        templateId: 'template-8pwn',
         vars: { family_data: JSON.stringify(familyData) },
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
