@@ -53,19 +53,19 @@ function buildFamilyContext(
     return `${p.name} (${g}, ${b}, ${s})`;
   };
 
-  const spouseIds = relationships
+  const spouseIds = [...new Set(relationships
     .filter(r => r.type === 'spouse' && (r.person1_id === deceased.id || r.person2_id === deceased.id))
-    .map(r => r.person1_id === deceased.id ? r.person2_id : r.person1_id);
+    .map(r => r.person1_id === deceased.id ? r.person2_id : r.person1_id))];
   const spouses = spouseIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
-  const childIds = relationships
+  const childIds = [...new Set(relationships
     .filter(r => r.type === 'parent_child' && r.person1_id === deceased.id)
-    .map(r => r.person2_id);
+    .map(r => r.person2_id))];
   const children = childIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
-  const parentIds = relationships
+  const parentIds = [...new Set(relationships
     .filter(r => r.type === 'parent_child' && r.person2_id === deceased.id)
-    .map(r => r.person1_id);
+    .map(r => r.person1_id))];
   const parents = parentIds.map(id => persons.find(p => p.id === id)).filter(Boolean) as Person[];
 
   const siblingSet = new Set<string>();
