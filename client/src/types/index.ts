@@ -33,6 +33,7 @@ export interface Relationship {
   family_id: string;   // 가족집단 식별자
   marriage_date?: string | null;   // "YYYY-MM-DD", spouse 관계에만 해당
   marriage_lunar?: boolean;
+  is_primary?: boolean;  // 대표 배우자 여부 (처가/처외가 기준, 다처/다부제 시 1명만 true)
 }
 
 export type BranchType = '친가' | '외가' | '처가' | '처외가';

@@ -8,9 +8,8 @@ import type { Person, Relationship, BranchType } from '../types';
 interface BranchContext {
   rootId: string;
   rootSpouseIds: Set<string>;
-  // root 자녀 & 배우자 자녀
+  primarySpouseId: string | null;  // 처가/처외가 기준이 되는 대표 배우자
   coupledChildIds: Set<string>;
-  // 브랜치별 소속 집합
   sets: Record<BranchType, Set<string>>;
 }
 
@@ -48,17 +47,22 @@ function buildBranchContext(
 
   const rootSpouseIds = new Set(spouseOf.get(root.id) ?? []);
 
-  // 배우자의 부모
-  // 1차: 배우자(전현숙)의 직접 parent_child 관계에서 찾음
-  // 2차: 한 쪽만 있으면 그 쪽의 spouse(배우자)에서 나머지를 찾음
-  //   예) 전중섭→전현숙만 있고 이인자→전현숙 없어도
-  //       전중섭의 spouse = 이인자 → spouseMother = 이인자
+  // 대표 배우자(is_primary=true) 기준으로 처가/처외가 계산
+  // is_primary가 없으면 첫 번째 배우자를 fallback으로 사용 (기존 데이터 호환)
+  const primarySpouseRel = relationships.find(
+    r => r.type === 'spouse' && r.is_primary === true &&
+    (r.person1_id === root.id || r.person2_id === root.id)
+  );
+  const primarySpouseId = primarySpouseRel
+    ? (primarySpouseRel.person1_id === root.id ? primarySpouseRel.person2_id : primarySpouseRel.person1_id)
+    : (spouseOf.get(root.id)?.[0] ?? null);
+
   let spouseFather: string | null = null;
   let spouseMother: string | null = null;
-  for (const sid of rootSpouseIds) {
-    const sp = parentOf.get(sid) ?? [];
-    if (!spouseFather) spouseFather = sp.find(id => personById.get(id)?.gender === 'male') ?? sp[0] ?? null;
-    if (!spouseMother) spouseMother = sp.find(id => personById.get(id)?.gender === 'female')
+  if (primarySpouseId) {
+    const sp = parentOf.get(primarySpouseId) ?? [];
+    spouseFather = sp.find(id => personById.get(id)?.gender === 'male') ?? sp[0] ?? null;
+    spouseMother = sp.find(id => personById.get(id)?.gender === 'female')
       ?? (sp.length > 1 ? sp[1] : null) ?? null;
   }
   // 한 쪽만 있으면 그 사람의 배우자에서 나머지 찾기
@@ -118,7 +122,7 @@ function buildBranchContext(
   if (rootFather   && !rootMother)   sets['외가']   = new Set(sets['친가']);
   if (rootMother   && !rootFather)   sets['친가']   = new Set(sets['외가']);
 
-  return { rootId: root.id, rootSpouseIds, coupledChildIds, sets };
+  return { rootId: root.id, rootSpouseIds, primarySpouseId, coupledChildIds, sets };
 }
 
 // 캐시: persons/relationships 레퍼런스가 바뀌면 재계산
@@ -139,7 +143,9 @@ export function classifyBranch(
   if (!ctx) return [];
 
   if (personId === ctx.rootId) return ['친가', '외가', '처가', '처외가'];
-  if (ctx.rootSpouseIds.has(personId)) return ['친가', '외가', '처가', '처외가'];
+  // 대표 배우자만 처가/처외가 포함 — 비대표 배우자는 친가/외가에만 표시
+  if (personId === ctx.primarySpouseId) return ['친가', '외가', '처가', '처외가'];
+  if (ctx.rootSpouseIds.has(personId)) return ['친가', '외가'];
   if (ctx.coupledChildIds.has(personId)) return ['친가', '외가', '처가', '처외가'];
 
   const result: BranchType[] = [];
@@ -192,6 +198,29 @@ export function getChusu(
   relationships: Relationship[]
 ): number | null {
   if (personId === root.id) return 0;
+
+  // 같은 자녀를 공유하는 공동부모(co-parent)는 0촌으로 처리 (사실상 배우자)
+  const coParentOf = new Map<string, Set<string>>();
+  const childParents = new Map<string, string[]>();
+  for (const r of relationships) {
+    if (r.type !== 'parent_child') continue;
+    const list = childParents.get(r.person2_id) ?? [];
+    list.push(r.person1_id);
+    childParents.set(r.person2_id, list);
+  }
+  for (const parents of childParents.values()) {
+    for (let i = 0; i < parents.length; i++) {
+      for (let j = i + 1; j < parents.length; j++) {
+        const si = coParentOf.get(parents[i]) ?? new Set();
+        si.add(parents[j]);
+        coParentOf.set(parents[i], si);
+        const sj = coParentOf.get(parents[j]) ?? new Set();
+        sj.add(parents[i]);
+        coParentOf.set(parents[j], sj);
+      }
+    }
+  }
+
   const visited = new Map<string, number>();
   const queue: Array<{ id: string; dist: number }> = [{ id: root.id, dist: 0 }];
   visited.set(root.id, 0);
@@ -219,6 +248,13 @@ export function getChusu(
           visited.set(childId, dist + 1);
           queue.push({ id: childId, dist: dist + 1 });
         }
+      }
+    }
+    // 공동부모 탐색 (0촌 증가)
+    for (const coParent of coParentOf.get(curr) ?? []) {
+      if (!visited.has(coParent)) {
+        visited.set(coParent, dist);
+        queue.push({ id: coParent, dist });
       }
     }
   }
@@ -289,42 +325,41 @@ export function useTreeLayout(
     // 촌수 기준: 뷰포인트가 설정되면 그 사람, 아니면 root
     const chusuBase = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
 
-    // ── Step 1: Build GLOBAL couple map (all persons, all relationships) ────────
+    // ── Step 1: Build GLOBAL group map (1:N, supports polygamy) ─────────────────
     // Must run BEFORE branch filtering so we can pull in spouses that aren't
     // yet in the branch.
-    const globalCouple = new Map<string, string>(); // personId → partnerId
-    const globalInCouple = new Set<string>();
+    // globalGroup: groupId → [anchorId, spouse1Id, spouse2Id, ...]
+    // globalPersonToGroup: personId → groupId
+    const globalGroup = new Map<string, string[]>();
+    const globalPersonToGroup = new Map<string, string>();
 
-    // 1a. Explicit spouse relationships
-    for (const r of relationships) {
-      if (r.type !== 'spouse') continue;
-      if (globalInCouple.has(r.person1_id) || globalInCouple.has(r.person2_id)) continue;
-      globalCouple.set(r.person1_id, r.person2_id);
-      globalCouple.set(r.person2_id, r.person1_id);
-      globalInCouple.add(r.person1_id);
-      globalInCouple.add(r.person2_id);
-    }
-
-    // 1b. Infer from shared children (fixes cases with no explicit spouse rel)
-    const allChildToParents = new Map<string, string[]>();
-    for (const r of relationships) {
-      if (r.type !== 'parent_child') continue;
-      const list = allChildToParents.get(r.person2_id) ?? [];
-      list.push(r.person1_id);
-      allChildToParents.set(r.person2_id, list);
-    }
-    for (const parentIds of allChildToParents.values()) {
-      const free = parentIds.filter(pid => !globalInCouple.has(pid));
-      if (free.length < 2) continue;
-      const male = free.find(pid => persons.find(p => p.id === pid)?.gender === 'male') ?? free[0];
-      const female = free.find(pid => pid !== male);
-      if (male && female) {
-        globalCouple.set(male, female);
-        globalCouple.set(female, male);
-        globalInCouple.add(male);
-        globalInCouple.add(female);
+    // 1a. Explicit spouse relationships — primary first so primary spouse is [1]
+    const spouseRels = relationships.filter(r => r.type === 'spouse');
+    const sortedSpouseRels = [
+      ...spouseRels.filter(r => r.is_primary === true),
+      ...spouseRels.filter(r => r.is_primary !== true),
+    ];
+    for (const r of sortedSpouseRels) {
+      const a = r.person1_id, b = r.person2_id;
+      const ga = globalPersonToGroup.get(a);
+      const gb = globalPersonToGroup.get(b);
+      if (!ga && !gb) {
+        globalGroup.set(a, [a, b]);
+        globalPersonToGroup.set(a, a);
+        globalPersonToGroup.set(b, a);
+      } else if (ga && !gb) {
+        globalGroup.get(ga)!.push(b);
+        globalPersonToGroup.set(b, ga);
+      } else if (!ga && gb) {
+        globalGroup.get(gb)!.push(a);
+        globalPersonToGroup.set(a, gb);
       }
     }
+
+    // 1b. Infer from shared children — 제거됨.
+    // fixMissingSpouseRels(familyStore)가 초기화 시 공동부모의 spouse 관계를 자동 생성하므로
+    // 여기서 추론하면 실제로 배우자가 아닌 사람(예: 테스트 인물, 부모-자녀가 공동 부모로 오인)이
+    // 커플 노드에 끌려들어오는 오작동이 발생한다.
 
     // ── Step 2: Filter to this branch, then pull in spouses + their children ──────
     const initialPersons = persons.filter(p =>
@@ -332,16 +367,18 @@ export function useTreeLayout(
     );
     const branchIdSet = new Set(initialPersons.map(p => p.id));
 
-    // Pass A: 배우자 추가 (부부는 한몸)
-    // 각 커플의 (원래멤버 ID, 추가된 배우자 ID) 쌍 기록
+    // Pass A: 그룹 멤버 전원 추가 (다처/다부제 포함, 부부는 한몸)
     const addedCouplePairs: Array<{ original: string; added: string }> = [];
     for (const p of initialPersons) {
-      const spouseId = globalCouple.get(p.id);
-      if (spouseId && !branchIdSet.has(spouseId)) {
-        const sp = persons.find(pp => pp.id === spouseId);
-        if (sp) {
-          branchIdSet.add(spouseId);
-          addedCouplePairs.push({ original: p.id, added: spouseId });
+      const gid = globalPersonToGroup.get(p.id);
+      if (!gid) continue;
+      for (const memberId of globalGroup.get(gid) ?? []) {
+        if (memberId !== p.id && !branchIdSet.has(memberId)) {
+          const member = persons.find(pp => pp.id === memberId);
+          if (member) {
+            branchIdSet.add(memberId);
+            addedCouplePairs.push({ original: p.id, added: memberId });
+          }
         }
       }
     }
@@ -366,20 +403,35 @@ export function useTreeLayout(
       }
     }
 
+    // 뷰포인트가 설정된 경우, 내 배우자의 다른 배우자(공동 배우자)를 숨김
+    // 예) 전현숙으로 로그인 시 홍재억의 다른 배우자 전현숙2·전현숙3은 표시하지 않음
+    if (viewpointPersonId) {
+      const vpSpouseIds = relationships
+        .filter(r => r.type === 'spouse' && (r.person1_id === viewpointPersonId || r.person2_id === viewpointPersonId))
+        .map(r => r.person1_id === viewpointPersonId ? r.person2_id : r.person1_id);
+      for (const mySpouseId of vpSpouseIds) {
+        relationships
+          .filter(r => r.type === 'spouse' && (r.person1_id === mySpouseId || r.person2_id === mySpouseId))
+          .map(r => r.person1_id === mySpouseId ? r.person2_id : r.person1_id)
+          .filter(id => id !== viewpointPersonId)
+          .forEach(coSpouseId => branchIdSet.delete(coSpouseId));
+      }
+    }
+
     const branchPersons = persons.filter(p => branchIdSet.has(p.id));
     const branchIds = branchIdSet;
     const branchRels = relationships.filter(
       r => branchIds.has(r.person1_id) && branchIds.has(r.person2_id)
     );
 
-    // ── Step 3: Couple map for this branch (re-use global results) ────────────
-    const couplePartner = new Map<string, string>();
-    const inCouple = new Set<string>();
-    for (const [a, b] of globalCouple) {
-      if (branchIds.has(a) && branchIds.has(b)) {
-        couplePartner.set(a, b);
-        inCouple.add(a);
-        inCouple.add(b);
+    // ── Step 3: Branch-level group map ───────────────────────────────────────
+    const branchGroupMembers = new Map<string, string[]>(); // groupId → personIds in branch
+    const branchPersonToGroup = new Map<string, string>();  // personId → groupId
+    for (const [gid, members] of globalGroup) {
+      const inBranch = members.filter(id => branchIds.has(id));
+      if (inBranch.length >= 2) {
+        branchGroupMembers.set(gid, inBranch);
+        inBranch.forEach(id => branchPersonToGroup.set(id, gid));
       }
     }
 
@@ -390,24 +442,24 @@ export function useTreeLayout(
 
     for (const p of branchPersons) {
       if (processed.has(p.id)) continue;
-      const partnerId = couplePartner.get(p.id);
-      if (partnerId && branchIds.has(partnerId)) {
-        const partner = branchPersons.find(q => q.id === partnerId)!;
-        // Left = root → male → whoever comes first
-        const left = (p.is_root === 1 || (partner.is_root !== 1 && p.gender === 'male')) ? p : partner;
-        const right = left === p ? partner : p;
-        const unitId = `couple_${left.id}_${right.id}`;
+      const gid = branchPersonToGroup.get(p.id);
+      if (gid) {
+        const memberIds = branchGroupMembers.get(gid)!;
+        const members = memberIds.map(id => branchPersons.find(q => q.id === id)!).filter(Boolean);
+        // 앵커(root 또는 남성)를 첫 번째로, 나머지 배우자들을 순서대로
+        const anchorIdx = members.findIndex(m => m.is_root === 1 || m.gender === 'male');
+        const ordered = anchorIdx >= 0
+          ? [members[anchorIdx], ...members.filter((_, i) => i !== anchorIdx)]
+          : members;
+        const unitId = `couple_${ordered.map(m => m.id).join('_')}`;
         units.push({
           id: unitId,
           kind: 'couple',
-          persons: [left, right],
-          gen: getGeneration(left.id, root, relationships),
-          width: COUPLE_W,
+          persons: ordered,
+          gen: getGeneration(ordered[0].id, root, relationships),
+          width: ordered.length * 64,
         });
-        personToUnitId.set(left.id, unitId);
-        personToUnitId.set(right.id, unitId);
-        processed.add(left.id);
-        processed.add(right.id);
+        ordered.forEach(m => { personToUnitId.set(m.id, unitId); processed.add(m.id); });
       } else {
         units.push({
           id: p.id,
@@ -563,21 +615,17 @@ export function useTreeLayout(
       const pos = positions.get(u.id) || { x: 0, y: 0 };
       const hiddenDesc = hiddenDescendantsMap.get(u.id) ?? 0;
       if (u.kind === 'couple') {
-        const [p1, p2] = u.persons;
         return {
           id: u.id,
           type: 'coupleNode',
           position: pos,
-          width: COUPLE_W,
+          width: u.width,
           height: NODE_H,
           data: {
-            person1: p1,
-            person2: p2,
-            chusu1: getChusu(p1.id, chusuBase, relationships),
-            chusu2: getChusu(p2.id, chusuBase, relationships),
+            persons: u.persons,
+            chusus: u.persons.map(p => getChusu(p.id, chusuBase, relationships)),
             hiddenDescendants: hiddenDesc,
-            anon1: !canSeeFull(p1, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
-            anon2: !canSeeFull(p2, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
+            anons: u.persons.map(p => !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships)),
           },
         };
       }
@@ -620,7 +668,7 @@ export function useTreeLayout(
       // If target is a couple node, route to the specific person's side handle
       const tgtUnit = units.find(u => u.id === tgtId);
       const targetHandle = tgtUnit?.kind === 'couple'
-        ? (personIndexInUnit.get(r.person2_id) === 0 ? 'p1' : 'p2')
+        ? `p${personIndexInUnit.get(r.person2_id) ?? 0}`
         : undefined;
 
       edges.push({

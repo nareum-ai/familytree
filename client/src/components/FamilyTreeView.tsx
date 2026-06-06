@@ -78,8 +78,8 @@ function FocusTargetController({
       if (n.id === personId) {
         match = true;
       } else if (n.type === 'coupleNode') {
-        const d = n.data as { person1?: { id: string }; person2?: { id: string } };
-        match = d.person1?.id === personId || d.person2?.id === personId;
+        const d = n.data as { persons?: Array<{ id: string }> };
+        match = d.persons?.some(p => p.id === personId) ?? false;
       }
       if (match) {
         cx = n.position.x + (n.width  ?? 90)  / 2;
@@ -347,8 +347,8 @@ export function FamilyTreeView() {
     for (const n of nodes) {
       if (n.id === personId) return n.id;
       if (n.type === 'coupleNode') {
-        const d = n.data as { person1?: { id: string }; person2?: { id: string } };
-        if (d.person1?.id === personId || d.person2?.id === personId) return n.id;
+        const d = n.data as { persons?: Array<{ id: string }> };
+        if (d.persons?.some(p => p.id === personId)) return n.id;
       }
     }
     return null;
@@ -422,10 +422,10 @@ export function FamilyTreeView() {
               const vp = viewpointPersonId;
               const root = persons.find(p => p.is_root === 1);
               if (node.type === 'coupleNode') {
-                const d = node.data as { person1?: Person; person2?: Person };
+                const d = node.data as { persons?: Person[] };
                 const isMe = vp
-                  ? d.person1?.id === vp || d.person2?.id === vp
-                  : d.person1?.is_root === 1 || d.person2?.is_root === 1;
+                  ? d.persons?.some(p => p.id === vp) ?? false
+                  : d.persons?.some(p => p.is_root === 1) ?? false;
                 return isMe ? '#4F46E5' : '#0EA5E9';
               }
               const p = node.data?.person as Person | undefined;

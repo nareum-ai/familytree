@@ -6,10 +6,10 @@ import { getManAge, getAgeAtDeath } from '../utils/age';
 import './CoupleNode.css';
 
 interface CoupleNodeData {
-  person1: Person;
-  person2: Person;
-  chusu1: number | null;
-  chusu2: number | null;
+  persons: Person[];
+  chusus: (number | null)[];
+  hiddenDescendants?: number;
+  anons?: boolean[];
 }
 
 
@@ -61,41 +61,37 @@ function HexAvatar({
 }
 
 export const CoupleNode = memo(({ data }: { data: unknown }) => {
-  const { person1, person2, chusu1, chusu2, hiddenDescendants, anon1, anon2 } =
-    data as CoupleNodeData & { hiddenDescendants?: number; anon1?: boolean; anon2?: boolean };
+  const { persons, chusus, hiddenDescendants, anons } = data as CoupleNodeData;
   const { selectedPersonId, selectPerson, viewpointPersonId, openInfoRequest } = useFamilyStore();
 
   const toggle = (id: string, isAnon: boolean) => (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isAnon) {
-      openInfoRequest(id);   // 비공개 → 정보공개 요청 패널
+      openInfoRequest(id);
     } else {
       selectPerson(selectedPersonId === id ? null : id);
     }
   };
 
+  const n = persons.length;
+
   return (
     <div className="couple-node">
-      {/* Per-person target handles — parent edges land on the right side */}
-      <Handle type="target" id="p1" position={Position.Top}
-        style={{ opacity: 0, left: '25%' }} />
-      <Handle type="target" id="p2" position={Position.Top}
-        style={{ opacity: 0, left: '75%' }} />
+      {persons.map((p, i) => (
+        <Handle key={i} type="target" id={`p${i}`} position={Position.Top}
+          style={{ opacity: 0, left: `${((i + 0.5) / n) * 100}%` }} />
+      ))}
 
       <div className="couple-row">
-        <HexAvatar person={person1} chusu={chusu1}
-          selected={selectedPersonId === person1.id}
-          showME={viewpointPersonId ? viewpointPersonId === person1.id : person1.is_root === 1}
-          anon={!!anon1}
-          onClick={toggle(person1.id, !!anon1)} />
-        <HexAvatar person={person2} chusu={chusu2}
-          selected={selectedPersonId === person2.id}
-          showME={viewpointPersonId ? viewpointPersonId === person2.id : person2.is_root === 1}
-          anon={!!anon2}
-          onClick={toggle(person2.id, !!anon2)} />
+        {persons.map((p, i) => (
+          <HexAvatar key={p.id} person={p} chusu={chusus[i]}
+            selected={selectedPersonId === p.id}
+            showME={viewpointPersonId ? viewpointPersonId === p.id : p.is_root === 1}
+            anon={!!(anons?.[i])}
+            onClick={toggle(p.id, !!(anons?.[i]))} />
+        ))}
       </div>
 
-      {/* Children always connect from center bottom */}
       <Handle type="source" position={Position.Bottom}
         style={{ opacity: 0, left: '50%' }} />
       {hiddenDescendants ? (
