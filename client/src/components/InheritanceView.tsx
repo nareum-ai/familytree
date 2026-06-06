@@ -1,13 +1,42 @@
 import { useState, useMemo } from 'react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useFamilyStore } from '../store/familyStore';
 import type { Person, Relationship } from '../types';
 import { getChusu } from '../hooks/useTreeLayout';
-import { app } from '../lib/firebase';
 import './InheritanceView.css';
 
-const functions = getFunctions(app);
-const callAiLogicTemplate = httpsCallable(functions, 'callAiLogicTemplate');
+const GEMINI_KEY = 'REMOVED_SECRET';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+
+async function callGemini(prompt: string): Promise<string> {
+  const resp = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2 },
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `HTTP ${resp.status}`);
+  }
+  const res = await resp.json();
+  return res.candidates?.[0]?.content?.parts?.[0]?.text ?? '결과를 받지 못했습니다.';
+}
+
+const PROMPT_HEADER = `아래 JSON 데이터의 가족 관계와 상속재산을 바탕으로 현행 한국 상속법에 따라 계산해주세요.
+
+결과 형식:
+① 법정 상속인 확정
+② 상속 지분표 (분수 + 퍼센트 + 금액)
+③ 상속공제 계산
+④ 상속세 계산
+⑤ 주의사항 (한두 줄)
+
+숫자는 한국식(억/만원)으로 표기하고, 간결하되 정확하게 작성하세요.
+
+가족 데이터:
+`;
 
 interface Props {
   onClose: () => void;
@@ -131,13 +160,8 @@ export function InheritanceView({ onClose }: Props) {
     setResult('');
     setError('');
     try {
-      const res = await callAiLogicTemplate({
-        templateId: 'template-8pwn',
-        vars: { family_data: JSON.stringify({ test: '헬로~!' }) },
-      });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const d = res.data as any;
-      setResult(typeof d === 'string' ? d : (d?.text ?? d?.result ?? JSON.stringify(d)));
+      const text = await callGemini('헬로~!');
+      setResult(text);
     } catch (e: unknown) {
       setError(`오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`);
     } finally {
@@ -150,16 +174,10 @@ export function InheritanceView({ onClose }: Props) {
     setLoading(true);
     setResult('');
     setError('');
-
     try {
       const familyData = buildFamilyJson(selectedPerson, persons, relationships, assetValue);
-      const res = await callAiLogicTemplate({
-        templateId: 'template-8pwn',
-        vars: { family_data: JSON.stringify(familyData) },
-      });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const d = res.data as any;
-      setResult(typeof d === 'string' ? d : (d?.text ?? d?.result ?? JSON.stringify(d)));
+      const text = await callGemini(PROMPT_HEADER + JSON.stringify(familyData, null, 2));
+      setResult(text);
     } catch (e: unknown) {
       setError(`AI 계산 중 오류가 발생했습니다:\n${e instanceof Error ? e.message : '알 수 없는 오류'}`);
     } finally {
