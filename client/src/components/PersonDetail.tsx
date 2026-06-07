@@ -27,6 +27,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [alreadyMapped, setAlreadyMapped] = useState(false);
   const [infoRequests, setInfoRequests]   = useState<Array<{ id: string; requesterName: string; personId: string; createdAt: string }>>([]);
   const [editGrants, setEditGrants] = useState<EditGrant[]>([]);
+  const [showGrantSection, setShowGrantSection] = useState(false);
   const [showGrantPicker, setShowGrantPicker] = useState(false);
   const [granteeSearch, setGranteeSearch] = useState('');
 
@@ -42,6 +43,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
     loadEditGrantsForPerson(person.id)
       .then(grants => {
         setEditGrants(grants);
+        setShowGrantSection(false);
         setShowGrantPicker(false);
         setGranteeSearch('');
       })
@@ -355,32 +357,45 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               )}
             </div>
           )}
-          {!person.is_pet && (
+          {!person.is_pet && persons.some(p => p.is_pet && p.owner_person_id === person.id) && (
             <div className="detail-meta">
               {persons.filter(p => p.is_pet && p.owner_person_id === person.id).map(pet => (
                 <span key={pet.id} className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => selectPerson(pet.id)}>
                   🐾 {pet.name}
                 </span>
               ))}
-              {canEdit && (
-                <button className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => setShowAddPetModal(true)}>
-                  + 반려동물 추가
+            </div>
+          )}
+
+          {canEdit && (
+            <div className="detail-action-row">
+              <button className="btn-action" onClick={() => setEditing(true)}>
+                <span className="btn-action-icon">✏️</span>편집
+              </button>
+              {!person.is_pet && (
+                <button className="btn-action" onClick={() => setShowAddPetModal(true)}>
+                  <span className="btn-action-icon">🐾</span>반려동물 추가
+                </button>
+              )}
+              {canManageEditGrants && (
+                <button
+                  className={`btn-action ${showGrantSection ? 'active' : ''}`}
+                  onClick={() => setShowGrantSection(s => !s)}
+                >
+                  <span className="btn-action-icon">🔑</span>권한 관리
+                </button>
+              )}
+              {!person.is_root && !alreadyMapped && (
+                <button className="btn-action danger" onClick={handleDelete}>
+                  <span className="btn-action-icon">🗑️</span>삭제
                 </button>
               )}
             </div>
           )}
-          {canEdit && (
-            <div className="detail-btn-row">
-              <button className="btn-edit" onClick={() => setEditing(true)}>편집</button>
-              {!person.is_root && !alreadyMapped && (
-                <button className="btn-delete-sm" onClick={handleDelete}>삭제</button>
-              )}
-            </div>
-          )}
 
-          {canManageEditGrants && (
+          {canManageEditGrants && showGrantSection && (
             <div className="edit-grant-section">
-              <p className="edit-grant-title">✏️ 편집 권한 관리</p>
+              <p className="edit-grant-desc">이 인물의 정보를 편집할 수 있는 권한을 다른 사람에게 부여합니다</p>
               {editGrants.length > 0 && (
                 <div className="detail-meta">
                   {editGrants.map(g => (
@@ -434,8 +449,8 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
                     onClick={() => { setShowGrantPicker(false); setGranteeSearch(''); }}>취소</button>
                 </div>
               ) : (
-                <button type="button" className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => setShowGrantPicker(true)}>
-                  + 추가
+                <button type="button" className="btn-action-link" onClick={() => setShowGrantPicker(true)}>
+                  + 권한 추가
                 </button>
               )}
             </div>

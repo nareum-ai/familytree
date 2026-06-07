@@ -131,6 +131,49 @@
 }
 .btn-delete-sm:hover { background: #fff5f5; border-color: #e53e3e; }
 
+/* 통일된 관리 액션 그룹 (편집 / 반려동물 추가 / 권한 관리 / 삭제) */
+.detail-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.btn-action-icon { font-size: 13px; line-height: 1; }
+.btn-action:hover { border-color: #4F46E5; color: #4F46E5; }
+.btn-action.active { border-color: #4F46E5; color: #4F46E5; background: #EEF2FF; }
+.btn-action.danger { border-color: #fca5a5; color: #e53e3e; margin-left: auto; }
+.btn-action.danger:hover { background: #fff5f5; border-color: #e53e3e; }
+
+.btn-action-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #4F46E5;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+  font-family: inherit;
+}
+.btn-action-link:hover { text-decoration: underline; }
+
 .edit-form {
   display: flex;
   flex-direction: column;
@@ -469,17 +512,19 @@
 }
 
 .edit-grant-section {
-  border-top: 1px solid #f0f0f0;
-  padding-top: 14px;
+  background: #f8f9fa;
+  border: 1px solid #e8f0f5;
+  border-radius: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.edit-grant-title {
+.edit-grant-desc {
   font-size: 12px;
-  font-weight: 700;
-  color: #2AABE2;
+  color: #64748b;
   margin: 0;
+  line-height: 1.5;
 }
 .edit-grant-revoke-btn {
   background: none; border: none; color: #94a3b8; cursor: pointer;

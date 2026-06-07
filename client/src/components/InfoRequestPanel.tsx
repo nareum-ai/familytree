@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import './InfoRequestPanel.css';
 
@@ -8,9 +8,16 @@ interface Props {
 }
 
 export function InfoRequestPanel({ personId, onClose }: Props) {
-  const { createInfoRequest } = useFamilyStore();
+  const { persons, createInfoRequest, getInfoHolderName } = useFamilyStore();
   const [sent, setSent]     = useState(false);
   const [loading, setLoading] = useState(false);
+  const [holderName, setHolderName] = useState('');
+
+  const targetName = persons.find(p => p.id === personId)?.name ?? '이 인물';
+
+  useEffect(() => {
+    getInfoHolderName(personId).then(setHolderName);
+  }, [personId, getInfoHolderName]);
 
   const handleRequest = async () => {
     setLoading(true);
@@ -39,12 +46,12 @@ export function InfoRequestPanel({ personId, onClose }: Props) {
       ) : (
         <>
           <p className="irp-desc">
-            이 인물의 정보는 <strong>비공개</strong>입니다.<br />
-            정보공개를 요청하면 권한자에게 알림이 전송됩니다.
+            <strong>{targetName}</strong>님의 정보는 <strong>비공개</strong>입니다.<br />
+            공개를 요청하면 <strong>{holderName || '권한자'}</strong>님에게 알림이 전송됩니다.
           </p>
           <p className="irp-notice">
-            ℹ️ <strong>권한자</strong>의 정보를 공유받으면,<br />
-            나의 정보도 <strong>권한자</strong>에게 공유됩니다.
+            ℹ️ <strong>{targetName}</strong>님의 정보를 공유받으면,<br />
+            나의 정보도 <strong>{targetName}</strong>님에게 공유됩니다.
           </p>
           <button
             className="irp-request-btn"

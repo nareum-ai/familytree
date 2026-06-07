@@ -21,6 +21,44 @@ import type { Member } from '../types';
 import { LS } from '../lib/storageKeys';
 import { getChusu } from '../hooks/useTreeLayout';
 
+// 인물의 정보공개 권한자(보유 계정) 조회 — createInfoRequest와 getInfoHolderName이 공유
+async function lookupInfoHolder(targetPersonId: string, persons: Person[]) {
+  let holderMemberId: string | null = null;
+  let holderName = '';
+  let holderIsAdmin = false;
+
+  const target = persons.find(p => p.id === targetPersonId);
+
+  // 1순위: 해당 인물에 직접 매핑된 계정
+  const holderSnap = await getDocs(
+    query(collection(db, 'members'), where('person_id', '==', targetPersonId))
+  );
+  if (!holderSnap.empty) {
+    const d = holderSnap.docs[0];
+    holderMemberId = d.id;
+    holderName     = d.data().username as string;
+    holderIsAdmin  = d.data().is_admin === true;
+  }
+
+  // 2순위: created_by 계정 찾기
+  if (!holderMemberId && target?.created_by) {
+    const creatorSnap = await getDocs(
+      query(collection(db, 'members'), where('username', '==', target.created_by))
+    );
+    if (!creatorSnap.empty) {
+      const d = creatorSnap.docs[0];
+      holderMemberId = d.id;
+      holderName     = target.created_by;
+      holderIsAdmin  = d.data().is_admin === true;
+    } else {
+      holderName = target.created_by;
+    }
+  }
+  if (!holderName) holderName = '알 수 없음';
+
+  return { holderMemberId, holderName, holderIsAdmin };
+}
+
 const LS_USER_KEY     = LS.USER_NAME;
 const LS_FAMILY_ID    = LS.FAMILY_ID;
 const LS_MEMBER_ID    = LS.MEMBER_ID;
@@ -55,6 +93,7 @@ interface FamilyState {
   grantedPersonIds: Set<string>;
   loadGrantedAccess: () => Promise<void>;
   createInfoRequest: (targetPersonId: string) => Promise<boolean>; // true = 자동 승인됨
+  getInfoHolderName: (targetPersonId: string) => Promise<string>;
   loadInfoRequestsForMe: () => Promise<Array<{ id: string; requesterName: string; personId: string; createdAt: string }>>;
   approveInfoRequest: (requestId: string, requesterName: string, personId: string) => Promise<void>;
   rejectInfoRequest:  (requestId: string) => Promise<void>;
@@ -485,6 +524,20 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
         where('requester_member_id', '==', memberId))
     );
     const ids = new Set(snap.docs.map(d => d.data().person_id as string));
+
+    // 나를 등록한 계정의 인물 — 그 계정은 이미 내 정보를 알고 있으므로 기본 공개
+    const myPersonId = localStorage.getItem(LS.MY_PERSON_ID);
+    const myPerson = get().persons.find(p => p.id === myPersonId);
+    if (myPerson?.created_by) {
+      const creatorSnap = await getDocs(
+        query(collection(db, 'members'), where('username', '==', myPerson.created_by))
+      );
+      if (!creatorSnap.empty) {
+        const creatorPersonId = creatorSnap.docs[0].data().person_id as string | undefined;
+        if (creatorPersonId) ids.add(creatorPersonId);
+      }
+    }
+
     set({ grantedPersonIds: ids });
   },
 
@@ -497,7 +550,6 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     const requesterPersonId = (memberSnap.data()?.person_id as string | null) ?? null;
 
     const { persons, relationships } = get();
-    const target = persons.find(p => p.id === targetPersonId);
 
     // 2촌 이내(배우자 포함) → 자동 승인
     if (requesterPersonId) {
@@ -522,36 +574,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       }
     }
 
-    let holderMemberId: string | null = null;
-    let holderName = '';
-    let holderIsAdmin = false;
-
-    // 1순위: 해당 인물에 직접 매핑된 계정
-    const holderSnap = await getDocs(
-      query(collection(db, 'members'), where('person_id', '==', targetPersonId))
-    );
-    if (!holderSnap.empty) {
-      const d = holderSnap.docs[0];
-      holderMemberId = d.id;
-      holderName     = d.data().username as string;
-      holderIsAdmin  = d.data().is_admin === true;
-    }
-
-    // 2순위: created_by 계정 찾기
-    if (!holderMemberId && target?.created_by) {
-      const creatorSnap = await getDocs(
-        query(collection(db, 'members'), where('username', '==', target.created_by))
-      );
-      if (!creatorSnap.empty) {
-        const d = creatorSnap.docs[0];
-        holderMemberId = d.id;
-        holderName     = target.created_by;
-        holderIsAdmin  = d.data().is_admin === true;
-      } else {
-        holderName = target.created_by;
-      }
-    }
-    if (!holderName) holderName = '알 수 없음';
+    const { holderMemberId, holderName, holderIsAdmin } = await lookupInfoHolder(targetPersonId, persons);
 
     // 권한자가 관리자이거나 없으면 → 즉시 자동 승인
     if (!holderMemberId || holderIsAdmin) {
@@ -592,6 +615,12 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       created_at:           new Date().toISOString(),
     });
     return false;
+  },
+
+  getInfoHolderName: async (targetPersonId) => {
+    const { persons } = get();
+    const { holderName } = await lookupInfoHolder(targetPersonId, persons);
+    return holderName;
   },
 
   loadInfoRequestsForMe: async () => {
