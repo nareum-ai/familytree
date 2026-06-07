@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { uploadAvatarPhoto } from '../lib/avatarUpload';
 import './AvatarPicker.css';
 
 const AVATARS = [
@@ -80,6 +82,27 @@ interface Props {
 }
 
 export function AvatarPicker({ current, onSelect, onClose }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const url = await uploadAvatarPhoto(file);
+      onSelect(url);
+      onClose();
+    } catch {
+      setUploadError('사진 업로드에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return createPortal(
     <div className="avpick-backdrop" onClick={onClose}>
       <div className="avpick-panel" onClick={e => e.stopPropagation()}>
@@ -89,6 +112,22 @@ export function AvatarPicker({ current, onSelect, onClose }: Props) {
         </div>
 
         <div className="avpick-body">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+          <button
+            className="avpick-upload"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? '업로드 중...' : '📷 사진 올리기'}
+          </button>
+          {uploadError && <p className="avpick-upload-error">{uploadError}</p>}
+
           {current && (
             <button
               className="avpick-remove"

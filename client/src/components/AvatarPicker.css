@@ -35,6 +35,18 @@
   flex: 1; overflow-y: auto; padding: 14px 16px 32px;
 }
 
+.avpick-upload {
+  width: 100%; padding: 10px;
+  background: #EEF2FF; color: #4F46E5;
+  border: 1px solid #C7D2FE; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  margin-bottom: 10px;
+}
+.avpick-upload:disabled { opacity: 0.6; cursor: default; }
+.avpick-upload-error {
+  font-size: 12px; color: #EF4444; margin: -2px 0 12px; text-align: center;
+}
+
 .avpick-remove {
   width: 100%; padding: 10px;
   background: #FEF2F2; color: #EF4444;
