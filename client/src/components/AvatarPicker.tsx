@@ -58,6 +58,9 @@ const AVATARS = [
       { key: 'dog_yorkie', label: '강아지(요크셔)' },
       { key: 'chameleon',  label: '카멜레온' },
       { key: 'toad',       label: '두꺼비' },
+      { key: 'pig',        label: '돼지'   },
+      { key: 'cow',        label: '소'     },
+      { key: 'mouse',      label: '쥐'     },
     ],
   },
   {
