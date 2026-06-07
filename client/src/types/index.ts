@@ -20,7 +20,25 @@ export interface Person {
   created_at: string;
   phone?: string | null;
   email?: string | null;
-  memo?: string | null;
+  recent_status?: RecentStatus[] | null;  // 근황 (최신순 최대 3개 유지)
+  is_pet?: boolean;                  // 반려동물 여부
+  species?: string | null;           // 반려동물 종류 (예: 강아지, 고양이)
+  owner_person_id?: string | null;   // 반려동물의 주인 Person ID
+}
+
+export interface RecentStatus {
+  text: string;
+  at: string;  // 작성일 ("YYYY-MM-DD")
+}
+
+// 노드별 편집 권한 위임 — 본인/작성자/관리자 외의 특정 인물에게 특정 노드의 편집 권한을 부여
+export interface EditGrant {
+  id: string;
+  person_id: string;          // 편집 권한이 위임되는 대상 노드
+  grantee_person_id: string;  // 권한을 받는 사람의 Person ID
+  grantee_name: string;       // 캐시된 이름 (목록 표시용)
+  granted_by: string;         // 부여한 사람의 계정명
+  granted_at: string;         // ISO 날짜
 }
 
 export type RelationshipType = 'spouse' | 'parent_child';

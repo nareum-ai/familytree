@@ -96,12 +96,7 @@ export function MyMenuView({ onClose }: Props) {
     persons.find(p => p.id === personId)?.name ?? '(비공개)';
 
   const handleApprove = async (req: RequestItem) => {
-    const { getDocs, collection, query, where } = await import('firebase/firestore');
-    const { db } = await import('../lib/firebase');
-    const snap = await getDocs(query(collection(db, 'info_requests'),
-      where('requester_name', '==', req.requesterName)));
-    const memberId = snap.docs.find(d => d.id === req.id)?.data().requester_member_id ?? '';
-    await approveInfoRequest(req.id, memberId, req.personId);
+    await approveInfoRequest(req.id, req.requesterName, req.personId);
     setRequests(r => r.filter(x => x.id !== req.id));
   };
 

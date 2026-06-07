@@ -191,15 +191,12 @@ export function getGeneration(personId: string, root: Person, relationships: Rel
   return visited.get(personId) ?? 0;
 }
 
-// ─── 촌수 ─────────────────────────────────────────────────────────────────────
-export function getChusu(
-  personId: string,
-  root: Person,
-  relationships: Relationship[]
-): number | null {
-  if (personId === root.id) return 0;
+// 같은 자녀를 공유하는 공동부모(co-parent) 맵: relationships 레퍼런스 기준 캐시
+// (getChusu가 인물마다 반복 호출되므로 매번 재계산하지 않도록 함)
+let _coParentCache: { r: Relationship[]; map: Map<string, Set<string>> } | null = null;
+function getCoParentOf(relationships: Relationship[]): Map<string, Set<string>> {
+  if (_coParentCache && _coParentCache.r === relationships) return _coParentCache.map;
 
-  // 같은 자녀를 공유하는 공동부모(co-parent)는 0촌으로 처리 (사실상 배우자)
   const coParentOf = new Map<string, Set<string>>();
   const childParents = new Map<string, string[]>();
   for (const r of relationships) {
@@ -220,6 +217,20 @@ export function getChusu(
       }
     }
   }
+  _coParentCache = { r: relationships, map: coParentOf };
+  return coParentOf;
+}
+
+// ─── 촌수 ─────────────────────────────────────────────────────────────────────
+export function getChusu(
+  personId: string,
+  root: Person,
+  relationships: Relationship[]
+): number | null {
+  if (personId === root.id) return 0;
+
+  // 같은 자녀를 공유하는 공동부모(co-parent)는 0촌으로 처리 (사실상 배우자)
+  const coParentOf = getCoParentOf(relationships);
 
   const visited = new Map<string, number>();
   const queue: Array<{ id: string; dist: number }> = [{ id: root.id, dist: 0 }];
@@ -297,7 +308,7 @@ export function canSeeFull(
 // ─── Layout constants ─────────────────────────────────────────────────────────
 const PERSON_W = 90;
 const NODE_H = 110;
-const H_GAP = 20;
+const H_GAP = 10;
 const V_GAP = 28;
 
 interface LayoutUnit {
@@ -323,6 +334,19 @@ export function useTreeLayout(
 
     // 촌수 기준: 뷰포인트가 설정되면 그 사람, 아니면 root
     const chusuBase = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
+
+    // 빠른 조회용: personId → Person
+    const personById = new Map(persons.map(p => [p.id, p]));
+
+    // 주인 personId → 반려동물 목록 (관계 그래프에 포함되지 않으므로 배지로만 표시)
+    const petsByOwner = new Map<string, Person[]>();
+    for (const p of persons) {
+      if (p.is_pet && p.owner_person_id) {
+        const list = petsByOwner.get(p.owner_person_id) ?? [];
+        list.push(p);
+        petsByOwner.set(p.owner_person_id, list);
+      }
+    }
 
     // ── Step 1: Build GLOBAL group map (1:N, supports polygamy) ─────────────────
     // Must run BEFORE branch filtering so we can pull in spouses that aren't
@@ -373,7 +397,7 @@ export function useTreeLayout(
       if (!gid) continue;
       for (const memberId of globalGroup.get(gid) ?? []) {
         if (memberId !== p.id && !branchIdSet.has(memberId)) {
-          const member = persons.find(pp => pp.id === memberId);
+          const member = personById.get(memberId);
           if (member) {
             branchIdSet.add(memberId);
             addedCouplePairs.push({ original: p.id, added: memberId });
@@ -395,9 +419,8 @@ export function useTreeLayout(
         }
       }
       for (const childId of coupleChildIds) {
-        if (!branchIdSet.has(childId)) {
-          const child = persons.find(pp => pp.id === childId);
-          if (child) branchIdSet.add(childId);
+        if (!branchIdSet.has(childId) && personById.has(childId)) {
+          branchIdSet.add(childId);
         }
       }
     }
@@ -444,7 +467,7 @@ export function useTreeLayout(
       const gid = branchPersonToGroup.get(p.id);
       if (gid) {
         const memberIds = branchGroupMembers.get(gid)!;
-        const members = memberIds.map(id => branchPersons.find(q => q.id === id)!).filter(Boolean);
+        const members = memberIds.map(id => personById.get(id)!).filter(Boolean);
         // 앵커(root 또는 남성)를 첫 번째로, 나머지 배우자들을 순서대로
         const anchorIdx = members.findIndex(m => m.is_root === 1 || m.gender === 'male');
         const ordered = anchorIdx >= 0
@@ -492,7 +515,8 @@ export function useTreeLayout(
 
     // 유닛 ID 빠른 접근용 맵 & 세대 맵
     const unitMap = new Map(units.map(u => [u.id, u]));
-    const unitGenMap = new Map(units.map(u => [u.id, getGeneration(u.persons[0].id, root, relationships)]));
+    // gen은 유닛 생성 시 이미 계산됨 (getGeneration 재호출 불필요)
+    const unitGenMap = new Map(units.map(u => [u.id, u.gen]));
 
     // 전체 unitChildren (필터 전)
     const allUnitChildren = new Map<string, string[]>();
@@ -625,6 +649,7 @@ export function useTreeLayout(
             chusus: u.persons.map(p => getChusu(p.id, chusuBase, relationships)),
             hiddenDescendants: hiddenDesc,
             anons: u.persons.map(p => !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships)),
+            pets: u.persons.map(p => petsByOwner.get(p.id) ?? []),
           },
         };
       }
@@ -641,6 +666,7 @@ export function useTreeLayout(
           isRoot: p.is_root === 1,
           hiddenDescendants: hiddenDesc,
           anon: !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
+          pets: petsByOwner.get(p.id) ?? [],
         },
       };
     });
@@ -665,7 +691,7 @@ export function useTreeLayout(
       addedEdgeKeys.add(key);
 
       // If target is a couple node, route to the specific person's side handle
-      const tgtUnit = units.find(u => u.id === tgtId);
+      const tgtUnit = unitMap.get(tgtId);
       const targetHandle = tgtUnit?.kind === 'couple'
         ? `p${personIndexInUnit.get(r.person2_id) ?? 0}`
         : undefined;

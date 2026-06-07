@@ -28,6 +28,11 @@ export const LS = new Proxy(BASE_LS as { [K in LSKey]: string }, {
   },
 });
 
+/** 현재 로그인 계정명 — ACCOUNT_NAME 우선, 없으면 USER_NAME으로 폴백 */
+export function getCurrentUserName(): string | null {
+  return localStorage.getItem(LS.ACCOUNT_NAME) ?? localStorage.getItem(LS.USER_NAME);
+}
+
 export const SS = {
   VIEWPOINT_PERSON_ID: 'viewpointPersonId',
   INVITE_TOKEN:        'inviteToken',

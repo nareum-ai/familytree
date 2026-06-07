@@ -13,7 +13,7 @@ async function getLib(): Promise<SolarLunarLib | null> {
   if (_tried) return _lib;
   _tried = true;
   try {
-    const mod = await import('solarlunar') as any;
+    const mod = await import('solarlunar') as unknown as Record<string, Partial<SolarLunarLib> | undefined>;
     // ESM 번들 구조가 다양하므로 여러 경로 시도
     for (const candidate of [mod?.default, mod, mod?.solarlunar]) {
       if (candidate && typeof candidate.lunar2solar === 'function') {

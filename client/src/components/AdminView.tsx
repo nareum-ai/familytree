@@ -59,6 +59,7 @@ function parseUA(ua: string): string {
 import { useFamilyStore } from '../store/familyStore';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { callGemini } from '../lib/gemini';
 import type { ApprovalRequest, Member, Person, Relationship } from '../types';
 import { LS, SS } from '../lib/storageKeys';
 import { exportFamilyToCSV, downloadCSV } from '../utils/csvExport';
@@ -134,6 +135,8 @@ export function AdminView({ onLogout }: Props) {
   const [pushSettings, setPushSettings] = useState<{ sendHourKST: number }>({ sendHourKST: 8 });
   const [pushLoading,  setPushLoading]  = useState(true);
   const [pushSaveMsg,  setPushSaveMsg]  = useState<{ ok: boolean; msg: string } | null>(null);
+  const [showAlarmDiag, setShowAlarmDiag] = useState(false);
+  const [showPushTime,  setShowPushTime]  = useState(false);
 
   const [broadcastTitle,   setBroadcastTitle]   = useState('');
   const [broadcastBody,    setBroadcastBody]    = useState('');
@@ -154,21 +157,7 @@ export function AdminView({ onLogout }: Props) {
     setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
     setChatLoading(true);
     try {
-      const GEMINI_KEY = 'REMOVED_SECRET';
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: msg }] }],
-          }),
-        }
-      );
-      const data = await resp.json();
-      const text: string = resp.ok
-        ? (data.candidates?.[0]?.content?.parts?.[0]?.text ?? '응답 없음')
-        : (data?.error?.message ?? `HTTP ${resp.status}`);
+      const text = await callGemini(msg);
       setChatMessages(prev => [...prev, { role: 'ai', text }]);
     } catch (e) {
       setChatMessages(prev => [...prev, { role: 'ai', text: `오류: ${e instanceof Error ? e.message : '알 수 없음'}` }]);
@@ -554,6 +543,12 @@ export function AdminView({ onLogout }: Props) {
                 <button onClick={() => { setShowPwChange(true); setAdminPwMsg(null); }}>
                   🔑 비밀번호 변경
                 </button>
+                <button onClick={() => setShowAlarmDiag(true)}>
+                  🔧 알림 진단
+                </button>
+                <button onClick={() => { setShowPushTime(true); setPushSaveMsg(null); }}>
+                  🔔 알림 발송 시간
+                </button>
               </div>
             )}
           </div>
@@ -801,38 +796,6 @@ export function AdminView({ onLogout }: Props) {
               {broadcastLoading ? '발송 중...' : '발송'}
             </button>
           </div>
-        </section>
-        {/* 관리자 알림 진단 */}
-        <section className="admin-section">
-          <h2>🔧 관리자 알림 진단</h2>
-          <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 12px' }}>
-            관리자 앱(PWA)에서 알림을 받으려면 토큰을 등록하세요.
-          </p>
-          <FcmDebugPanel field="fcm_token_admin" />
-        </section>
-        {/* 알림 발송 시간 (전역) */}
-        <section className="admin-section">
-          <h2>🔔 알림 발송 시간</h2>
-          <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 12px' }}>
-            알림 시기·범위·종류는 각 회원의 My 페이지에서 개별 설정합니다.
-          </p>
-          {pushLoading ? <p className="admin-empty">불러오는 중...</p> : (
-            <div className="push-settings">
-              <div className="push-row">
-                <label className="push-label">발송 시간 (KST)</label>
-                <select className="push-select" value={pushSettings.sendHourKST}
-                  onChange={e => setPushSettings({ sendHourKST: Number(e.target.value) })}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
-                  ))}
-                </select>
-              </div>
-              {pushSaveMsg && (
-                <p className={`push-save-msg ${pushSaveMsg.ok ? 'ok' : 'err'}`}>{pushSaveMsg.msg}</p>
-              )}
-              <button className="push-save-btn" onClick={savePushSettings}>저장</button>
-            </div>
-          )}
         </section>
         {/* 활동 로그 */}
         <section className="admin-section">
@@ -1130,6 +1093,54 @@ export function AdminView({ onLogout }: Props) {
           onClose={() => setBulkTarget(null)}
           onDone={reload}
         />
+      )}
+
+      {/* 알림 진단 모달 */}
+      {showAlarmDiag && (
+        <div className="confirm-backdrop" onClick={() => setShowAlarmDiag(false)}>
+          <div className="confirm-box" onClick={e => e.stopPropagation()}>
+            <h3>🔧 관리자 알림 진단</h3>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px' }}>
+              관리자 앱(PWA)에서 알림을 받으려면 토큰을 등록하세요.
+            </p>
+            <FcmDebugPanel field="fcm_token_admin" />
+            <div className="confirm-actions" style={{ marginTop: 16 }}>
+              <button className="btn-cancel-confirm" onClick={() => setShowAlarmDiag(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 알림 발송 시간 모달 */}
+      {showPushTime && (
+        <div className="confirm-backdrop" onClick={() => setShowPushTime(false)}>
+          <div className="confirm-box" onClick={e => e.stopPropagation()}>
+            <h3>🔔 알림 발송 시간</h3>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px' }}>
+              알림 시기·범위·종류는 각 회원의 My 페이지에서 개별 설정합니다.
+            </p>
+            {pushLoading ? <p className="admin-empty">불러오는 중...</p> : (
+              <div className="push-settings">
+                <div className="push-row">
+                  <label className="push-label">발송 시간 (KST)</label>
+                  <select className="push-select" value={pushSettings.sendHourKST}
+                    onChange={e => setPushSettings({ sendHourKST: Number(e.target.value) })}>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+                {pushSaveMsg && (
+                  <p className={`push-save-msg ${pushSaveMsg.ok ? 'ok' : 'err'}`}>{pushSaveMsg.msg}</p>
+                )}
+                <button className="push-save-btn" onClick={savePushSettings}>저장</button>
+              </div>
+            )}
+            <div className="confirm-actions" style={{ marginTop: 16 }}>
+              <button className="btn-cancel-confirm" onClick={() => setShowPushTime(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

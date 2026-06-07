@@ -221,7 +221,7 @@
 
 .edit-input:focus { border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
 
-.edit-memo {
+.edit-recent-status {
   line-height: 1.5;
 }
 
@@ -235,6 +235,104 @@
 .edit-contact-group .form-field:last-child {
   margin-bottom: 0;
 }
+
+.detail-recent-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #fffbea;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid #f5e8c8;
+}
+
+.recent-status-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recent-status-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a6d1f;
+}
+
+.recent-status-date {
+  margin-left: auto;
+  font-size: 11px;
+  color: #a08a55;
+}
+
+.recent-status-entry {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.recent-status-entry + .recent-status-entry {
+  border-top: 1px dashed #f0e2bc;
+}
+
+.recent-status-body {
+  font-size: 13px;
+  color: #4a5568;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.recent-status-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.recent-status-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #fffbea;
+  border: 1px solid #f5e8c8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.recent-status-edit-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recent-status-edit-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #4a5568;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.recent-status-edit-date {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.recent-status-remove-btn {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #c08a3e;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+.recent-status-remove-btn:hover { color: #b94a48; }
 
 .detail-contact {
   display: flex;
@@ -367,6 +465,48 @@
 }
 .info-req-reject {
   background: white; color: #e53e3e; border: 1px solid #fca5a5;
+  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+
+.edit-grant-section {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.edit-grant-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2AABE2;
+  margin: 0;
+}
+.edit-grant-revoke-btn {
+  background: none; border: none; color: #94a3b8; cursor: pointer;
+  font-size: 11px; margin-left: 4px; padding: 0; line-height: 1;
+}
+.edit-grant-revoke-btn:hover { color: #e53e3e; }
+.edit-grant-picker {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.edit-grant-search-input {
+  padding: 9px 12px; border: 1.5px solid #e0e0e0;
+  border-radius: 8px; font-size: 14px; outline: none;
+}
+.edit-grant-search-input:focus { border-color: #2AABE2; }
+.edit-grant-results {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 180px; overflow-y: auto;
+}
+.edit-grant-result-row {
+  padding: 9px 12px; background: #f8f9fa; border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: #1a2e3b;
+  cursor: pointer; transition: background 0.1s;
+}
+.edit-grant-result-row:hover { background: #e6f5fb; }
+.edit-grant-cancel-btn {
+  align-self: flex-start;
+  background: white; color: #64748b; border: 1px solid #e2e8f0;
   border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
 }
 

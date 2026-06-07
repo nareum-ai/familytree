@@ -3,7 +3,7 @@ import { useFamilyStore } from '../store/familyStore';
 import { classifyBranch, canSeeFull } from '../hooks/useTreeLayout';
 import { buildAnniversaries, formatDate, type AnniversaryItem } from '../utils/anniversary';
 import type { BranchType } from '../types';
-import { LS } from '../lib/storageKeys';
+import { LS, getCurrentUserName } from '../lib/storageKeys';
 import { NotifBlockedModal } from './NotifBlockedModal';
 import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import './AnniversaryView.css';
@@ -76,8 +76,7 @@ export function AnniversaryView({ onClose }: Props) {
   const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds } = useFamilyStore();
   const root       = persons.find(p => p.is_root === 1);
   const mePersonId = viewpointPersonId ?? root?.id;
-  const currentUserName = localStorage.getItem('familyTreeAccountName')
-    ?? localStorage.getItem('familyTreeUser');
+  const currentUserName = getCurrentUserName();
   const [items, setItems] = useState<AnniversaryItem[]>([]);
   const [loading, setLoading] = useState(true);
 

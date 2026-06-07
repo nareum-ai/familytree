@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { Person } from '../types';
+import type { Person, EditGrant } from '../types';
 import { useFamilyStore } from '../store/familyStore';
 import { getChusu } from '../hooks/useTreeLayout';
 import { getRelationLabel } from '../utils/relationLabel';
 import { getManAge } from '../utils/age';
 import { DateInput } from './DateInput';
 import { AvatarPicker } from './AvatarPicker';
-import { LS } from '../lib/storageKeys';
+import { LS, getCurrentUserName } from '../lib/storageKeys';
+import { AddPetModal } from './AddPetModal';
 import './PersonDetail.css';
 
 interface Props {
@@ -18,12 +19,16 @@ interface Props {
 export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const { persons, relationships, viewpointPersonId, updatePerson, deletePerson, createInvite,
           isPersonMapped, loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
-          updateRelationship, addRelationship } = useFamilyStore();
+          updateRelationship, addRelationship, selectPerson,
+          editGrantedPersonIds, loadEditGrantsForPerson, grantEditAccess, revokeEditAccess } = useFamilyStore();
   const root       = persons.find(p => p.is_root === 1)!;
   const chusuBase  = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
 
   const [alreadyMapped, setAlreadyMapped] = useState(false);
   const [infoRequests, setInfoRequests]   = useState<Array<{ id: string; requesterName: string; personId: string; createdAt: string }>>([]);
+  const [editGrants, setEditGrants] = useState<EditGrant[]>([]);
+  const [showGrantPicker, setShowGrantPicker] = useState(false);
+  const [granteeSearch, setGranteeSearch] = useState('');
 
   useEffect(() => {
     isPersonMapped(person.id)
@@ -32,6 +37,14 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
     loadInfoRequestsForMe()
       .then(reqs => setInfoRequests(reqs.filter(r => r.personId === person.id)))
+      .catch(() => {});
+
+    loadEditGrantsForPerson(person.id)
+      .then(grants => {
+        setEditGrants(grants);
+        setShowGrantPicker(false);
+        setGranteeSearch('');
+      })
       .catch(() => {});
   }, [person.id]);
 
@@ -45,9 +58,11 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [deathLunar, setDeathLunar] = useState(person.death_lunar ?? false);
   const [phone, setPhone] = useState(person.phone ?? '');
   const [email, setEmail] = useState(person.email ?? '');
-  const [memo, setMemo]   = useState(person.memo ?? '');
+  const [recentStatusList, setRecentStatusList] = useState(person.recent_status ?? []);
+  const [newStatusText, setNewStatusText] = useState('');
   const [photoUrl, setPhotoUrl]     = useState(person.photo_url ?? '');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showAddPetModal, setShowAddPetModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState('');
@@ -72,6 +87,11 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
   const handleSave = async () => {
     setSaving(true);
+    let finalStatusList = recentStatusList;
+    const newText = newStatusText.trim();
+    if (newText) {
+      finalStatusList = [{ text: newText, at: new Date().toISOString().split('T')[0] }, ...recentStatusList].slice(0, 3);
+    }
     await updatePerson(person.id, {
       name,
       gender,
@@ -82,9 +102,11 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
       death_lunar: isDeceased ? deathLunar : false,
       phone: phone.trim() || null,
       email: email.trim() || null,
-      memo:  memo.trim()  || null,
+      recent_status: finalStatusList.length > 0 ? finalStatusList : null,
       photo_url: photoUrl || null,
     });
+    setRecentStatusList(finalStatusList);
+    setNewStatusText('');
     if (spouseRel) {
       await updateRelationship(spouseRel.id, {
         marriage_date: marriageDate || null,
@@ -221,19 +243,22 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const { viewpointPersonId: vpId } = useFamilyStore();
   const mePersonId  = vpId ?? root?.id;
 
-  const currentUserAccount = localStorage.getItem('familyTreeAccountName') ?? localStorage.getItem('familyTreeUser');
+  const currentUserAccount = getCurrentUserName();
 
   const myPersonId = localStorage.getItem(LS.MY_PERSON_ID);
 
-  // 편집 권한: 나 자신 | 관리자 | (주인 없는 노드만) 내가 만든 노드
+  // 편집 권한 소유자: 나 자신 | 관리자 | (주인 없는 노드만) 내가 만든 노드
   const isAdmin = localStorage.getItem(LS.IS_ADMIN) === 'true' || localStorage.getItem(LS.ADMIN_RETURN) === 'true';
-  const canEdit = (() => {
+  const isOwnerOrCreator = (() => {
     if (isAdmin) return true;
     if (person.id === vpId || person.id === myPersonId) return true;         // 내 노드
     if (alreadyMapped) return false;                                          // 주인 있는 노드는 본인만
     if (person.created_by && person.created_by === currentUserAccount) return true; // 내가 만든 노드 (주인 없을 때만)
     return false;
   })();
+  // 위임받은 편집 권한이 있으면 편집은 가능하되, 추가 위임(부여/회수)은 원 소유자만 가능
+  const canEdit = isOwnerOrCreator || editGrantedPersonIds.has(person.id);
+  const canManageEditGrants = isOwnerOrCreator;
   const relationName = chusuBase ? getRelationLabel(person.id, chusuBase, persons, relationships) : '';
 
   // 촌수 배지: 0촌이면 나/배우자, 그 외엔 "N촌 (관계명)"
@@ -292,7 +317,21 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               );
             })}
           </div>
-          {(person.phone || person.email || person.memo) && (
+          {person.recent_status && person.recent_status.length > 0 && (
+            <div className="detail-recent-status">
+              <div className="recent-status-head">
+                <span className="contact-icon">💬</span>
+                <span className="recent-status-label">근황</span>
+              </div>
+              {person.recent_status.map((s, i) => (
+                <div key={i} className="recent-status-entry">
+                  <div className="recent-status-body">{s.text}</div>
+                  <span className="recent-status-date">{fmtDate(s.at, false)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {(person.phone || person.email) && (
             <div className="detail-contact">
               {person.phone && (
                 <div className="contact-row-wrap">
@@ -314,10 +353,19 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
                   )}
                 </div>
               )}
-              {person.memo && (
-                <div className="contact-row contact-memo">
-                  <span className="contact-icon">📝</span>{person.memo}
-                </div>
+            </div>
+          )}
+          {!person.is_pet && (
+            <div className="detail-meta">
+              {persons.filter(p => p.is_pet && p.owner_person_id === person.id).map(pet => (
+                <span key={pet.id} className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => selectPerson(pet.id)}>
+                  🐾 {pet.name}
+                </span>
+              ))}
+              {canEdit && (
+                <button className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => setShowAddPetModal(true)}>
+                  + 반려동물 추가
+                </button>
               )}
             </div>
           )}
@@ -326,6 +374,69 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               <button className="btn-edit" onClick={() => setEditing(true)}>편집</button>
               {!person.is_root && !alreadyMapped && (
                 <button className="btn-delete-sm" onClick={handleDelete}>삭제</button>
+              )}
+            </div>
+          )}
+
+          {canManageEditGrants && (
+            <div className="edit-grant-section">
+              <p className="edit-grant-title">✏️ 편집 권한 관리</p>
+              {editGrants.length > 0 && (
+                <div className="detail-meta">
+                  {editGrants.map(g => (
+                    <span key={g.id} className="meta-chip">
+                      {g.grantee_name}
+                      <button
+                        type="button"
+                        className="edit-grant-revoke-btn"
+                        onClick={async () => {
+                          await revokeEditAccess(g.id, g.person_id, g.grantee_person_id);
+                          setEditGrants(list => list.filter(x => x.id !== g.id));
+                        }}
+                      >✕</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {showGrantPicker ? (
+                <div className="edit-grant-picker">
+                  <input
+                    className="edit-grant-search-input"
+                    value={granteeSearch}
+                    onChange={e => setGranteeSearch(e.target.value)}
+                    placeholder="이름으로 검색"
+                    autoFocus
+                  />
+                  {granteeSearch.trim() && (
+                    <div className="edit-grant-results">
+                      {persons
+                        .filter(p => !p.is_pet && p.id !== person.id
+                          && !editGrants.some(g => g.grantee_person_id === p.id)
+                          && p.name.includes(granteeSearch.trim()))
+                        .slice(0, 8)
+                        .map(p => (
+                          <div
+                            key={p.id}
+                            className="edit-grant-result-row"
+                            onClick={async () => {
+                              await grantEditAccess(person.id, p.id, p.name);
+                              setEditGrants(await loadEditGrantsForPerson(person.id));
+                              setShowGrantPicker(false);
+                              setGranteeSearch('');
+                            }}
+                          >
+                            {p.name}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                  <button type="button" className="edit-grant-cancel-btn"
+                    onClick={() => { setShowGrantPicker(false); setGranteeSearch(''); }}>취소</button>
+                </div>
+              ) : (
+                <button type="button" className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => setShowGrantPicker(true)}>
+                  + 추가
+                </button>
               )}
             </div>
           )}
@@ -417,9 +528,21 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
                 placeholder="이메일" maxLength={80} />
             </div>
             <div className="form-field">
-              <label>기타 사항</label>
-              <textarea value={memo} onChange={e => setMemo(e.target.value)}
-                className="edit-input edit-memo" placeholder="메모" rows={3} maxLength={200} />
+              <label>근황 <span className="recent-status-hint">(최근 3개만 유지)</span></label>
+              {recentStatusList.length > 0 && (
+                <div className="recent-status-edit-list">
+                  {recentStatusList.map((s, i) => (
+                    <div key={i} className="recent-status-edit-entry">
+                      <div className="recent-status-edit-text">{s.text}</div>
+                      <span className="recent-status-edit-date">{fmtDate(s.at, false)}</span>
+                      <button type="button" className="recent-status-remove-btn"
+                        onClick={() => setRecentStatusList(list => list.filter((_, j) => j !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <textarea value={newStatusText} onChange={e => setNewStatusText(e.target.value)}
+                className="edit-input edit-recent-status" placeholder="새 근황을 입력하면 오늘 날짜로 추가됩니다" rows={2} maxLength={150} />
             </div>
           </div>
 
@@ -488,14 +611,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
                 <button
                   className="info-req-approve"
                   onClick={async () => {
-                    // requester_member_id 직접 조회
-                    const { getDocs, collection, query, where } = await import('firebase/firestore');
-                    const { db } = await import('../lib/firebase');
-                    const snap = await getDocs(query(collection(db, 'info_requests'),
-                      where('requester_name', '==', req.requesterName)));
-                    const docData = snap.docs.find(d => d.id === req.id);
-                    const requesterMemberId = docData?.data().requester_member_id ?? '';
-                    await approveInfoRequest(req.id, requesterMemberId, req.personId);
+                    await approveInfoRequest(req.id, req.requesterName, req.personId);
                     setInfoRequests(r => r.filter(x => x.id !== req.id));
                   }}
                 >수락</button>
@@ -517,6 +633,14 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
           current={photoUrl || null}
           onSelect={url => setPhotoUrl(url ?? '')}
           onClose={() => setShowAvatarPicker(false)}
+        />
+      )}
+
+      {showAddPetModal && (
+        <AddPetModal
+          targetPerson={person}
+          onClose={() => setShowAddPetModal(false)}
+          onDone={() => setShowAddPetModal(false)}
         />
       )}
     </div>

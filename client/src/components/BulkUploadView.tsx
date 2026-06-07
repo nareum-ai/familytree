@@ -112,14 +112,12 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
         ...filteredRels.map(r => ({ col: 'relationships', id: uuidv4(), data: r })),
       ];
 
-      let written = 0;
       for (let i = 0; i < allOps.length; i += 499) {
         const chunk = allOps.slice(i, i + 499);
         const batch = writeBatch(db);
         chunk.forEach(op => batch.set(doc(collection(db, op.col), op.id), op.data));
         setProgress(`저장 중... ${Math.min(i + 499, allOps.length)} / ${allOps.length}`);
         await batch.commit();
-        written += chunk.length;
       }
 
       setResult({ persons: newPersonDocs.length, rels: filteredRels.length });
@@ -275,7 +273,8 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
                       checked={mergeChecked.has(m.csvRef)}
                       onChange={e => {
                         const next = new Set(mergeChecked);
-                        e.target.checked ? next.add(m.csvRef) : next.delete(m.csvRef);
+                        if (e.target.checked) next.add(m.csvRef);
+                        else next.delete(m.csvRef);
                         setMergeChecked(next);
                       }}
                     />

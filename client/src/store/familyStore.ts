@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../lib/firebase';
-import type { Person, Relationship, BranchType, ApprovalRequest } from '../types';
+import type { Person, Relationship, BranchType, ApprovalRequest, EditGrant } from '../types';
 import { DEFAULT_PERMISSIONS } from '../types/permissions';
 import { parseKoreanName } from '../utils/nameParser';
 import { hashPassword } from '../utils/crypto';
@@ -25,7 +25,6 @@ const LS_USER_KEY     = LS.USER_NAME;
 const LS_FAMILY_ID    = LS.FAMILY_ID;
 const LS_MEMBER_ID    = LS.MEMBER_ID;
 const LS_ACCOUNT_NAME = LS.ACCOUNT_NAME;
-const ADMIN_NAME     = '관리자';
 
 interface FamilyState {
   persons: Person[];
@@ -57,8 +56,15 @@ interface FamilyState {
   loadGrantedAccess: () => Promise<void>;
   createInfoRequest: (targetPersonId: string) => Promise<boolean>; // true = 자동 승인됨
   loadInfoRequestsForMe: () => Promise<Array<{ id: string; requesterName: string; personId: string; createdAt: string }>>;
-  approveInfoRequest: (requestId: string, requesterMemberId: string, personId: string) => Promise<void>;
+  approveInfoRequest: (requestId: string, requesterName: string, personId: string) => Promise<void>;
   rejectInfoRequest:  (requestId: string) => Promise<void>;
+
+  // 노드별 편집 권한 위임
+  editGrantedPersonIds: Set<string>;
+  loadEditGrants: () => Promise<void>;
+  loadEditGrantsForPerson: (personId: string) => Promise<EditGrant[]>;
+  grantEditAccess: (personId: string, granteePersonId: string, granteeName: string) => Promise<void>;
+  revokeEditAccess: (grantId: string, personId: string, granteePersonId: string) => Promise<void>;
 
   // 회원 인증
   registerMember: (username: string, password: string) => Promise<{ ok: boolean; error?: string }>;
@@ -100,8 +106,6 @@ interface FamilyState {
   switchToFamily: (familyId: string) => void;
 }
 
-export { ADMIN_NAME };
-
 export const useFamilyStore = create<FamilyState>((set, get) => ({
   persons: [],
   relationships: [],
@@ -112,6 +116,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   focusRequest: null,
   infoRequestPersonId: null,
   grantedPersonIds: new Set<string>(),
+  editGrantedPersonIds: new Set<string>(),
 
   init: () => {
     const familyId = get().currentFamilyId;
@@ -140,6 +145,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
             .then(() => fixMissingNameParts());
         }
         get().loadGrantedAccess();
+        get().loadEditGrants();
       }
     };
 
@@ -172,7 +178,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
           // 첫 번째 배우자를 대표로 지정
           try {
             await updateDoc(doc(db, 'relationships', spouseRels[0].id), { is_primary: true });
-          } catch {}
+          } catch { /* best-effort */ }
           break; // 이 사람은 처리됨, 반대쪽도 같은 rel을 보기 때문에 중복 업데이트 방지
         }
       }
@@ -189,7 +195,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
               last_name: lastName,
               first_name: firstName,
             });
-          } catch {}
+          } catch { /* best-effort */ }
         }
       }
     };
@@ -223,7 +229,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
           });
           existingPairs.add(`${male}|${female}`);
           existingPairs.add(`${female}|${male}`);
-        } catch {}
+        } catch { /* best-effort */ }
       }
     };
 
@@ -248,7 +254,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
                 family_id: get().currentFamilyId,
               });
               existing.add(key);
-            } catch {}
+            } catch { /* best-effort */ }
           }
         }
       }
@@ -325,11 +331,11 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
           const allRels    = await getDocs(collection(db, 'relationships'));
           for (const d of allPersons.docs) {
             if (!d.data().family_id)
-              try { await updateDoc(doc(db, 'persons', d.id), { family_id: familyId }); } catch {}
+              try { await updateDoc(doc(db, 'persons', d.id), { family_id: familyId }); } catch { /* best-effort */ }
           }
           for (const d of allRels.docs) {
             if (!d.data().family_id)
-              try { await updateDoc(doc(db, 'relationships', d.id), { family_id: familyId }); } catch {}
+              try { await updateDoc(doc(db, 'relationships', d.id), { family_id: familyId }); } catch { /* best-effort */ }
           }
         }
       } finally {
@@ -370,7 +376,10 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       created_at:  new Date().toISOString(),
       phone:       personData.phone  ?? null,
       email:       personData.email  ?? null,
-      memo:        personData.memo   ?? null,
+      recent_status: personData.recent_status ?? null,
+      is_pet:           personData.is_pet ?? false,
+      species:          personData.species ?? null,
+      owner_person_id:  personData.owner_person_id ?? null,
     };
     const ref = await addDoc(collection(db, 'persons'), fields);
     const actorName = localStorage.getItem(LS_USER_KEY) ?? '알 수 없음';
@@ -601,11 +610,16 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
     }));
   },
 
-  approveInfoRequest: async (requestId, requesterMemberId, personId) => {
+  approveInfoRequest: async (requestId, requesterName, personId) => {
     await updateDoc(doc(db, 'info_requests', requestId), {
       status:      'approved',
       reviewed_at: new Date().toISOString(),
     });
+
+    // requester_member_id 조회
+    const reqByName = await getDocs(query(collection(db, 'info_requests'),
+      where('requester_name', '==', requesterName)));
+    const requesterMemberId = reqByName.docs.find(d => d.id === requestId)?.data().requester_member_id ?? '';
 
     // 1. 요청자 → 대상인물 접근권 부여
     const dup = await getDocs(query(collection(db, 'info_access'),
@@ -669,6 +683,59 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       status:      'rejected',
       reviewed_at: new Date().toISOString(),
     });
+  },
+
+  // ── 노드별 편집 권한 위임 ──────────────────────────────────────────────────
+
+  loadEditGrants: async () => {
+    const myPersonId = localStorage.getItem(LS.MY_PERSON_ID);
+    const vpId = get().viewpointPersonId;
+    const granteeIds = [...new Set([myPersonId, vpId].filter((id): id is string => !!id))];
+    if (granteeIds.length === 0) return;
+    const snap = await getDocs(
+      query(collection(db, 'edit_grants'), where('grantee_person_id', 'in', granteeIds))
+    );
+    const ids = new Set(snap.docs.map(d => d.data().person_id as string));
+    set({ editGrantedPersonIds: ids });
+  },
+
+  loadEditGrantsForPerson: async (personId) => {
+    const snap = await getDocs(
+      query(collection(db, 'edit_grants'), where('person_id', '==', personId))
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as EditGrant));
+  },
+
+  grantEditAccess: async (personId, granteePersonId, granteeName) => {
+    const dup = await getDocs(
+      query(collection(db, 'edit_grants'),
+        where('person_id', '==', personId),
+        where('grantee_person_id', '==', granteePersonId))
+    );
+    if (!dup.empty) return;
+    const actorName = localStorage.getItem(LS_USER_KEY) ?? '알 수 없음';
+    await addDoc(collection(db, 'edit_grants'), {
+      person_id:         personId,
+      grantee_person_id: granteePersonId,
+      grantee_name:      granteeName,
+      granted_by:        actorName,
+      granted_at:        new Date().toISOString(),
+      family_id:         get().currentFamilyId ?? 'main',
+    });
+    if (granteePersonId === localStorage.getItem(LS.MY_PERSON_ID) || granteePersonId === get().viewpointPersonId) {
+      set(s => ({ editGrantedPersonIds: new Set([...s.editGrantedPersonIds, personId]) }));
+    }
+  },
+
+  revokeEditAccess: async (grantId, personId, granteePersonId) => {
+    await deleteDoc(doc(db, 'edit_grants', grantId));
+    if (granteePersonId === localStorage.getItem(LS.MY_PERSON_ID) || granteePersonId === get().viewpointPersonId) {
+      set(s => {
+        const next = new Set(s.editGrantedPersonIds);
+        next.delete(personId);
+        return { editGrantedPersonIds: next };
+      });
+    }
   },
 
   // ── 회원 인증 ──────────────────────────────────────────────────────────────

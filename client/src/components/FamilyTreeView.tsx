@@ -12,12 +12,14 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useFamilyStore } from '../store/familyStore';
+import { getCurrentUserName } from '../lib/storageKeys';
 import { useTreeLayout, classifyBranch } from '../hooks/useTreeLayout';
 import type { BranchType, Person, Relationship } from '../types';
 import { PersonNode } from './PersonNode';
 import { CoupleNode } from './CoupleNode';
 import { FamilyEdge } from './FamilyEdge';
 import { PersonDetail } from './PersonDetail';
+import { PetDetail } from './PetDetail';
 import { AddPersonModal } from './AddPersonModal';
 import { InfoRequestPanel } from './InfoRequestPanel';
 import './FamilyTreeView.css';
@@ -331,8 +333,7 @@ export function FamilyTreeView() {
   // 관리자 "가족 접속"(MEMBER_ID 없음): 전체 공개
   // 관리자 "계정 접속"(MEMBER_ID 있음): 해당 계정 권한 적용
   const isMemberImpersonation = isAdminReturn && !!localStorage.getItem('familyTreeMemberId');
-  const currentUserName = (isAdminReturn && !isMemberImpersonation) ? null
-    : (localStorage.getItem('familyTreeAccountName') ?? localStorage.getItem('familyTreeUser'));
+  const currentUserName = (isAdminReturn && !isMemberImpersonation) ? null : getCurrentUserName();
 
   const { nodes, edges } = useTreeLayout(
     persons, relationships, activeBranch, viewpointPersonId,
@@ -453,13 +454,18 @@ export function FamilyTreeView() {
         />
       )}
 
-      {selectedPerson && (
+      {selectedPerson && (selectedPerson.is_pet ? (
+        <PetDetail
+          pet={selectedPerson}
+          onClose={() => selectPerson(null)}
+        />
+      ) : (
         <PersonDetail
           person={selectedPerson}
           onAddFamily={() => setShowAddModal(true)}
           onClose={() => selectPerson(null)}
         />
-      )}
+      ))}
 
       {showAddModal && selectedPerson && (
         <AddPersonModal
