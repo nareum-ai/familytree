@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>삼척 친척 여행 일정표 (1박 2일)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color: #f9f9f9; }
         .container { max-width: 750px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
@@ -20,6 +21,69 @@
         li { margin-bottom: 5px; }
         .tips { background: #fffaf0; border: 1px solid #feebc8; padding: 15px; border-radius: 6px; font-size: 13px; }
         .tips h3 { margin: 0 0 8px 0; color: #c05621; }
+
+        .meet {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+            background: #f0fff4; border-left: 4px solid #38a169;
+            padding: 15px; margin-bottom: 20px; font-size: 14px;
+        }
+        .tmap-btn {
+            flex-shrink: 0;
+            background: #38a169; color: #fff; border: none;
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 13px; font-weight: bold; cursor: pointer;
+        }
+        .tmap-btn:hover { background: #2f855a; }
+
+        .map-btn {
+            margin-top: 14px;
+            background: #fff; color: #1a365d;
+            border: none; border-radius: 20px;
+            padding: 8px 18px; font-size: 13px; font-weight: bold;
+            cursor: pointer;
+        }
+        .map-btn:hover { background: #edf2f7; }
+
+        .map-modal {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        .map-modal.open { display: flex; }
+        .map-modal-inner {
+            background: #fff;
+            width: 100%; max-width: 800px; height: 88vh;
+            border-radius: 8px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .map-modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px;
+            background: #1a365d; color: #fff;
+            font-weight: bold; font-size: 15px; flex-shrink: 0;
+        }
+        .map-close { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+        .map-legend {
+            display: flex; gap: 16px;
+            padding: 10px 18px;
+            font-size: 12px; color: #4a5568;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        .map-legend .dot {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+            margin-right: 5px; vertical-align: middle;
+        }
+        .dot.day1 { background: #2b6cb0; }
+        .dot.day2 { background: #dd6b20; }
+        #map { flex: 1; }
+        .map-pin-num {
+            background: transparent !important; border: none !important; box-shadow: none !important;
+            color: #fff; font-weight: bold; font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -27,12 +91,20 @@
         <div class="header">
             <h1>삼척 친척 여행 일정표</h1>
             <p>전통 문화재, 무빙워크 바다 정원, 편안한 실버 힐링 코스</p>
+            <button class="map-btn" onclick="openMap()">🗺️ 이동 경로 지도 보기</button>
         </div>
 
         <div class="info">
             <strong>일정:</strong> 2026년 6월 13일 (토) ~ 6월 14일 (일) 【1박 2일】<br>
             <strong>숙소:</strong> 강원도 삼척시 근덕면 용화안길 60 (용화해변 앞)<br>
             <strong>대상:</strong> 50대 이상 어르신 및 친척 일동
+        </div>
+
+        <div class="meet">
+            <div>
+                <strong>🚏 집합 시간 및 장소:</strong> 6월 13일 (토) 오전 10:00, 삼척 죽서루 주차장
+            </div>
+            <button class="tmap-btn" onclick="openInTmap('삼척 죽서루', 129.1654, 37.4430)">🚗 티맵으로 길찾기</button>
         </div>
 
         <div class="day-title">1일차: 6월 13일 (토)</div>
@@ -173,5 +245,82 @@
             </ul>
         </div>
     </div>
+
+    <div id="mapModal" class="map-modal" onclick="if (event.target.id === 'mapModal') closeMap();">
+        <div class="map-modal-inner">
+            <div class="map-modal-header">
+                <span>🗺️ 이동 경로 &amp; 시간</span>
+                <button class="map-close" onclick="closeMap()">✕</button>
+            </div>
+            <div class="map-legend">
+                <span><i class="dot day1"></i>1일차 (6/13)</span>
+                <span><i class="dot day2"></i>2일차 (6/14)</span>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 시간 순서대로 정리한 이동 경로 (좌표는 대략적인 위치)
+        const stops = [
+            { day: 1, time: '10:30', title: '삼척 죽서루',          lat: 37.4430, lng: 129.1654 },
+            { day: 1, time: '11:20', title: '이사부사자공원',       lat: 37.4567, lng: 129.1726 },
+            { day: 1, time: '12:15', title: '점심 식사 (시내권)',   lat: 37.4498, lng: 129.1652 },
+            { day: 1, time: '13:20', title: '숙소 이동 (용화리)',   lat: 37.3398, lng: 129.2144 },
+            { day: 1, time: '13:50', title: '해상케이블카 (용화역)', lat: 37.3395, lng: 129.2148 },
+            { day: 1, time: '15:40', title: '숙소 입실 및 휴식',    lat: 37.3398, lng: 129.2144 },
+            { day: 1, time: '17:30', title: '저녁 식사',           lat: 37.3398, lng: 129.2144 },
+            { day: 2, time: '09:00', title: '아침 식사 & 퇴실',     lat: 37.3398, lng: 129.2144 },
+            { day: 2, time: '10:20', title: '수로부인 헌화공원',    lat: 37.2148, lng: 129.3315 },
+            { day: 2, time: '11:45', title: '점심 식사 & 쇼핑 (임원항)', lat: 37.2102, lng: 129.3290 },
+        ];
+        const dayColors = { 1: '#2b6cb0', 2: '#dd6b20' };
+
+        // 티맵 앱 길찾기로 연결 (앱 미설치 시 스토어로 이동)
+        function openInTmap(name, lng, lat) {
+            const encoded = encodeURIComponent(name);
+            const tmapUrl = `tmap://route?goalname=${encoded}&goalx=${lng}&goaly=${lat}&rGoName=${encoded}`;
+            const fallbackUrl = 'https://play.google.com/store/apps/details?id=com.skt.tmap.ku';
+            const fallbackTimer = setTimeout(() => { location.href = fallbackUrl; }, 1500);
+            window.addEventListener('blur', () => clearTimeout(fallbackTimer), { once: true });
+            location.href = tmapUrl;
+        }
+
+        let map = null;
+        function openMap() {
+            document.getElementById('mapModal').classList.add('open');
+            if (!map) {
+                map = L.map('map');
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19,
+                }).addTo(map);
+
+                [1, 2].forEach(day => {
+                    const dayStops = stops.filter(s => s.day === day);
+                    const color = dayColors[day];
+                    L.polyline(dayStops.map(s => [s.lat, s.lng]), {
+                        color, weight: 4, opacity: 0.7,
+                        dashArray: day === 2 ? '6 6' : null,
+                    }).addTo(map);
+                    dayStops.forEach((s, i) => {
+                        L.circleMarker([s.lat, s.lng], {
+                            radius: 10, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1,
+                        }).addTo(map)
+                            .bindTooltip(String(i + 1), { permanent: true, direction: 'center', className: 'map-pin-num' })
+                            .bindPopup(`<b>${s.time}</b> · ${s.title}<br><span style="color:${color}">${day}일차 ${i + 1}번째</span>`);
+                    });
+                });
+
+                map.fitBounds(stops.map(s => [s.lat, s.lng]), { padding: [30, 30] });
+            } else {
+                setTimeout(() => map.invalidateSize(), 50);
+            }
+        }
+        function closeMap() {
+            document.getElementById('mapModal').classList.remove('open');
+        }
+    </script>
 </body>
 </html>
