@@ -199,6 +199,7 @@
   cursor: pointer; transition: all 0.15s;
 }
 .ann-push-toggle.on { background: #4F46E5; border-color: #4F46E5; color: white; }
+.ann-push-toggle:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .ann-push-group { display: flex; flex-direction: column; gap: 8px; }
 .ann-push-chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -232,3 +233,40 @@
 }
 .ann-push-save-btn:hover:not(:disabled) { background: #4338ca; }
 .ann-push-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ann-notif-test-prompt {
+  margin-top: -8px;
+  padding: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+}
+.ann-notif-test-q {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+.ann-notif-test-actions { display: flex; gap: 8px; }
+.ann-notif-test-yes,
+.ann-notif-test-no {
+  flex: 1;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid transparent;
+}
+.ann-notif-test-yes {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #C7D2FE;
+}
+.ann-notif-test-no {
+  background: #FEF2F2;
+  color: #EF4444;
+  border-color: #FECACA;
+}

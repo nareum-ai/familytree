@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 interface Props {
   onClose: () => void;
   onInstall?: () => void;
@@ -7,6 +9,14 @@ export function NotifBlockedModal({ onClose, onInstall }: Props) {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
+  // 모달이 뜨자마자 같은 탭의 잔여 클릭(고스트 클릭)이 배경에 떨어져
+  // 바로 닫혀버리는 걸 막기 위해, 마운트 직후 잠깐은 배경 클릭을 무시한다
+  const mountedAt = useRef(Date.now());
+  const handleOverlayClick = () => {
+    if (Date.now() - mountedAt.current < 350) return;
+    onClose();
+  };
+
   // 이미 앱으로 설치된 경우 → 시스템 설정 안내
   if (isStandalone) {
     const steps = [
@@ -15,7 +25,7 @@ export function NotifBlockedModal({ onClose, onInstall }: Props) {
       { num: '③', icon: '🔔', text: '「알림」→「허용」으로 바꿔요' },
     ];
     return (
-      <div className="nb-overlay" onClick={onClose}>
+      <div className="nb-overlay" onClick={handleOverlayClick}>
         <div className="nb-modal" onClick={e => e.stopPropagation()}>
           <div className="nb-top-icon">🔕</div>
           <h3 className="nb-title">알림이 차단되어 있어요</h3>
@@ -38,7 +48,7 @@ export function NotifBlockedModal({ onClose, onInstall }: Props) {
   // iOS 브라우저 → 홈 화면 추가 안내
   if (isIOS) {
     return (
-      <div className="nb-overlay" onClick={onClose}>
+      <div className="nb-overlay" onClick={handleOverlayClick}>
         <div className="nb-modal" onClick={e => e.stopPropagation()}>
           <div className="nb-top-icon">📲</div>
           <h3 className="nb-title">바탕화면에 설치하면<br/>알림을 받을 수 있어요</h3>
@@ -67,7 +77,7 @@ export function NotifBlockedModal({ onClose, onInstall }: Props) {
 
   // Android 크롬·엣지 → PWA 설치 유도
   return (
-    <div className="nb-overlay" onClick={onClose}>
+    <div className="nb-overlay" onClick={handleOverlayClick}>
       <div className="nb-modal" onClick={e => e.stopPropagation()}>
         <div className="nb-top-icon">📲</div>
         <h3 className="nb-title">알림을 받으려면 바탕화면에 설치해야 해요</h3>

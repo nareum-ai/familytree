@@ -326,6 +326,46 @@
 }
 .my-notif-toggle.on { background: #4F46E5; border-color: #4F46E5; color: white; }
 .my-notif-toggle:disabled { opacity: 0.6; cursor: not-allowed; }
+.my-notif-test-prompt {
+  margin-top: 8px;
+  padding: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+}
+.my-notif-test-q {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+.my-notif-test-actions {
+  display: flex;
+  gap: 8px;
+}
+.my-notif-test-yes,
+.my-notif-test-no {
+  flex: 1;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid transparent;
+}
+.my-notif-test-yes {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #C7D2FE;
+}
+.my-notif-test-no {
+  background: #FEF2F2;
+  color: #EF4444;
+  border-color: #FECACA;
+}
+
 .my-notif-blocked-hint {
   display: inline-block;
   margin-left: 6px;

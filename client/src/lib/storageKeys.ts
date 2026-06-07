@@ -14,6 +14,7 @@ const BASE_LS = {
   ACCOUNT_NAME: 'familyTreeAccountName',
   GOOGLE_EMAIL:    'familyTreeGoogleEmail',
   FCM_TOKEN_SAVED:      'familyTreeFcmTokenSaved',
+  NOTIF_CONFIRMED_BLOCKED: 'familyTreeNotifConfirmedBlocked',
   PENDING_INVITE_TOKEN: 'familyTreePendingInviteToken',
 } as const;
 

@@ -18,6 +18,8 @@ interface PushPrefs {
 }
 const DEFAULT_PUSH: PushPrefs = { enabled: true, offsets: [0, 1, 3, 7], maxChusu: 6, enableBirthday: true, enableDeathDay: true };
 
+const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
+
 interface Props {
   onClose: () => void;
 }
@@ -73,7 +75,7 @@ function AnniversaryRow({
 }
 
 export function AnniversaryView({ onClose }: Props) {
-  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds } = useFamilyStore();
+  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds, saveFcmToken } = useFamilyStore();
   const root       = persons.find(p => p.is_root === 1);
   const mePersonId = viewpointPersonId ?? root?.id;
   const currentUserName = getCurrentUserName();
@@ -91,7 +93,13 @@ export function AnniversaryView({ onClose }: Props) {
   const [pushSaving, setPushSaving]   = useState(false);
   const [pushSaveMsg, setPushSaveMsg] = useState<{ ok: boolean; msg: string } | null>(null);
   const [showNotifBlocked, setShowNotifBlocked] = useState(false);
-  const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+  const [notifTestPrompt, setNotifTestPrompt] = useState(false);
+  const [pushToggleLoading, setPushToggleLoading] = useState(false);
+  const [confirmedBlocked, setConfirmedBlocked] = useState(
+    localStorage.getItem(LS.NOTIF_CONFIRMED_BLOCKED) === 'true'
+  );
+  const notifDenied = confirmedBlocked
+    || (typeof Notification !== 'undefined' && Notification.permission === 'denied');
 
   const handleInstall = async () => {
     await triggerInstall();
@@ -169,6 +177,67 @@ export function AnniversaryView({ onClose }: Props) {
     }
   };
 
+  const handlePushToggle = async () => {
+    if (pushToggleLoading) return;
+    const turningOn = !pushPrefs.enabled;
+    if (!turningOn) {
+      setPushPrefs(p => ({ ...p, enabled: false }));
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      setShowNotifBlocked(true);
+      return;
+    }
+    setPushToggleLoading(true);
+    try {
+      if (Notification.permission !== 'granted') {
+        const result = await Notification.requestPermission();
+        if (result !== 'granted') return;
+      }
+      const memberId = localStorage.getItem(LS.MEMBER_ID);
+      const { getMessagingInstance } = await import('../lib/firebase');
+      const { getToken } = await import('firebase/messaging');
+      const messaging = await getMessagingInstance();
+      const swReg = await navigator.serviceWorker.ready;
+      if (messaging && memberId) {
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+        if (token) {
+          await saveFcmToken(memberId, token, 'fcm_token');
+          localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
+        }
+      }
+      // 권한 API 값과 무관하게, 실제로 알림이 화면에 뜨는지 직접 테스트해서 확인한다
+      // (TWA에서는 Notification.permission이 안드로이드 시스템 알림 권한과 어긋나는 경우가 있음)
+      try {
+        await swReg.showNotification('🔔 알림 테스트', {
+          body: '이 알림이 보이면 정상적으로 작동하고 있어요!',
+          icon: '/icons/icon-192.png',
+          tag: 'notif-test',
+        });
+        setNotifTestPrompt(true);
+      } catch { /* ignore */ }
+      setPushPrefs(p => ({ ...p, enabled: true }));
+    } finally {
+      setPushToggleLoading(false);
+    }
+  };
+
+  // 테스트 알림이 실제로는 안 보였다고 답한 경우 — 꺼진 게 사실이므로 토글도 OFF로 되돌리고 차단 상태를 기억해 둔다
+  const handleNotifTestFailed = async () => {
+    setNotifTestPrompt(false);
+    setConfirmedBlocked(true);
+    localStorage.setItem(LS.NOTIF_CONFIRMED_BLOCKED, 'true');
+    setShowNotifBlocked(true);
+    setPushPrefs(p => ({ ...p, enabled: false }));
+    const memberId = localStorage.getItem(LS.MEMBER_ID);
+    if (!memberId) return;
+    try {
+      const { updateDoc, doc } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      await updateDoc(doc(db, 'members', memberId), { 'push_prefs.enabled': false });
+    } catch { /* ignore */ }
+  };
+
   // 항목 클릭 → 트리에서 포커스
   const handleClick = (item: AnniversaryItem) => {
     const focusId = item.personId;
@@ -214,21 +283,36 @@ export function AnniversaryView({ onClose }: Props) {
                 <span className="ann-push-label">알림 사용</span>
                 <button
                   className={`ann-push-toggle ${pushPrefs.enabled ? 'on' : ''}`}
-                  onClick={async () => {
-                    const turningOn = !pushPrefs.enabled;
-                    if (turningOn && Notification.permission !== 'granted') {
-                      if (Notification.permission === 'denied') {
-                        setShowNotifBlocked(true);
-                        return;
-                      }
-                      const result = await Notification.requestPermission();
-                      if (result !== 'granted') return;
-                    }
-                    setPushPrefs(p => ({ ...p, enabled: !p.enabled }));
-                  }}>
-                  {pushPrefs.enabled ? 'ON' : 'OFF'}
+                  onClick={handlePushToggle}
+                  disabled={pushToggleLoading}>
+                  {pushToggleLoading ? '...' : pushPrefs.enabled ? 'ON' : 'OFF'}
                 </button>
               </div>
+              {notifTestPrompt && (
+                <div className="ann-notif-test-prompt">
+                  <p className="ann-notif-test-q">방금 테스트 알림이 화면에 떴나요?</p>
+                  <div className="ann-notif-test-actions">
+                    <button
+                      type="button"
+                      className="ann-notif-test-yes"
+                      onClick={() => {
+                        setNotifTestPrompt(false);
+                        setConfirmedBlocked(false);
+                        localStorage.removeItem(LS.NOTIF_CONFIRMED_BLOCKED);
+                      }}
+                    >
+                      네, 보였어요
+                    </button>
+                    <button
+                      type="button"
+                      className="ann-notif-test-no"
+                      onClick={handleNotifTestFailed}
+                    >
+                      아니요, 안 보여요
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="ann-push-group">
                 <span className="ann-push-label">알림 시기</span>

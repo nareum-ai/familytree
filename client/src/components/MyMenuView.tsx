@@ -53,6 +53,7 @@ export function MyMenuView({ onClose }: Props) {
   const [notifEnabled, setNotifEnabled] = useState<boolean | null>(null);
   const [notifLoading, setNotifLoading] = useState(false);
   const [showNotifBlocked, setShowNotifBlocked] = useState(false);
+  const [notifTestPrompt, setNotifTestPrompt] = useState(false);
   const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
   const username = localStorage.getItem(LS.ACCOUNT_NAME)
@@ -196,14 +197,24 @@ export function MyMenuView({ onClose }: Props) {
         const { getMessagingInstance } = await import('../lib/firebase');
         const { getToken } = await import('firebase/messaging');
         const messaging = await getMessagingInstance();
+        const swReg = await navigator.serviceWorker.ready;
         if (messaging) {
-          const swReg = await navigator.serviceWorker.ready;
           const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
           if (token) {
             await saveFcmToken(memberId, token, 'fcm_token');
             localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
           }
         }
+        // 권한 API 값과 무관하게, 실제로 알림이 화면에 뜨는지 직접 테스트해서 확인한다
+        // (TWA에서는 Notification.permission이 안드로이드 시스템 알림 권한과 어긋나는 경우가 있음)
+        try {
+          await swReg.showNotification('🔔 알림 테스트', {
+            body: '이 알림이 보이면 정상적으로 작동하고 있어요!',
+            icon: '/icons/icon-192.png',
+            tag: 'notif-test',
+          });
+          setNotifTestPrompt(true);
+        } catch { /* ignore */ }
       }
       const { updateDoc, doc } = await import('firebase/firestore');
       const { db } = await import('../lib/firebase');
@@ -212,6 +223,20 @@ export function MyMenuView({ onClose }: Props) {
     } catch { /* ignore */ } finally {
       setNotifLoading(false);
     }
+  };
+
+  // 테스트 알림이 실제로는 안 보였다고 답한 경우 — 꺼진 게 사실이므로 토글도 OFF로 되돌린다
+  const handleNotifTestFailed = async () => {
+    setNotifTestPrompt(false);
+    setShowNotifBlocked(true);
+    const memberId = localStorage.getItem(LS.MEMBER_ID);
+    if (!memberId) return;
+    try {
+      const { updateDoc, doc } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      await updateDoc(doc(db, 'members', memberId), { 'push_prefs.enabled': false });
+      setNotifEnabled(false);
+    } catch { /* ignore */ }
   };
 
   const showInstallBanner = hasInstallPrompt && !isStandalone && !installDismissed;
@@ -385,6 +410,27 @@ export function MyMenuView({ onClose }: Props) {
                     {isStandalone ? '안내' : '설치'}
                   </button>
                 )}
+              </div>
+            )}
+            {notifTestPrompt && (
+              <div className="my-notif-test-prompt">
+                <p className="my-notif-test-q">방금 테스트 알림이 화면에 떴나요?</p>
+                <div className="my-notif-test-actions">
+                  <button
+                    type="button"
+                    className="my-notif-test-yes"
+                    onClick={() => setNotifTestPrompt(false)}
+                  >
+                    네, 보였어요
+                  </button>
+                  <button
+                    type="button"
+                    className="my-notif-test-no"
+                    onClick={handleNotifTestFailed}
+                  >
+                    아니요, 안 보여요
+                  </button>
+                </div>
               </div>
             )}
 
