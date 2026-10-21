@@ -31,8 +31,8 @@
   <line x1="192" y1="390" x2="192" y2="424" stroke="rgba(255,255,255,0.45)" stroke-width="10" stroke-linecap="round"/>
   <line x1="320" y1="390" x2="320" y2="424" stroke="rgba(255,255,255,0.45)" stroke-width="10" stroke-linecap="round"/>
   <line x1="448" y1="390" x2="448" y2="424" stroke="rgba(255,255,255,0.45)" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="64"  cy="452" r="30" fill="white" opacity="0.78"/>
-  <circle cx="192" cy="452" r="30" fill="white" opacity="0.78"/>
-  <circle cx="320" cy="452" r="30" fill="white" opacity="0.78"/>
-  <circle cx="448" cy="452" r="30" fill="white" opacity="0.78"/>
+  <circle cx="64"  cy="452" r="30" fill="#F3C9A8"/>
+  <circle cx="192" cy="452" r="30" fill="#F3C9A8"/>
+  <circle cx="320" cy="452" r="30" fill="#F3C9A8"/>
+  <circle cx="448" cy="452" r="30" fill="#F3C9A8"/>
 </svg>
