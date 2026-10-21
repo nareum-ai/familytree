@@ -4,6 +4,7 @@ import { useFamilyStore } from '../store/familyStore';
 import { todayStr, formatDotDate } from '../utils/date';
 import { DateInput } from './DateInput';
 import { AvatarPicker } from './AvatarPicker';
+import { AvatarSelector } from './AvatarSelector';
 
 const MAX_RECENT_STATUS = 3;
 
@@ -68,21 +69,8 @@ export function PersonEditForm({ person, spouseRel, onDone }: Props) {
 
   return (
     <div className="edit-form">
-      <div className="avatar-selector-wrap">
-        <button type="button" className="avatar-selector-btn" onClick={() => setShowAvatarPicker(true)}>
-          {photoUrl
-            ? <img src={photoUrl} alt="아바타" className="avatar-preview" />
-            : <span className={`avatar-initial-circle ${gender === 'female' ? 'female' : 'male'}`}>
-                {name[0] || '?'}
-              </span>}
-        </button>
-        <span className="avatar-selector-label">아바타 설정</span>
-        {photoUrl && (
-          <button type="button" className="edit-avatar-remove-link" onClick={() => setPhotoUrl('')}>
-            아바타 삭제
-          </button>
-        )}
-      </div>
+      <AvatarSelector photoUrl={photoUrl || null} name={name} gender={gender}
+        onOpen={() => setShowAvatarPicker(true)} onRemove={() => setPhotoUrl('')} />
 
       <div className="form-field name-gender-row">
         <input value={name} onChange={e => setName(e.target.value)} placeholder="이름" required />
