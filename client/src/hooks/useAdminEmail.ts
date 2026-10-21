@@ -1,22 +1,40 @@
 import { useEffect, useState } from 'react';
+import { where } from 'firebase/firestore';
+import { findDocs } from '../lib/firestore';
 
-/** 관리자 계정의 google_email을 Firestore에서 조회하는 훅 */
-export function useAdminEmail(): string | null {
-  const [adminEmail, setAdminEmail] = useState<string | null>(null);
+/** 관리자 계정에 구글 이메일이 연결되어 있지 않을 때 쓰는 문의 주소 (선택) */
+const FALLBACK_EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) || null;
+
+// 관리자 이메일은 세션 중 바뀌지 않으므로 한 번만 조회해 공유
+let adminEmailPromise: Promise<string | null> | null = null;
+
+function fetchAdminEmail(): Promise<string | null> {
+  // 관리자가 여럿일 수 있으므로 구글 이메일이 연결된 첫 번째 관리자를 사용
+  adminEmailPromise ??= findDocs('members', where('is_admin', '==', true))
+    .then(snap => {
+      const email = snap.docs
+        .map(d => d.data()?.google_email as string | undefined)
+        .find(e => !!e);
+      return email ?? FALLBACK_EMAIL;
+    })
+    .catch(() => { adminEmailPromise = null; return FALLBACK_EMAIL; });
+  return adminEmailPromise;
+}
+
+/** 관리자 문의 이메일과 조회 중 여부 */
+export function useAdminEmailStatus(): { email: string | null; loading: boolean } {
+  const [state, setState] = useState<{ email: string | null; loading: boolean }>({ email: null, loading: true });
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { getDocs, collection, query, where } = await import('firebase/firestore');
-        const { db } = await import('../lib/firebase');
-        const snap = await getDocs(
-          query(collection(db, 'members'), where('is_admin', '==', true))
-        );
-        const email = snap.docs[0]?.data()?.google_email as string | undefined;
-        if (email) setAdminEmail(email);
-      } catch { /* 무시 */ }
-    })();
+    let cancelled = false;
+    fetchAdminEmail().then(email => { if (!cancelled) setState({ email, loading: false }); });
+    return () => { cancelled = true; };
   }, []);
 
-  return adminEmail;
+  return state;
+}
+
+/** 관리자 계정의 google_email (문의 안내용) */
+export function useAdminEmail(): string | null {
+  return useAdminEmailStatus().email;
 }

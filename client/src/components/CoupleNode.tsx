@@ -62,7 +62,10 @@ function HexAvatar({
 
 export const CoupleNode = memo(({ data }: { data: unknown }) => {
   const { persons, chusus, hiddenDescendants, anons } = data as CoupleNodeData;
-  const { selectedPersonId, selectPerson, viewpointPersonId, openInfoRequest } = useFamilyStore();
+  const selectedPersonId  = useFamilyStore(s => s.selectedPersonId);
+  const viewpointPersonId = useFamilyStore(s => s.viewpointPersonId);
+  const selectPerson      = useFamilyStore(s => s.selectPerson);
+  const openInfoRequest   = useFamilyStore(s => s.openInfoRequest);
 
   const toggle = (id: string, isAnon: boolean) => (e: React.MouseEvent) => {
     e.stopPropagation();

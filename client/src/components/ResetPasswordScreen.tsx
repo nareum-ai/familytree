@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFamilyStore } from '../store/familyStore';
+import { resetPasswordWithToken } from '../services/authService';
 import './LoginScreen.css';
 
 interface Props {
@@ -7,7 +7,6 @@ interface Props {
 }
 
 export function ResetPasswordScreen({ token }: Props) {
-  const { resetPasswordWithToken } = useFamilyStore();
 
   const [password,  setPassword]  = useState('');
   const [confirm,   setConfirm]   = useState('');

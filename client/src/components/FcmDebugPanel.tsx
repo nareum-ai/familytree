@@ -1,18 +1,16 @@
 import { useState } from 'react';
-import { getToken } from 'firebase/messaging';
+import { getToken, isSupported } from 'firebase/messaging';
 import { getMessagingInstance } from '../lib/firebase';
-import { useFamilyStore } from '../store/familyStore';
+import { saveFcmToken } from '../services/authService';
+import { VAPID_KEY } from '../lib/pushNotifications';
+import { isStandalone } from '../lib/device';
 import { LS } from '../lib/storageKeys';
-
-const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
-
 
 interface FcmDebugProps {
   field?: 'fcm_token' | 'fcm_token_admin';
 }
 
 export function FcmDebugPanel({ field = 'fcm_token' }: FcmDebugProps) {
-  const { saveFcmToken } = useFamilyStore();
   const [log, setLog] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [open, setOpen] = useState(false);
@@ -23,10 +21,9 @@ export function FcmDebugPanel({ field = 'fcm_token' }: FcmDebugProps) {
     setLog([]);
     setRunning(true);
     try {
-      add(`PWA 모드: ${window.matchMedia('(display-mode: standalone)').matches ? '✅' : '❌'}`);
+      add(`PWA 모드: ${isStandalone() ? '✅' : '❌'}`);
       add(`알림 권한: ${Notification.permission}`);
 
-      const { isSupported } = await import('firebase/messaging');
       const supported = await isSupported();
       add(`FCM 지원: ${supported ? '✅' : '❌'}`);
       if (!supported) { add('❌ 이 환경에서 FCM 미지원'); return; }

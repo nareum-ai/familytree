@@ -1,4 +1,7 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { isIOS as detectIOS, isStandalone as detectStandalone } from '../lib/device';
+
+const GHOST_CLICK_GUARD_MS = 350;
 
 interface Props {
   onClose: () => void;
@@ -6,14 +9,15 @@ interface Props {
 }
 
 export function NotifBlockedModal({ onClose, onInstall }: Props) {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = detectStandalone();
+  const isIOS = detectIOS();
 
   // 모달이 뜨자마자 같은 탭의 잔여 클릭(고스트 클릭)이 배경에 떨어져
   // 바로 닫혀버리는 걸 막기 위해, 마운트 직후 잠깐은 배경 클릭을 무시한다
-  const mountedAt = useRef(Date.now());
+  const mountedAt = useRef(0);
+  useEffect(() => { mountedAt.current = Date.now(); }, []);
   const handleOverlayClick = () => {
-    if (Date.now() - mountedAt.current < 350) return;
+    if (Date.now() - mountedAt.current < GHOST_CLICK_GUARD_MS) return;
     onClose();
   };
 

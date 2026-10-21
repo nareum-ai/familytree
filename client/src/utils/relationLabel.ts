@@ -1,5 +1,5 @@
 import type { Person, Relationship } from '../types';
-import { getGeneration } from '../hooks/useTreeLayout';
+import { getGeneration } from './familyGraph';
 
 type Gender = 'male' | 'female' | null;
 

@@ -14,3 +14,11 @@
   margin-top: 12px;
   text-align: center;
 }
+
+.verify-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a2e;
+  text-align: center;
+  margin: 0 0 20px;
+}

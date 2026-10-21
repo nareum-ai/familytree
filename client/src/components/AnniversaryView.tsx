@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
-import { classifyBranch, canSeeFull } from '../hooks/useTreeLayout';
+import { useVisiblePersons } from '../hooks/useVisiblePersons';
+import { classifyBranch, getChusuBase } from '../utils/familyGraph';
 import { buildAnniversaries, formatDate, type AnniversaryItem } from '../utils/anniversary';
-import type { BranchType } from '../types';
-import { LS, getCurrentUserName } from '../lib/storageKeys';
+import { LS } from '../lib/storageKeys';
+import { getMemberId, getMyPersonId, isAdminContext as checkAdminContext } from '../lib/session';
+import { getMemberData, updateMember } from '../lib/firestore';
+import { enablePushOnDevice, setPushEnabled } from '../lib/pushNotifications';
 import { NotifBlockedModal } from './NotifBlockedModal';
 import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import './AnniversaryView.css';
@@ -18,7 +21,15 @@ interface PushPrefs {
 }
 const DEFAULT_PUSH: PushPrefs = { enabled: true, offsets: [0, 1, 3, 7], maxChusu: 6, enableBirthday: true, enableDeathDay: true };
 
-const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
+function toPushPrefs(pp: Partial<PushPrefs>): PushPrefs {
+  return {
+    enabled:        pp.enabled !== false,
+    offsets:        Array.isArray(pp.offsets) ? pp.offsets : DEFAULT_PUSH.offsets,
+    maxChusu:       typeof pp.maxChusu === 'number' ? pp.maxChusu : DEFAULT_PUSH.maxChusu,
+    enableBirthday: pp.enableBirthday !== false,
+    enableDeathDay: pp.enableDeathDay !== false,
+  };
+}
 
 interface Props {
   onClose: () => void;
@@ -75,21 +86,17 @@ function AnniversaryRow({
 }
 
 export function AnniversaryView({ onClose }: Props) {
-  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds, tempUnlockAll, saveFcmToken } = useFamilyStore();
-  const root       = persons.find(p => p.is_root === 1);
-  const mePersonId = viewpointPersonId ?? root?.id;
-  const currentUserName = getCurrentUserName();
-  const [items, setItems] = useState<AnniversaryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { persons, relationships, viewpointPersonId, accessibleBranches, visiblePersons } = useVisiblePersons();
+  const requestFocus = useFamilyStore(s => s.requestFocus);
 
-  const isAdminContext =
-    localStorage.getItem(LS.IS_ADMIN) === 'true' ||
-    localStorage.getItem(LS.ADMIN_RETURN) === 'true';
-  const hasPersonId = !!localStorage.getItem(LS.MY_PERSON_ID);
+  const isAdminContext = checkAdminContext();
+  const hasPersonId = !!getMyPersonId();
+  const memberId = getMemberId();
+  const canUsePush = !!memberId && !isAdminContext && hasPersonId;
 
   const [mode, setMode] = useState<'list' | 'settings'>('list');
   const [pushPrefs, setPushPrefs]     = useState<PushPrefs>(DEFAULT_PUSH);
-  const [pushLoading, setPushLoading] = useState(true);
+  const [pushLoading, setPushLoading] = useState(canUsePush);
   const [pushSaving, setPushSaving]   = useState(false);
   const [pushSaveMsg, setPushSaveMsg] = useState<{ ok: boolean; msg: string } | null>(null);
   const [showNotifBlocked, setShowNotifBlocked] = useState(false);
@@ -105,69 +112,41 @@ export function AnniversaryView({ onClose }: Props) {
     await triggerInstall();
   };
 
-  // 뷰포인트 접근 가능 브랜치
-  const accessibleBranches = useMemo((): BranchType[] => {
-    const root = persons.find(p => p.is_root === 1);
-    const viewpoint = viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null;
-    if (!root || !viewpoint || viewpoint.id === root.id) return ['친가', '외가', '처가', '처외가'];
-    const hasSpouse = relationships.some(
-      r => r.type === 'spouse' &&
-        (r.person1_id === viewpoint.id || r.person2_id === viewpoint.id)
-    );
-    return hasSpouse ? ['친가', '외가', '처가', '처외가'] : ['친가', '외가'];
-  }, [persons, relationships, viewpointPersonId]);
-
-  // 볼 수 있는 사람만
-  const visiblePersons = useMemo(() =>
-    persons.filter(p => {
-      const branches = classifyBranch(p.id, persons, relationships);
-      if (!branches.some(b => (accessibleBranches as string[]).includes(b))) return false;
-      // 비공개 노드는 기념일에서 제외
-      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships, tempUnlockAll);
-    }),
-  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds, tempUnlockAll]);
-
   // 촌수 계산 기준: 뷰포인트 인물 (없으면 root)
-  const chusuBasePerson = mePersonId ? persons.find(p => p.id === mePersonId) : root;
+  const chusuBaseId = getChusuBase(persons, viewpointPersonId)?.id;
 
+  // 기념일 목록은 비동기(음력 변환)로 계산 — 입력이 바뀌면 이전 결과는 버린다
+  const annInput = useMemo(
+    () => ({ visiblePersons, relationships, chusuBaseId }),
+    [visiblePersons, relationships, chusuBaseId]
+  );
+  const [annResult, setAnnResult] = useState<{ input: typeof annInput; items: AnniversaryItem[] } | null>(null);
   useEffect(() => {
-    setLoading(true);
-    buildAnniversaries(visiblePersons, relationships, chusuBasePerson).then(result => {
-      setItems(result);
-      setLoading(false);
+    let cancelled = false;
+    const base = persons.find(p => p.id === annInput.chusuBaseId);
+    buildAnniversaries(annInput.visiblePersons, annInput.relationships, base).then(items => {
+      if (!cancelled) setAnnResult({ input: annInput, items });
     });
-  }, [visiblePersons, relationships, chusuBasePerson?.id]);
+    return () => { cancelled = true; };
+  }, [annInput, persons]);
+  const loading = annResult?.input !== annInput;
+  const items = annResult?.items ?? [];
 
   useEffect(() => {
-    const memberId = localStorage.getItem(LS.MEMBER_ID);
-    if (!memberId || isAdminContext || !hasPersonId) { setPushLoading(false); return; }
-    (async () => {
-      const { getDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      const snap = await getDoc(doc(db, 'members', memberId));
-      const pp = snap.data()?.push_prefs as Partial<PushPrefs> | undefined;
-      if (pp) {
-        setPushPrefs({
-          enabled:        pp.enabled !== false,
-          offsets:        Array.isArray(pp.offsets) ? pp.offsets : DEFAULT_PUSH.offsets,
-          maxChusu:       typeof pp.maxChusu === 'number' ? pp.maxChusu : DEFAULT_PUSH.maxChusu,
-          enableBirthday: pp.enableBirthday !== false,
-          enableDeathDay: pp.enableDeathDay !== false,
-        });
-      }
+    if (!canUsePush || !memberId) return;
+    getMemberData(memberId).then(data => {
+      const pp = data?.push_prefs as Partial<PushPrefs> | undefined;
+      if (pp) setPushPrefs(toPushPrefs(pp));
       setPushLoading(false);
-    })();
-  }, []);
+    });
+  }, [canUsePush, memberId]);
 
   const savePushPrefs = async () => {
     setPushSaving(true);
     setPushSaveMsg(null);
     try {
-      const memberId = localStorage.getItem(LS.MEMBER_ID);
       if (!memberId) return;
-      const { updateDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      await updateDoc(doc(db, 'members', memberId), { push_prefs: pushPrefs });
+      await updateMember(memberId, { push_prefs: pushPrefs });
       setPushSaveMsg({ ok: true, msg: '저장됐습니다.' });
     } catch {
       setPushSaveMsg({ ok: false, msg: '저장 중 오류가 발생했습니다.' });
@@ -179,8 +158,7 @@ export function AnniversaryView({ onClose }: Props) {
 
   const handlePushToggle = async () => {
     if (pushToggleLoading) return;
-    const turningOn = !pushPrefs.enabled;
-    if (!turningOn) {
+    if (pushPrefs.enabled) {
       setPushPrefs(p => ({ ...p, enabled: false }));
       return;
     }
@@ -190,32 +168,9 @@ export function AnniversaryView({ onClose }: Props) {
     }
     setPushToggleLoading(true);
     try {
-      if (Notification.permission !== 'granted') {
-        const result = await Notification.requestPermission();
-        if (result !== 'granted') return;
-      }
-      const memberId = localStorage.getItem(LS.MEMBER_ID);
-      const { getMessagingInstance } = await import('../lib/firebase');
-      const { getToken } = await import('firebase/messaging');
-      const messaging = await getMessagingInstance();
-      const swReg = await navigator.serviceWorker.ready;
-      if (messaging && memberId) {
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-        if (token) {
-          await saveFcmToken(memberId, token, 'fcm_token');
-          localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
-        }
-      }
-      // 권한 API 값과 무관하게, 실제로 알림이 화면에 뜨는지 직접 테스트해서 확인한다
-      // (TWA에서는 Notification.permission이 안드로이드 시스템 알림 권한과 어긋나는 경우가 있음)
-      try {
-        await swReg.showNotification('🔔 알림 테스트', {
-          body: '이 알림이 보이면 정상적으로 작동하고 있어요!',
-          icon: '/icons/icon-192.png',
-          tag: 'notif-test',
-        });
-        setNotifTestPrompt(true);
-      } catch { /* ignore */ }
+      const { granted, testShown } = await enablePushOnDevice(memberId);
+      if (!granted) return;
+      if (testShown) setNotifTestPrompt(true);
       setPushPrefs(p => ({ ...p, enabled: true }));
     } finally {
       setPushToggleLoading(false);
@@ -229,24 +184,16 @@ export function AnniversaryView({ onClose }: Props) {
     localStorage.setItem(LS.NOTIF_CONFIRMED_BLOCKED, 'true');
     setShowNotifBlocked(true);
     setPushPrefs(p => ({ ...p, enabled: false }));
-    const memberId = localStorage.getItem(LS.MEMBER_ID);
     if (!memberId) return;
-    try {
-      const { updateDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      await updateDoc(doc(db, 'members', memberId), { 'push_prefs.enabled': false });
-    } catch { /* ignore */ }
+    await setPushEnabled(memberId, false).catch(() => {});
   };
 
   // 항목 클릭 → 트리에서 포커스
   const handleClick = (item: AnniversaryItem) => {
-    const focusId = item.personId;
-    const branches = classifyBranch(focusId, persons, relationships);
-    const targetBranch =
-      branches.find(b => (accessibleBranches as string[]).includes(b)) ??
-      (branches[0] as BranchType);
+    const branches = classifyBranch(item.personId, persons, relationships);
+    const targetBranch = branches.find(b => accessibleBranches.includes(b)) ?? branches[0];
     if (targetBranch) {
-      requestFocus(focusId, targetBranch);
+      requestFocus(item.personId, targetBranch);
       onClose();
     }
   };

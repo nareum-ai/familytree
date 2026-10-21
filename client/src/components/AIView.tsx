@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import { callGemini } from '../lib/gemini';
-import { LS } from '../lib/storageKeys';
+import { getMyPersonId } from '../lib/session';
 import './AIView.css';
 
 interface Props {
@@ -25,14 +25,15 @@ function historyPrompt(month: number, day: number) {
 }
 
 export function AIView({ onClose }: Props) {
-  const { persons, viewpointPersonId } = useFamilyStore();
+  const persons           = useFamilyStore(s => s.persons);
+  const viewpointPersonId = useFamilyStore(s => s.viewpointPersonId);
   const [service, setService] = useState<Service>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
 
   const myPerson = useMemo(() => {
-    const myId = viewpointPersonId ?? localStorage.getItem(LS.MY_PERSON_ID);
+    const myId = viewpointPersonId ?? getMyPersonId();
     return (myId ? persons.find(p => p.id === myId) : null)
       ?? persons.find(p => p.is_root === 1)
       ?? null;

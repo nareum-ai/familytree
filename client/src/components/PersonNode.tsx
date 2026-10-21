@@ -16,7 +16,7 @@ interface PersonNodeData {
 
 export const PersonNode = memo(({ data, selected }: NodeProps) => {
   const { person, chusu, isRoot, hiddenDescendants, anon } = data as unknown as PersonNodeData;
-  const { viewpointPersonId } = useFamilyStore();
+  const viewpointPersonId = useFamilyStore(s => s.viewpointPersonId);
 
   const initial = person.name?.[0] ?? '?';
   const isMale = person.gender === 'male';

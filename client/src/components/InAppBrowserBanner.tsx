@@ -1,8 +1,5 @@
 import { useState } from 'react';
-
-function isInAppBrowser() {
-  return /KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\/|Twitter/i.test(navigator.userAgent);
-}
+import { isIOS as detectIOS, isKakaoTalk, openInExternalBrowserFromKakao } from '../lib/device';
 
 const DotsIcon = () => (
   <svg width="8" height="12" viewBox="0 0 4 12" fill="currentColor"
@@ -16,7 +13,7 @@ const DotsIcon = () => (
 function Banner() {
   const [copied, setCopied] = useState(false);
   const url   = window.location.href;
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isIOS = detectIOS();
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(url).then(() => {
@@ -37,7 +34,11 @@ function Banner() {
         구글 로그인을 하려면<br />
         <strong>{isIOS ? 'Safari' : 'Chrome'}</strong>에서 열어야 합니다.
       </p>
-      {isIOS ? (
+      {isKakaoTalk() ? (
+        <button className="inapp-open-btn" onClick={() => openInExternalBrowserFromKakao(url)}>
+          {isIOS ? 'Safari로' : '브라우저로'} 열기
+        </button>
+      ) : isIOS ? (
         <>
           <button
             className="inapp-open-btn"
@@ -66,5 +67,4 @@ function Banner() {
   );
 }
 
-export { isInAppBrowser };
 export default Banner;

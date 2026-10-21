@@ -8,12 +8,11 @@ interface Props {
 }
 
 export function InfoRequestPanel({ personId, onClose }: Props) {
-  const { persons, createInfoRequest, getInfoHolderName } = useFamilyStore();
+  const targetName = useFamilyStore(s => s.persons.find(p => p.id === personId)?.name) ?? '이 인물';
+  const { createInfoRequest, getInfoHolderName } = useFamilyStore.getState();
   const [sent, setSent]     = useState(false);
   const [loading, setLoading] = useState(false);
   const [holderName, setHolderName] = useState('');
-
-  const targetName = persons.find(p => p.id === personId)?.name ?? '이 인물';
 
   useEffect(() => {
     getInfoHolderName(personId).then(setHolderName);

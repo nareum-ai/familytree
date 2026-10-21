@@ -17,6 +17,7 @@ const BASE_LS = {
   NOTIF_CONFIRMED_BLOCKED: 'familyTreeNotifConfirmedBlocked',
   PENDING_INVITE_TOKEN: 'familyTreePendingInviteToken',
   LAST_ACTIVITY: 'familyTreeLastActivity',
+  PWA_INSTALL_DISMISSED: 'pwa_install_dismissed',
 } as const;
 
 type LSKey = keyof typeof BASE_LS;
@@ -41,4 +42,5 @@ export const SS = {
   INVITE_PERSON_ID:    'invitePersonId',
   INVITE_PERSON_NAME:  'invitePersonName',
   INVITE_FAMILY_ID:    'inviteFamilyId',
+  ADMIN_PWA:           '_admin_pwa',
 } as const;

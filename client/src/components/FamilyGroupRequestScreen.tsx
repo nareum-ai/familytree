@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useFamilyStore } from '../store/familyStore';
+import { submitFamilyGroupRequest, checkPendingFamilyRequest, cancelFamilyGroupRequest } from '../services/authService';
 import { useAdminEmail } from '../hooks/useAdminEmail';
 import { DateInput } from './DateInput';
+import { todayStr } from '../utils/date';
 import './LoginScreen.css';
 import './FamilyGroupRequestScreen.css';
 
@@ -13,7 +14,6 @@ interface Props {
 type Step = 'checking' | 'pending' | 'ask' | 'form' | 'done';
 
 export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
-  const { submitFamilyGroupRequest, checkPendingFamilyRequest, cancelFamilyGroupRequest } = useFamilyStore();
   const [step, setStep]                  = useState<Step>('checking');
   const [pendingRequestId, setPendingId] = useState<string | null>(null);
   const [pendingName, setPendingName]    = useState<string>('');
@@ -162,7 +162,7 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
                 <DateInput
                   value={birthDate}
                   onChange={setBirthDate}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={todayStr()}
                 />
                 <label className="fgr-lunar-check">
                   <input type="checkbox" checked={birthLunar}

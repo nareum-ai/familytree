@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { LS } from '../lib/storageKeys';
+import { getCurrentUserName } from '../lib/storageKeys';
 import { parseCSVText, detectNameMatches, buildImportData } from '../utils/csvImport';
 import { downloadCSV, CSV_TEMPLATE } from '../utils/csvExport';
 import type { CSVRow, ImportError, NameMatch } from '../utils/csvImport';
@@ -31,7 +31,7 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
   const [result, setResult] = useState<{ persons: number; rels: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const createdBy = localStorage.getItem(LS.ACCOUNT_NAME) ?? localStorage.getItem(LS.USER_NAME) ?? 'admin';
+  const createdBy = getCurrentUserName() ?? 'admin';
 
   // ── 파일 읽기 ────────────────────────────────────────────────────────────
   const readCsvText = async (file: File): Promise<string> => {

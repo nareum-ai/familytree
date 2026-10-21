@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { findDocs } from '../lib/firestore';
+import { isInAppBrowser, isIOS as detectIOS, isKakaoTalk, openInExternalBrowserFromKakao } from '../lib/device';
 import { LS, SS } from '../lib/storageKeys';
 import type { Person } from '../types';
-
-
-
-function isInAppBrowser() {
-  return /KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\/|Twitter/i.test(navigator.userAgent);
-}
 
 function buildOpenInChromeUrl() {
   const path     = window.location.href.replace(/^https?:\/\//, '');
@@ -20,44 +16,39 @@ function buildOpenInChromeUrl() {
 interface Props { token: string; }
 
 export function InvitePage({ token }: Props) {
-  const [loading,    setLoading]    = useState(true);
+  const inApp = isInAppBrowser();
+  const isIOS = detectIOS();
+  const kakao = isKakaoTalk();
+
+  // KakaoTalk 등 인앱 브라우저는 Firestore WebSocket이 차단돼 무한 로딩됨
+  // → Firestore 호출 없이 즉시 렌더 (외부 브라우저 안내 화면으로 진입)
+  const [loading,    setLoading]    = useState(!inApp);
   const [error,      setError]      = useState<string | null>(null);
-  const [senderName, setSenderName] = useState<string | null>(null);
+  // URL ?from= 파라미터에서 발신자 이름 읽기 (인앱 브라우저용 — Firestore 건너뜀)
+  const [senderName, setSenderName] = useState<string | null>(() => {
+    const from = new URLSearchParams(window.location.search).get('from');
+    return from ? decodeURIComponent(from) : null;
+  });
   const [copied,     setCopied]     = useState(false);
 
-  const inApp = isInAppBrowser();
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  // URL ?from= 파라미터에서 발신자 이름 읽기 (인앱 브라우저용 — Firestore 건너뜀)
   useEffect(() => {
-    const from = new URLSearchParams(window.location.search).get('from');
-    if (from) setSenderName(decodeURIComponent(from));
-  }, []);
-
-  useEffect(() => {
-    // KakaoTalk 등 인앱 브라우저는 Firestore WebSocket이 차단돼 무한 로딩됨
-    // → Firestore 호출 없이 즉시 렌더 (외부 브라우저 안내 화면으로 진입)
-    if (isInAppBrowser()) {
+    if (inApp) {
       localStorage.setItem(LS.PENDING_INVITE_TOKEN, token);
-      setLoading(false);
+      // 카카오톡은 외부 브라우저 열기 스킴을 지원 → 버튼 누를 필요 없이 바로 넘김
+      if (kakao) openInExternalBrowserFromKakao();
       return;
     }
     (async () => {
       try {
-        const inviteSnap = await getDocs(
-          query(collection(db, 'invites'), where('token', '==', token))
-        );
+        const inviteSnap = await findDocs('invites', where('token', '==', token));
         if (inviteSnap.empty) throw new Error('not found');
         const invite = inviteSnap.docs[0].data();
 
         setSenderName(invite.created_by ?? null);
 
-        const personsAll = await getDocs(collection(db, 'persons'));
-        const allPersons = personsAll.docs.map(d => ({
-          ...(d.data() as Omit<Person, 'id'>), id: d.id,
-        }));
-        const person = allPersons.find(p => p.id === invite.person_id) ?? null;
-        if (!person) throw new Error('person not found');
+        const personSnap = await getDoc(doc(db, 'persons', invite.person_id as string));
+        if (!personSnap.exists()) throw new Error('person not found');
+        const person = { ...(personSnap.data() as Omit<Person, 'id'>), id: personSnap.id };
 
         // 초대 컨텍스트 저장 — sessionStorage(현재 탭)와 localStorage(앱 설치 후 재진입 대비)
         sessionStorage.setItem(SS.INVITE_TOKEN,       token);
@@ -75,7 +66,7 @@ export function InvitePage({ token }: Props) {
         setLoading(false);
       }
     })();
-  }, [token]);
+  }, [token, inApp, kakao]);
 
   if (loading) return <div className="invite-loading">초대 정보를 불러오는 중...</div>;
   if (error) return (
@@ -109,14 +100,18 @@ export function InvitePage({ token }: Props) {
         <h1 className="invite-title">가계도 초대</h1>
         <p className="invite-desc">
           <strong>{senderName ?? '누군가'}님</strong>이 가계도에 초대했습니다.<br />
-          가입 후 본인 확인 절차가 있습니다.
+          가입하면 바로 가족 가계도를 볼 수 있어요.
         </p>
 
         {inApp ? (
           <div className="invite-inapp-warn">
-            <p>카카오톡에서는 구글 로그인이 불가합니다.<br />
+            <p>이 앱 안에서는 가입이 어렵습니다.<br />
             아래 버튼으로 {isIOS ? <strong>Safari</strong> : <strong>Chrome</strong>}에서 열어주세요.</p>
-            {isIOS ? (
+            {kakao ? (
+              <button className="invite-inapp-btn" onClick={() => openInExternalBrowserFromKakao()}>
+                🌐 {isIOS ? 'Safari로' : '브라우저로'} 열기
+              </button>
+            ) : isIOS ? (
               <>
                 <button
                   className="invite-inapp-btn"
@@ -146,7 +141,7 @@ export function InvitePage({ token }: Props) {
               </button>
             </div>
             <p className="invite-note">
-              가입 후 본인 이름을 확인하는 절차가 있습니다.
+              Google 계정이나 아이디로 간단히 가입할 수 있어요.
             </p>
           </>
         )}

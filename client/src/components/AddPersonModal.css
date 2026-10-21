@@ -378,3 +378,12 @@
   flex: 1;
   min-width: 0;
 }
+
+/* 추가 완료 후 초대 단계 */
+.add-invite-btn,
+.add-invite-later {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+.add-invite-btn { margin-top: 20px; padding: 13px; font-size: 15px; }

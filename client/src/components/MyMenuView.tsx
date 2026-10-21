@@ -1,53 +1,51 @@
 import { useEffect, useState } from 'react';
-import { useFamilyStore } from '../store/familyStore';
-import { useAdminEmail } from '../hooks/useAdminEmail';
-import { LS } from '../lib/storageKeys';
+import { useFamilyStore, type InfoRequestItem } from '../store/familyStore';
+import { useAdminEmailStatus } from '../hooks/useAdminEmail';
+import { LS, getCurrentUserName } from '../lib/storageKeys';
+import { getMemberId, isAdminContext as checkAdminContext } from '../lib/session';
+import { isStandalone as checkStandalone } from '../lib/device';
+import { getMemberData } from '../lib/firestore';
+import { enablePushOnDevice, setPushEnabled } from '../lib/pushNotifications';
+import { changePassword, linkGoogleAccount, unlinkGoogleFromMember } from '../services/authService';
 import { FcmDebugPanel } from './FcmDebugPanel';
 import { NotifBlockedModal } from './NotifBlockedModal';
+import { GoogleIcon } from './GoogleIcon';
 import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
+import { validateNewPassword } from '../utils/password';
 import './MyMenuView.css';
 import './NotifBlockedModal.css';
 
 interface Props { onClose: () => void; }
 
 type Tab = 'requests' | 'password' | 'google';
-
-interface RequestItem {
-  id: string;
-  requesterName: string;
-  personId: string;
-  createdAt: string;
-}
-
-const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNENkr9oviMKeqFhgmELvbpD0yIrJm2xgLz-g';
+type Msg = { ok: boolean; msg: string } | null;
 
 export function MyMenuView({ onClose }: Props) {
-  const { loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
-          persons, loginMember, linkGoogleToMember, unlinkGoogleFromMember,
-          saveFcmToken } = useFamilyStore();
+  const persons = useFamilyStore(s => s.persons);
+  const { loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest } = useFamilyStore.getState();
   const [tab, setTab]           = useState<Tab>('requests');
-  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [requests, setRequests] = useState<InfoRequestItem[]>([]);
   const [reqLoading, setReqLoading] = useState(true);
 
   // 비밀번호 변경
   const [oldPw, setOldPw]    = useState('');
   const [newPw, setNewPw]    = useState('');
   const [confirmPw, setConf] = useState('');
-  const [pwMsg, setPwMsg]    = useState<{ ok: boolean; msg: string } | null>(null);
+  const [pwMsg, setPwMsg]    = useState<Msg>(null);
   const [pwLoading, setPwLoading] = useState(false);
 
   // 구글 연결
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
-  const [googleMsg, setGoogleMsg]     = useState<{ ok: boolean; msg: string } | null>(null);
+  const [googleMsg, setGoogleMsg]     = useState<Msg>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const adminEmail = useAdminEmail();
+  const { email: adminEmail, loading: adminEmailLoading } = useAdminEmailStatus();
 
   // PWA 설치
   const [installDismissed, setInstallDismissed] = useState(
-    localStorage.getItem('pwa_install_dismissed') === 'true'
+    localStorage.getItem(LS.PWA_INSTALL_DISMISSED) === 'true'
   );
   const [hasInstallPrompt, setHasInstallPrompt] = useState(!!getInstallPrompt());
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const isStandalone = checkStandalone();
 
   // 알림 ON/OFF
   const [notifEnabled, setNotifEnabled] = useState<boolean | null>(null);
@@ -56,35 +54,26 @@ export function MyMenuView({ onClose }: Props) {
   const [notifTestPrompt, setNotifTestPrompt] = useState(false);
   const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
-  const username = localStorage.getItem(LS.ACCOUNT_NAME)
-    ?? localStorage.getItem(LS.USER_NAME) ?? '';
+  const username = getCurrentUserName() ?? '';
 
   // 관리자 or 관리자 대리 접속 중에는 구글·알림 탭 숨김
-  const isAdminContext =
-    localStorage.getItem(LS.IS_ADMIN) === 'true' ||
-    localStorage.getItem(LS.ADMIN_RETURN) === 'true';
+  const isAdminContext = checkAdminContext();
 
   useEffect(() => {
-    setReqLoading(true);
     loadInfoRequestsForMe()
       .then(setRequests)
       .catch(() => setRequests([]))
       .finally(() => setReqLoading(false));
 
-    // Firestore에서 google_email 로드
-    const loadMemberData = async () => {
-      const memberId = localStorage.getItem(LS.MEMBER_ID);
-      if (!memberId) return;
-      const { getDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      const snap = await getDoc(doc(db, 'members', memberId));
-      const data = snap.data();
+    // 구글 연결 상태·알림 설정 로드
+    const memberId = getMemberId();
+    if (!memberId) return;
+    getMemberData(memberId).then(data => {
       setGoogleEmail((data?.google_email as string | null) ?? null);
       const pp = data?.push_prefs as { enabled?: boolean } | undefined;
       setNotifEnabled(pp?.enabled !== false);
-    };
-    loadMemberData();
-  }, []);
+    });
+  }, [loadInfoRequestsForMe]);
 
   // beforeinstallprompt: 전역에서 이미 캡처됨, 혹시 늦게 발생하면 여기서도 반영
   useEffect(() => {
@@ -96,30 +85,27 @@ export function MyMenuView({ onClose }: Props) {
   const personName = (personId: string) =>
     persons.find(p => p.id === personId)?.name ?? '(비공개)';
 
-  const handleApprove = async (req: RequestItem) => {
-    await approveInfoRequest(req.id, req.requesterName, req.personId);
+  const handleApprove = async (req: InfoRequestItem) => {
+    await approveInfoRequest(req.id, req.personId);
     setRequests(r => r.filter(x => x.id !== req.id));
   };
 
-  const handleReject = async (req: RequestItem) => {
+  const handleReject = async (req: InfoRequestItem) => {
     await rejectInfoRequest(req.id);
     setRequests(r => r.filter(x => x.id !== req.id));
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPwMsg(null);
-    if (newPw.length < 6) { setPwMsg({ ok: false, msg: '새 비밀번호는 6자 이상이어야 합니다.' }); return; }
-    if (newPw !== confirmPw) { setPwMsg({ ok: false, msg: '새 비밀번호가 일치하지 않습니다.' }); return; }
+    const invalid = validateNewPassword(newPw, confirmPw);
+    setPwMsg(invalid ? { ok: false, msg: invalid } : null);
+    if (invalid) return;
     setPwLoading(true);
     try {
-      const member = await loginMember(username, oldPw);
-      if (!member) { setPwMsg({ ok: false, msg: '현재 비밀번호가 올바르지 않습니다.' }); return; }
-      const { hashPassword } = await import('../utils/crypto');
-      const { updateDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      const newHash = await hashPassword(newPw);
-      await updateDoc(doc(db, 'members', member.id), { password_hash: newHash });
+      if (await changePassword(username, oldPw, newPw) === 'wrong-password') {
+        setPwMsg({ ok: false, msg: '현재 비밀번호가 올바르지 않습니다.' });
+        return;
+      }
       setPwMsg({ ok: true, msg: '비밀번호가 변경됐습니다.' });
       setOldPw(''); setNewPw(''); setConf('');
     } catch {
@@ -130,26 +116,21 @@ export function MyMenuView({ onClose }: Props) {
   };
 
   const handleLinkGoogle = async () => {
+    const memberId = getMemberId();
+    if (!memberId) return;
     setGoogleMsg(null);
     setGoogleLoading(true);
     try {
-      const { signInWithPopup } = await import('firebase/auth');
-      const { auth, googleProvider } = await import('../lib/firebase');
-      const result = await signInWithPopup(auth, googleProvider);
-      const uid   = result.user.uid;
-      const email = result.user.email ?? '';
-      const memberId = localStorage.getItem(LS.MEMBER_ID);
-      if (!memberId) return;
-      const res = await linkGoogleToMember(memberId, uid, email);
+      const res = await linkGoogleAccount(memberId);
+      if (!res) return; // 팝업 취소
       if (!res.ok) {
         setGoogleMsg({ ok: false, msg: res.error ?? '구글 연결 중 오류가 발생했습니다.' });
         return;
       }
-      localStorage.setItem(LS.GOOGLE_EMAIL, email);
-      setGoogleEmail(email);
+      localStorage.setItem(LS.GOOGLE_EMAIL, res.email);
+      setGoogleEmail(res.email);
       setGoogleMsg({ ok: true, msg: '구글 계정이 연결됐습니다.' });
-    } catch (err: unknown) {
-      if ((err as { code?: string })?.code === 'auth/popup-closed-by-user') return;
+    } catch {
       setGoogleMsg({ ok: false, msg: '구글 연결 중 오류가 발생했습니다.' });
     } finally {
       setGoogleLoading(false);
@@ -157,11 +138,11 @@ export function MyMenuView({ onClose }: Props) {
   };
 
   const handleUnlinkGoogle = async () => {
+    const memberId = getMemberId();
+    if (!memberId) return;
     setGoogleMsg(null);
     setGoogleLoading(true);
     try {
-      const memberId = localStorage.getItem(LS.MEMBER_ID);
-      if (!memberId) return;
       await unlinkGoogleFromMember(memberId);
       localStorage.removeItem(LS.GOOGLE_EMAIL);
       setGoogleEmail(null);
@@ -180,45 +161,21 @@ export function MyMenuView({ onClose }: Props) {
 
   const handleNotifToggle = async () => {
     if (notifLoading || notifEnabled === null) return;
-    const memberId = localStorage.getItem(LS.MEMBER_ID);
+    const memberId = getMemberId();
     if (!memberId) return;
     const turningOn = !notifEnabled;
+    if (turningOn && Notification.permission === 'denied') {
+      setShowNotifBlocked(true);
+      return;
+    }
     setNotifLoading(true);
     try {
       if (turningOn) {
-        if (Notification.permission === 'denied') {
-          setShowNotifBlocked(true);
-          return;
-        }
-        if (Notification.permission !== 'granted') {
-          const result = await Notification.requestPermission();
-          if (result !== 'granted') return;
-        }
-        const { getMessagingInstance } = await import('../lib/firebase');
-        const { getToken } = await import('firebase/messaging');
-        const messaging = await getMessagingInstance();
-        const swReg = await navigator.serviceWorker.ready;
-        if (messaging) {
-          const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-          if (token) {
-            await saveFcmToken(memberId, token, 'fcm_token');
-            localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
-          }
-        }
-        // 권한 API 값과 무관하게, 실제로 알림이 화면에 뜨는지 직접 테스트해서 확인한다
-        // (TWA에서는 Notification.permission이 안드로이드 시스템 알림 권한과 어긋나는 경우가 있음)
-        try {
-          await swReg.showNotification('🔔 알림 테스트', {
-            body: '이 알림이 보이면 정상적으로 작동하고 있어요!',
-            icon: '/icons/icon-192.png',
-            tag: 'notif-test',
-          });
-          setNotifTestPrompt(true);
-        } catch { /* ignore */ }
+        const { granted, testShown } = await enablePushOnDevice(memberId);
+        if (!granted) return;
+        if (testShown) setNotifTestPrompt(true);
       }
-      const { updateDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      await updateDoc(doc(db, 'members', memberId), { 'push_prefs.enabled': turningOn });
+      await setPushEnabled(memberId, turningOn);
       setNotifEnabled(turningOn);
     } catch { /* ignore */ } finally {
       setNotifLoading(false);
@@ -229,12 +186,10 @@ export function MyMenuView({ onClose }: Props) {
   const handleNotifTestFailed = async () => {
     setNotifTestPrompt(false);
     setShowNotifBlocked(true);
-    const memberId = localStorage.getItem(LS.MEMBER_ID);
+    const memberId = getMemberId();
     if (!memberId) return;
     try {
-      const { updateDoc, doc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      await updateDoc(doc(db, 'members', memberId), { 'push_prefs.enabled': false });
+      await setPushEnabled(memberId, false);
       setNotifEnabled(false);
     } catch { /* ignore */ }
   };
@@ -318,12 +273,7 @@ export function MyMenuView({ onClose }: Props) {
           {tab === 'google' && (
             <div className="my-google-section">
               <div className="my-google-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32" height="32">
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
+                <GoogleIcon size={32} />
               </div>
 
               {googleEmail ? (
@@ -376,7 +326,7 @@ export function MyMenuView({ onClose }: Props) {
                 <div className="my-install-actions">
                   <button className="my-install-btn" onClick={handleInstall}>설치</button>
                   <button className="my-install-dismiss" onClick={() => {
-                    localStorage.setItem('pwa_install_dismissed', 'true');
+                    localStorage.setItem(LS.PWA_INSTALL_DISMISSED, 'true');
                     setInstallDismissed(true);
                   }}>✕</button>
                 </div>
@@ -450,7 +400,7 @@ export function MyMenuView({ onClose }: Props) {
           </p>
           {adminEmail
             ? <a href={`mailto:${adminEmail}?subject=계정 탈퇴 요청`} className="my-contact-email">{adminEmail}</a>
-            : <span className="my-contact-email" style={{ color: '#aaa' }}>이메일 불러오는 중...</span>
+            : <span className="my-contact-email" style={{ color: '#aaa' }}>{adminEmailLoading ? '이메일 불러오는 중...' : '관리자에게 직접 연락해 주세요.'}</span>
           }
         </div>
       </div>

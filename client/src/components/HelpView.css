@@ -81,7 +81,7 @@
 
 /* ── 본문 요소들 ──────────────────────────────────────────── */
 .help-para {
-  font-size: 13px; color: #4a5568; line-height: 1.7;
+  font-size: 14px; color: #4a5568; line-height: 1.7;
   margin: 10px 0 8px;
 }
 
@@ -90,7 +90,7 @@
   display: flex; flex-direction: column; gap: 6px;
 }
 .help-list li {
-  font-size: 13px; color: #4a5568; line-height: 1.6;
+  font-size: 14px; color: #4a5568; line-height: 1.6;
 }
 
 .help-steps {
@@ -101,7 +101,7 @@
 .help-steps li {
   position: relative;
   padding-left: 32px;
-  font-size: 13px; color: #4a5568; line-height: 1.6;
+  font-size: 14px; color: #4a5568; line-height: 1.6;
   min-height: 24px;
 }
 .step-num {
@@ -206,15 +206,66 @@
 .ann-near  { background: #4F46E5; color: white; }
 .ann-far   { background: #f0f4f8; color: #64748B; }
 
-/* ── 푸터 ────────────────────────────────────────────────── */
-.help-footer {
-  text-align: center; font-size: 12px; color: #94a3b8;
-  padding: 12px 0 4px;
+/* ── 검색 ────────────────────────────────────────────────── */
+.help-search {
+  display: flex; align-items: center; gap: 8px;
+  margin: 12px 14px 0; padding: 0 12px;
+  background: white; border: 1px solid #dbe4ee; border-radius: 12px;
+  flex-shrink: 0;
 }
-.help-footer-link {
-  color: #4F46E5; font-weight: 600; text-decoration: none;
+.help-search:focus-within { border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+.help-search-icon { font-size: 14px; opacity: 0.6; }
+.help-search-input {
+  flex: 1; min-width: 0; border: none; outline: none; background: none;
+  padding: 11px 0; font-size: 15px; color: #1a2e3b;
 }
-.help-footer-link:hover { text-decoration: underline; }
+.help-search-clear {
+  border: none; background: #e2e8f0; color: #64748B;
+  width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer;
+}
+
+/* ── 빠른 시작 ───────────────────────────────────────────── */
+.help-quickstart {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0f2fe 100%);
+  border: 1px solid #c7d2fe; border-radius: 14px;
+  padding: 14px 16px;
+}
+.help-quickstart-title { font-size: 14px; font-weight: 800; color: #3730a3; margin: 0 0 10px; }
+.help-quickstart-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.help-quickstart-list li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; color: #1e293b; font-weight: 600;
+}
+.help-quickstart-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #4F46E5; color: white; font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.help-quickstart-icon { font-size: 16px; }
+
+/* ── 그룹 ────────────────────────────────────────────────── */
+.help-group { display: flex; flex-direction: column; gap: 8px; }
+.help-group-label {
+  font-size: 12px; font-weight: 700; color: #64748B;
+  margin: 8px 4px 0;
+}
+.help-empty {
+  text-align: center; font-size: 13px; color: #94a3b8; line-height: 1.7;
+  padding: 24px 0;
+}
+
+/* ── 문의 카드 ───────────────────────────────────────────── */
+.help-contact {
+  margin-top: 8px; padding: 14px 16px;
+  background: white; border: 1px dashed #cbd5e1; border-radius: 14px;
+  text-align: center;
+}
+.help-contact-title { font-size: 14px; font-weight: 800; color: #1a2e3b; margin: 0 0 6px; }
+.help-contact-desc { font-size: 12px; color: #6b7c93; line-height: 1.6; margin: 0; }
+.help-contact-loading { display: inline-block; margin-top: 6px; font-size: 13px; color: #aaa; }
 .help-contact-link {
   display: inline-block; margin-top: 6px;
   color: #4F46E5; font-weight: 700; font-size: 13px; text-decoration: none;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useFamilyStore } from '../store/familyStore';
+import { requestPasswordReset, requestAdminPasswordReset } from '../services/authService';
 import { DateInput } from './DateInput';
+import { todayStr } from '../utils/date';
 import './LoginScreen.css';
 
 interface Props {
@@ -10,7 +11,6 @@ interface Props {
 type Step = 'form' | 'sent' | 'fallback' | 'fallback_sent';
 
 export function ForgotPasswordScreen({ onBack }: Props) {
-  const { requestPasswordReset, requestAdminPasswordReset } = useFamilyStore();
 
   const [step,          setStep]          = useState<Step>('form');
   const [username,      setUsername]      = useState('');
@@ -145,7 +145,7 @@ export function ForgotPasswordScreen({ onBack }: Props) {
             placeholder="이름 (가계도에 등록된 이름)"
             maxLength={30}
           />
-          <DateInput value={birthDate} onChange={setBirthDate} max={new Date().toISOString().split('T')[0]} />
+          <DateInput value={birthDate} onChange={setBirthDate} max={todayStr()} />
           <input
             className="login-input"
             type="email"

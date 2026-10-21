@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
-import { classifyBranch, canSeeFull, getChusu } from '../hooks/useTreeLayout';
+import { useVisiblePersons } from '../hooks/useVisiblePersons';
+import { classifyBranch, getChusu, getChusuBase } from '../utils/familyGraph';
 import { getRelationLabel } from '../utils/relationLabel';
-import { LS } from '../lib/storageKeys';
-import type { BranchType } from '../types';
 import './SearchView.css';
 
 interface Props {
@@ -11,44 +10,22 @@ interface Props {
 }
 
 export function SearchView({ onClose }: Props) {
-  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds, tempUnlockAll } = useFamilyStore();
+  const { persons, relationships, viewpointPersonId, visiblePersons } = useVisiblePersons();
+  const requestFocus = useFamilyStore(s => s.requestFocus);
   const [query, setQuery] = useState('');
 
-  const root     = persons.find(p => p.is_root === 1);
-  const chusuBase = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
-  const currentUserName = localStorage.getItem(LS.ACCOUNT_NAME) ?? localStorage.getItem(LS.USER_NAME);
-
-  // AnniversaryView와 동일: 접근 가능한 브랜치에 속한 사람만 표시
-  const accessibleBranches = useMemo((): BranchType[] => {
-    const viewpoint = viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null;
-    if (!root || !viewpoint || viewpoint.id === root.id) return ['친가', '외가', '처가', '처외가'];
-    const hasSpouse = relationships.some(
-      r => r.type === 'spouse' && (r.person1_id === viewpoint.id || r.person2_id === viewpoint.id)
-    );
-    return hasSpouse ? ['친가', '외가', '처가', '처외가'] : ['친가', '외가'];
-  }, [persons, relationships, viewpointPersonId, root]);
-
-  const visiblePersons = useMemo(() =>
-    persons.filter(p => {
-      const branches = classifyBranch(p.id, persons, relationships);
-      if (!branches.some(b => (accessibleBranches as string[]).includes(b))) return false;
-      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships, tempUnlockAll);
-    }),
-  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds, tempUnlockAll]);
+  const chusuBase = getChusuBase(persons, viewpointPersonId);
 
   const results = useMemo(() => {
-    const base = visiblePersons;
-    if (!query.trim()) return base.slice().sort((a, b) => a.name.localeCompare(b.name));
     const q = query.trim().toLowerCase();
-    return base
-      .filter(p => p.name.toLowerCase().includes(q))
+    return visiblePersons
+      .filter(p => !q || p.name.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [query, visiblePersons]);
 
   const handleClick = (personId: string) => {
     const branches = classifyBranch(personId, persons, relationships);
-    const targetBranch = (branches[0] as BranchType) ?? '친가';
-    requestFocus(personId, targetBranch);
+    requestFocus(personId, branches[0] ?? '친가');
     onClose();
   };
 
@@ -77,10 +54,6 @@ export function SearchView({ onClose }: Props) {
             const chusu = chusuBase ? getChusu(p.id, chusuBase, relationships) : null;
             const relationLabel = chusuBase ? getRelationLabel(p.id, chusuBase, persons, relationships) : '';
             const chusuLabel = relationLabel || (chusu != null ? `${chusu}촌` : '');
-            const branchLabels = branches.map(b => {
-              const map: Record<BranchType, string> = { '친가': '친가', '외가': '외가', '처가': '처가', '처외가': '처외가' };
-              return map[b] ?? b;
-            });
 
             return (
               <div
@@ -103,8 +76,8 @@ export function SearchView({ onClose }: Props) {
                   </span>
                 </div>
                 <div className="search-branches">
-                  {branchLabels.length > 0
-                    ? branchLabels.map(b => <span key={b} className="branch-tag">{b}</span>)
+                  {branches.length > 0
+                    ? branches.map(b => <span key={b} className="branch-tag">{b}</span>)
                     : <span className="branch-tag unclassified-tag">분류없음</span>}
                 </div>
               </div>

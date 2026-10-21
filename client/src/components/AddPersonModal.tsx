@@ -3,6 +3,9 @@ import type { Person, AddRelationType } from '../types';
 import { useFamilyStore } from '../store/familyStore';
 import { DateInput } from './DateInput';
 import { AvatarPicker } from './AvatarPicker';
+import { InviteLinkBox } from './InviteLinkBox';
+import { buildInviteLink } from '../lib/inviteMessage';
+import { todayStr } from '../utils/date';
 import './AddPersonModal.css';
 
 interface Props {
@@ -20,7 +23,9 @@ const ALL_OPTIONS: { type: AddRelationType; label: string; desc: string; genderH
 ];
 
 export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
-  const { persons, relationships, addPerson, addRelationship } = useFamilyStore();
+  const persons       = useFamilyStore(s => s.persons);
+  const relationships = useFamilyStore(s => s.relationships);
+  const { addPerson, addRelationship, createInvite } = useFamilyStore.getState();
 
   const [relationType, setRelationType] = useState<AddRelationType>('child');
   const [name, setName] = useState('');
@@ -34,6 +39,10 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
   const [deathLunar, setDeathLunar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [polyConfirmed, setPolyConfirmed] = useState(false);
+  // 추가 완료 후 바로 초대할 수 있도록 보관 (생존 인물만)
+  const [added, setAdded] = useState<Person | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [creatingInvite, setCreatingInvite] = useState(false);
 
   // Check existing relations
   const hasFather = relationships.some(r =>
@@ -180,11 +189,48 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
           await addRelationship({ person1_id: pid, person2_id: newPerson.id, type: 'parent_child' });
         }
       }
-      (onDone ?? onClose)();
+      if (isDeceased) (onDone ?? onClose)();
+      else setAdded(newPerson);
     } finally {
       setSaving(false);
     }
   };
+
+  const finish = onDone ?? onClose;
+
+  const handleCreateInvite = async () => {
+    if (!added) return;
+    setCreatingInvite(true);
+    try {
+      setInviteLink(buildInviteLink(await createInvite(added.id)));
+    } finally {
+      setCreatingInvite(false);
+    }
+  };
+
+  if (added) {
+    return (
+      <div className="modal-backdrop" onClick={finish}>
+        <div className="modal-box" onClick={e => e.stopPropagation()}>
+          <h2 className="modal-title">✅ 추가 완료</h2>
+          <p className="modal-subtitle">
+            <strong>{added.name}</strong>님을 가계도에 추가했어요.<br />
+            지금 초대 링크를 보내 함께 채워보세요.
+          </p>
+          {inviteLink ? (
+            <InviteLinkBox link={inviteLink} personName={added.name} />
+          ) : (
+            <button type="button" className="btn-save add-invite-btn" onClick={handleCreateInvite} disabled={creatingInvite}>
+              {creatingInvite ? '링크 만드는 중...' : `💌 ${added.name}님 초대하기`}
+            </button>
+          )}
+          <button type="button" className="btn-cancel add-invite-later" onClick={finish}>
+            {inviteLink ? '완료' : '나중에 할게요'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const selectedOpt = ALL_OPTIONS.find(o => o.type === relationType);
   const showGenderPicker = !selectedOpt?.genderHint;
@@ -268,7 +314,7 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
                 <DateInput
                   value={birthDate}
                   onChange={setBirthDate}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={todayStr()}
                 />
                 <label className="lunar-check">
                   <input type="checkbox" checked={birthLunar} onChange={e => setBirthLunar(e.target.checked)} />
@@ -292,7 +338,7 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
                   <DateInput
                     value={deathDate}
                     onChange={setDeathDate}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={todayStr()}
                   />
                   <label className="lunar-check">
                     <input type="checkbox" checked={deathLunar} onChange={e => setDeathLunar(e.target.checked)} />

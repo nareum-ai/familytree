@@ -1,5 +1,5 @@
 import type { Person, Relationship } from '../types';
-import { getChusu } from '../hooks/useTreeLayout';
+import { getChusu } from './familyGraph';
 import { getRelationLabel } from './relationLabel';
 
 // solarlunar ESM 동적 임포트 — 여러 export 구조 대응
