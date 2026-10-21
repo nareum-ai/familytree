@@ -76,15 +76,11 @@ export const CoupleNode = memo(({ data }: { data: unknown }) => {
     }
   };
 
-  const n = persons.length;
-
   return (
     <div className="couple-node">
-      {persons.map((_p, i) => (
-        <Handle key={i} type="target" id={`p${i}`} position={Position.Top}
-          style={{ opacity: 0, left: `${((i + 0.5) / n) * 100}%` }} />
-      ))}
-
+      {/* 부모에서 내려오는 선은 부부 가운데로 연결 */}
+      <Handle type="target" position={Position.Top}
+        style={{ opacity: 0, left: '50%' }} />
       <div className="couple-row">
         {persons.map((p, i) => (
           <HexAvatar key={p.id} person={p} chusu={chusus[i]}

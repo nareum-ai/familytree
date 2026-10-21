@@ -359,13 +359,8 @@ export function useTreeLayout(
       };
     });
 
-    // Build person-index map for handle targeting (filteredUnits only)
-    const personIndexInUnit = new Map<string, number>();
-    for (const u of filteredUnits) {
-      u.persons.forEach((p, i) => personIndexInUnit.set(p.id, i));
-    }
-
     // Build edges: parent_child only, routed through unit IDs
+    // (커플 유닛은 부부 가운데의 단일 핸들로 들어오고 나간다)
     const edges: Edge[] = [];
     const addedEdgeKeys = new Set<string>();
 
@@ -378,17 +373,10 @@ export function useTreeLayout(
       if (addedEdgeKeys.has(key)) continue;
       addedEdgeKeys.add(key);
 
-      // If target is a couple node, route to the specific person's side handle
-      const tgtUnit = unitMap.get(tgtId);
-      const targetHandle = tgtUnit?.kind === 'couple'
-        ? `p${personIndexInUnit.get(r.person2_id) ?? 0}`
-        : undefined;
-
       edges.push({
         id: key,
         source: srcId,
         target: tgtId,
-        targetHandle,
         type: 'familyEdge',
         style: { stroke: '#2AABE2', strokeWidth: 2 },
       });
