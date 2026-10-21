@@ -6,6 +6,7 @@ import { BulkUploadView } from '../BulkUploadView';
 import { ConfirmDeleteModal } from './AdminModal';
 import { AdminPager } from './AdminPager';
 import { paginate } from '../../utils/paginate';
+import { Icon } from '../Icon';
 
 const PAGE_SIZE = 20;
 
@@ -35,7 +36,7 @@ export function FamilySection({ families, loading, flash, reload }: Props) {
 
   const handleToggle = async (fam: FamilyInfo) => {
     await toggleFamilyStatus(fam.rootPersonId, !fam.disabled);
-    flash(fam.disabled ? `✅ "${fam.rootName}" 활성화` : `🚫 "${fam.rootName}" 비활성화`);
+    flash(fam.disabled ? `"${fam.rootName}" 활성화` : `"${fam.rootName}" 비활성화`);
     reload();
   };
 
@@ -47,7 +48,7 @@ export function FamilySection({ families, loading, flash, reload }: Props) {
   const handleDelete = async () => {
     if (!confirmDelete) return;
     await deleteFamily(confirmDelete.familyId);
-    flash(`🗑️ "${confirmDelete.rootName}" 삭제`);
+    flash(`"${confirmDelete.rootName}" 삭제`);
     setConfirmDelete(null);
     reload();
   };
@@ -58,7 +59,7 @@ export function FamilySection({ families, loading, flash, reload }: Props) {
   return (
     <section className="admin-section">
       <div className="member-header">
-        <h2>👨‍👩‍👧‍👦 가족집단 ({families.length}개)</h2>
+        <h2><Icon name="family" /> 가족집단 ({families.length}개)</h2>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             className="member-search"
@@ -68,7 +69,7 @@ export function FamilySection({ families, loading, flash, reload }: Props) {
             placeholder="이름 검색"
             style={{ width: 120 }}
           />
-          <button className="btn-bulk-new" onClick={() => setBulkTarget('new')}>⬆ 새 가족 일괄 등록</button>
+          <button className="btn-bulk-new" onClick={() => setBulkTarget('new')}><Icon name="upload" /> 새 가족 일괄 등록</button>
         </div>
       </div>
       {loading ? <p className="admin-empty">불러오는 중...</p> :
@@ -78,14 +79,14 @@ export function FamilySection({ families, loading, flash, reload }: Props) {
             {pageItems.map(f => (
               <div key={f.familyId} className={`admin-fam-row ${f.disabled ? 'disabled' : ''}`}>
                 <div className="fam-info">
-                  <span className="fam-root">👤 {f.rootName}</span>
+                  <span className="fam-root"><Icon name="user" /> {f.rootName}</span>
                   {f.disabled && <span className="fam-badge disabled-badge">비활성</span>}
                   <span className="fam-id">{f.personCount}명</span>
                 </div>
                 <div className="fam-actions">
                   <button className="btn-enter"   onClick={() => handleEnter(f)} disabled={f.disabled}>보기</button>
-                  <button className="btn-export"  onClick={() => handleExport(f)} title="CSV 내보내기">⬇</button>
-                  <button className="btn-upload"  onClick={() => setBulkTarget({ id: f.familyId, rootName: f.rootName })} title="일괄 등록">⬆</button>
+                  <button className="btn-export"  onClick={() => handleExport(f)} title="CSV 내보내기"><Icon name="download" /></button>
+                  <button className="btn-upload"  onClick={() => setBulkTarget({ id: f.familyId, rootName: f.rootName })} title="일괄 등록"><Icon name="upload" /></button>
                   <button className={f.disabled ? 'btn-enable' : 'btn-disable'} onClick={() => handleToggle(f)}>
                     {f.disabled ? '활성화' : '비활성화'}
                   </button>
@@ -100,7 +101,7 @@ export function FamilySection({ families, loading, flash, reload }: Props) {
 
       {confirmDelete && (
         <ConfirmDeleteModal
-          title="⚠️ 가족집단 완전 삭제"
+          title="가족집단 완전 삭제"
           confirmLabel="완전 삭제"
           onConfirm={handleDelete}
           onCancel={() => setConfirmDelete(null)}

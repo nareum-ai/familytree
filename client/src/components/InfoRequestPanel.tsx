@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import './InfoRequestPanel.css';
+import { Icon } from './Icon';
 
 interface Props {
   personId: string;
@@ -32,13 +33,13 @@ export function InfoRequestPanel({ personId, onClose }: Props) {
   return (
     <div className="detail-panel irp-panel">
       <div className="detail-header">
-        <div className="irp-lock-icon">🔒</div>
+        <div className="irp-lock-icon"><Icon name="lock" /></div>
         <button className="close-btn" onClick={onClose}>✕</button>
       </div>
 
       {sent ? (
         <div className="irp-sent">
-          <div className="irp-sent-icon">✅</div>
+          <div className="irp-sent-icon"><Icon name="check" /></div>
           <p>정보공개 요청이 전송됐습니다.<br />권한자가 승인하면 열람할 수 있습니다.</p>
           <button className="irp-close-btn" onClick={onClose}>닫기</button>
         </div>

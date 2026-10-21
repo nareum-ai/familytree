@@ -3,15 +3,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e6f5fb 0%, #f0f7fb 100%);
+  background: linear-gradient(135deg, var(--pri-bg) 0%, var(--pri-bg-2) 100%);
 }
 
 .glink-card {
-  background: white;
+  background: var(--surface);
   border-radius: 24px;
   padding: 40px 36px 36px;
   text-align: center;
-  box-shadow: 0 12px 48px rgba(42, 171, 226, 0.15);
+  box-shadow: 0 12px 48px rgba(46,94,78, 0.15);
   width: 380px;
   max-width: 92vw;
   animation: fadeUp 0.25s ease;
@@ -30,20 +30,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f8f9fa;
-  border: 1px solid #dadce0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
   border-radius: 20px;
   padding: 6px 14px 6px 10px;
   font-size: 13px;
   font-weight: 600;
-  color: #3c4043;
+  color: var(--text);
   margin-bottom: 20px;
 }
 
 .glink-email {
   font-size: 18px;
   font-weight: 700;
-  color: #1a2e3b;
+  color: var(--text);
   margin: 0 0 4px;
 }
 
@@ -56,13 +56,13 @@
 
 .glink-email-sub {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--text-4);
   margin: 0 0 20px;
 }
 
 .glink-desc {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-3);
   line-height: 1.6;
   margin: 0 0 20px;
 }
@@ -91,19 +91,19 @@
 }
 
 .glink-btn.primary {
-  background: #2AABE2;
+  background: var(--pri);
   color: white;
 }
 
-.glink-btn.primary:hover:not(:disabled) { background: #1a8ab5; }
+.glink-btn.primary:hover:not(:disabled) { background: var(--pri-dark); }
 
 .glink-btn.secondary {
-  background: #f0f9ff;
-  color: #2AABE2;
-  border: 1.5px solid #2AABE2;
+  background: var(--pri-bg-2);
+  color: var(--pri);
+  border: 1.5px solid var(--pri);
 }
 
-.glink-btn.secondary:hover { background: #e0f2fb; }
+.glink-btn.secondary:hover { background: var(--pri-bg); }
 
 .glink-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -117,11 +117,11 @@
 .glink-cancel {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-4);
   font-size: 13px;
   cursor: pointer;
   padding: 6px;
   text-decoration: underline;
 }
 
-.glink-cancel:hover { color: #64748b; }
+.glink-cancel:hover { color: var(--text-3); }

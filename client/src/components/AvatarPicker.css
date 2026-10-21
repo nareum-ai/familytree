@@ -1,11 +1,11 @@
 .avpick-backdrop {
   position: fixed; inset: 0; z-index: 1100;
-  background: rgba(0,0,0,0.5);
+  background: rgba(42,38,32,0.5);
   display: flex; align-items: flex-end; justify-content: center;
 }
 
 .avpick-panel {
-  background: white;
+  background: var(--surface);
   border-radius: 24px 24px 0 0;
   width: 100%; max-width: 480px;
   max-height: 80vh;
@@ -20,14 +20,14 @@
 .avpick-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 20px 14px;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid var(--surface-3);
   flex-shrink: 0;
 }
-.avpick-title { font-size: 16px; font-weight: 800; color: #1A1A2E; }
+.avpick-title { font-size: 16px; font-weight: 800; color: var(--text); }
 .avpick-close {
-  background: #F1F5F9; border: none; border-radius: 50%;
+  background: var(--surface-3); border: none; border-radius: 50%;
   width: 30px; height: 30px; font-size: 13px;
-  cursor: pointer; color: #64748B;
+  cursor: pointer; color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
 }
 
@@ -37,27 +37,27 @@
 
 .avpick-upload {
   width: 100%; padding: 10px;
-  background: #EEF2FF; color: #4F46E5;
-  border: 1px solid #C7D2FE; border-radius: 10px;
+  background: var(--pri-bg); color: var(--pri);
+  border: 1px solid var(--border-pri); border-radius: 10px;
   font-size: 13px; font-weight: 700; cursor: pointer;
   margin-bottom: 10px;
 }
 .avpick-upload:disabled { opacity: 0.6; cursor: default; }
 .avpick-upload-error {
-  font-size: 12px; color: #EF4444; margin: -2px 0 12px; text-align: center;
+  font-size: 12px; color: var(--red); margin: -2px 0 12px; text-align: center;
 }
 
 .avpick-remove {
   width: 100%; padding: 10px;
-  background: #FEF2F2; color: #EF4444;
-  border: 1px solid #FECACA; border-radius: 10px;
+  background: var(--red-bg); color: var(--red);
+  border: 1px solid var(--red-border); border-radius: 10px;
   font-size: 13px; font-weight: 600; cursor: pointer;
   margin-bottom: 16px;
 }
 
 .avpick-group { margin-bottom: 20px; }
 .avpick-group-label {
-  font-size: 12px; font-weight: 700; color: #94A3B8;
+  font-size: 12px; font-weight: 700; color: var(--text-4);
   text-transform: uppercase; letter-spacing: 0.5px;
   margin-bottom: 10px;
 }
@@ -69,7 +69,7 @@
 }
 
 .avpick-item {
-  background: #F8FAFC;
+  background: var(--surface-2);
   border: 2px solid transparent;
   border-radius: 12px;
   padding: 4px;
@@ -79,14 +79,14 @@
   aspect-ratio: 1;
 }
 .avpick-item:hover {
-  background: #EEF2FF;
-  border-color: #C7D2FE;
+  background: var(--pri-bg);
+  border-color: var(--border-pri);
   transform: scale(1.06);
 }
 .avpick-item.selected {
-  background: #EEF2FF;
-  border-color: #4F46E5;
-  box-shadow: 0 0 0 1px #4F46E5;
+  background: var(--pri-bg);
+  border-color: var(--pri);
+  box-shadow: 0 0 0 1px var(--pri);
 }
 .avpick-item img {
   width: 100%; height: 100%;

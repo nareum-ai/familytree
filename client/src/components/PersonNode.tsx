@@ -4,6 +4,7 @@ import type { Person } from '../types';
 import { getManAge, getAgeAtDeath } from '../utils/age';
 import { useFamilyStore } from '../store/familyStore';
 import './PersonNode.css';
+import { Icon } from './Icon';
 
 interface PersonNodeData {
   person: Person;
@@ -30,7 +31,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
         <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
         {chusu !== null && chusu > 0 && <div className="chusu-badge">{chusu}촌</div>}
         <div className="hex-wrapper">
-          <div className="hex-shape anon-hex"><span className="anon-icon">🔒</span></div>
+          <div className="hex-shape anon-hex"><span className="anon-icon"><Icon name="lock" /></span></div>
         </div>
         <div className="person-name anon-name">비공개</div>
         <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
@@ -54,7 +55,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
           </div>
       </div>
 
-      <div className="person-name">{person.name}</div>
+      <div className="person-name">{deceased && <span className="deceased-prefix">故</span>}{person.name}</div>
       {person.birth_date && (
         <div className="person-age">
           {person.is_deceased && person.death_date

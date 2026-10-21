@@ -1,10 +1,11 @@
+import { Icon } from './Icon';
 /** iOS Safari 홈 화면 추가 안내 */
 export function IOSInstallGuide({ onClose }: { onClose: () => void }) {
   return (
     <div className="ios-install-backdrop" onClick={onClose}>
       <div className="ios-install-guide" onClick={e => e.stopPropagation()}>
         <button className="ios-install-close" onClick={onClose}>✕</button>
-        <div className="ios-install-icon">📲</div>
+        <div className="ios-install-icon"><Icon name="install" /></div>
         <p className="ios-install-title">홈 화면에 추가</p>
         <ol className="ios-install-steps">
           <li>Safari 하단의 <strong>공유 버튼(□↑)</strong>을 누르세요</li>

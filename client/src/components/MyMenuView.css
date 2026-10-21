@@ -1,6 +1,6 @@
 .my-backdrop {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(42,38,32,0.4);
   z-index: 1000;
   display: flex; justify-content: flex-end;
   animation: fadeIn 0.15s ease;
@@ -9,8 +9,8 @@
 
 .my-panel {
   width: 360px; max-width: 100vw; height: 100%;
-  background: white; display: flex; flex-direction: column;
-  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  background: var(--surface); display: flex; flex-direction: column;
+  box-shadow: -4px 0 24px rgba(42,38,32,0.15);
   animation: slideIn 0.2s ease;
 }
 @keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
@@ -18,80 +18,80 @@
 .my-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 20px 14px;
-  border-bottom: 1px solid #e8f0f5;
+  border-bottom: 1px solid var(--pri-bg);
 }
-.my-header h2 { font-size: 16px; font-weight: 700; color: #1a2e3b; margin: 0; }
-.my-close { background:none; border:none; font-size:18px; color:#aaa; cursor:pointer; }
-.my-close:hover { color:#333; }
+.my-header h2 { font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
+.my-close { background:none; border:none; font-size:18px; color:var(--text-4); cursor:pointer; }
+.my-close:hover { color:var(--text); }
 
 .my-tabs {
-  display: flex; border-bottom: 1px solid #e8f0f5;
+  display: flex; border-bottom: 1px solid var(--pri-bg);
 }
 .my-tab {
   flex: 1; padding: 12px 8px;
   background: none; border: none; border-bottom: 3px solid transparent;
-  font-size: 13px; font-weight: 600; color: #94a3b8;
+  font-size: 13px; font-weight: 600; color: var(--text-4);
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
   transition: all 0.15s;
 }
-.my-tab.active { color: #4F46E5; border-bottom-color: #4F46E5; }
+.my-tab.active { color: var(--pri); border-bottom-color: var(--pri); }
 
 .my-badge {
-  background: #e53e3e; color: white;
+  background: var(--red); color: white;
   font-size: 10px; font-weight: 800;
   border-radius: 50%; width: 18px; height: 18px;
   display: flex; align-items: center; justify-content: center;
 }
 
 .my-badge-warn {
-  background: #f59e0b;
+  background: var(--gold);
 }
 
 .my-body { flex: 1; overflow-y: auto; padding: 16px; }
-.my-empty { text-align: center; color: #94a3b8; font-size: 14px; padding: 24px 0; }
+.my-empty { text-align: center; color: var(--text-4); font-size: 14px; padding: 24px 0; }
 
 /* 요청 목록 */
 .my-req-list { display: flex; flex-direction: column; gap: 10px; }
 .my-req-row {
-  padding: 12px; background: #f8f9fa; border-radius: 10px;
-  border: 1px solid #e8f0f5;
+  padding: 12px; background: var(--surface-2); border-radius: 10px;
+  border: 1px solid var(--pri-bg);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
 .my-req-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.my-req-name { font-size: 13px; font-weight: 700; color: #1a2e3b; }
-.my-req-person { font-size: 12px; color: #4F46E5; }
-.my-req-date { font-size: 11px; color: #94a3b8; }
+.my-req-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.my-req-person { font-size: 12px; color: var(--pri); }
+.my-req-date { font-size: 11px; color: var(--text-4); }
 .my-req-btns { display: flex; gap: 6px; flex-shrink: 0; }
 .my-approve {
-  background: #4F46E5; color: white; border: none;
+  background: var(--pri); color: white; border: none;
   border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
 }
 .my-reject {
-  background: white; color: #e53e3e; border: 1px solid #fca5a5;
+  background: var(--surface); color: var(--red); border: 1px solid var(--red-border);
   border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
 }
 
 /* 비밀번호 변경 */
 .my-pw-form { display: flex; flex-direction: column; gap: 14px; }
 .my-field { display: flex; flex-direction: column; gap: 5px; }
-.my-field label { font-size: 12px; font-weight: 600; color: #4a5568; }
+.my-field label { font-size: 12px; font-weight: 600; color: var(--text-2); }
 .my-field input {
-  padding: 10px 12px; border: 1.5px solid #e0e0e0;
+  padding: 10px 12px; border: 1.5px solid var(--border);
   border-radius: 8px; font-size: 14px; outline: none;
   transition: border-color 0.15s;
 }
-.my-field input:focus { border-color: #4F46E5; }
+.my-field input:focus { border-color: var(--pri); }
 
 .my-pw-msg { font-size: 13px; padding: 8px 12px; border-radius: 6px; margin: 0; }
-.my-pw-msg.ok  { background: #e8f5e9; color: #2e7d32; }
-.my-pw-msg.err { background: #fee2e2; color: #c53030; }
+.my-pw-msg.ok  { background: var(--green-bg); color: var(--green); }
+.my-pw-msg.err { background: var(--red-bg); color: var(--red-dark); }
 
 .my-pw-btn {
-  padding: 12px; background: #4F46E5; color: white;
+  padding: 12px; background: var(--pri); color: white;
   border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
   cursor: pointer; transition: background 0.15s;
 }
-.my-pw-btn:hover:not(:disabled) { background: #3730A3; }
+.my-pw-btn:hover:not(:disabled) { background: var(--pri-dark); }
 .my-pw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 구글 연결 섹션 */
@@ -109,29 +109,29 @@
 .my-google-status {
   font-size: 13px;
   font-weight: 700;
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--text-4);
+  background: var(--surface-3);
   border-radius: 20px;
   padding: 3px 12px;
   margin: 0;
 }
 
 .my-google-status.linked {
-  color: #4F46E5;
-  background: #EEF2FF;
+  color: var(--pri);
+  background: var(--pri-bg);
 }
 
 .my-google-email {
   font-size: 14px;
   font-weight: 600;
-  color: #1a2e3b;
+  color: var(--text);
   margin: 0;
   word-break: break-all;
 }
 
 .my-google-desc {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-3);
   line-height: 1.5;
   margin: 0;
   max-width: 280px;
@@ -140,29 +140,29 @@
 .my-google-link-btn {
   width: 100%;
   padding: 13px;
-  background: white;
-  border: 1.5px solid #dadce0;
+  background: var(--surface);
+  border: 1.5px solid var(--border-2);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: #3c4043;
+  color: var(--text);
   cursor: pointer;
   transition: background 0.15s, box-shadow 0.15s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(42,38,32,0.08);
   margin-top: 6px;
 }
 
 .my-google-link-btn:hover:not(:disabled) {
-  background: #f8f9fa;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  background: var(--surface-2);
+  box-shadow: 0 2px 8px rgba(42,38,32,0.12);
 }
 
 .my-google-link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .my-google-unlink-btn {
   background: none;
-  border: 1px solid #fca5a5;
-  color: #e53e3e;
+  border: 1px solid var(--red-border);
+  color: var(--red);
   border-radius: 8px;
   padding: 8px 18px;
   font-size: 13px;
@@ -172,7 +172,7 @@
   margin-top: 4px;
 }
 
-.my-google-unlink-btn:hover:not(:disabled) { background: #fee2e2; }
+.my-google-unlink-btn:hover:not(:disabled) { background: var(--red-bg); }
 .my-google-unlink-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 알림 설정 */
@@ -181,17 +181,17 @@
 .my-push-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.my-push-toggle-row { padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; }
+.my-push-toggle-row { padding-bottom: 14px; border-bottom: 1px solid var(--surface-3); }
 
-.my-push-label { font-size: 13px; font-weight: 600; color: #1a2e3b; flex-shrink: 0; }
+.my-push-label { font-size: 13px; font-weight: 600; color: var(--text); flex-shrink: 0; }
 
 .my-push-toggle {
-  padding: 5px 16px; border-radius: 20px; border: 2px solid #e0e0e0;
-  background: #f1f5f9; color: #94a3b8; font-size: 13px; font-weight: 700;
+  padding: 5px 16px; border-radius: 20px; border: 2px solid var(--border);
+  background: var(--surface-3); color: var(--text-4); font-size: 13px; font-weight: 700;
   cursor: pointer; transition: all 0.15s;
 }
 .my-push-toggle.on {
-  background: #4F46E5; border-color: #4F46E5; color: white;
+  background: var(--pri); border-color: var(--pri); color: white;
 }
 
 .my-push-group { display: flex; flex-direction: column; gap: 8px; }
@@ -200,25 +200,25 @@
 
 .my-push-chip {
   display: flex; align-items: center; gap: 5px;
-  background: #f1f5f9; border: 1.5px solid #e0e0e0;
+  background: var(--surface-3); border: 1.5px solid var(--border);
   border-radius: 20px; padding: 5px 12px;
-  font-size: 13px; font-weight: 600; color: #64748b;
+  font-size: 13px; font-weight: 600; color: var(--text-3);
   cursor: pointer; transition: all 0.15s; user-select: none;
 }
-.my-push-chip.on { background: #EEF2FF; border-color: #4F46E5; color: #4F46E5; }
+.my-push-chip.on { background: var(--pri-bg); border-color: var(--pri); color: var(--pri); }
 .my-push-chip.dim { opacity: 0.4; cursor: not-allowed; }
 .my-push-chip input { display: none; }
 
 .my-push-select {
-  padding: 7px 10px; border: 1.5px solid #e0e0e0; border-radius: 8px;
-  font-size: 13px; background: white; cursor: pointer; outline: none;
+  padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; background: var(--surface); cursor: pointer; outline: none;
 }
-.my-push-select:focus { border-color: #4F46E5; }
+.my-push-select:focus { border-color: var(--pri); }
 .my-push-select:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* 탈퇴·문의 푸터 */
 .my-contact-footer {
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid var(--surface-3);
   padding: 16px 20px 20px;
   text-align: center;
   flex-shrink: 0;
@@ -226,21 +226,21 @@
 .my-contact-title {
   font-size: 12px;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-4);
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .my-contact-desc {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-4);
   line-height: 1.6;
   margin: 0 0 8px;
 }
 .my-contact-email {
   font-size: 13px;
   font-weight: 700;
-  color: #4F46E5;
+  color: var(--pri);
   text-decoration: none;
   display: inline-block;
 }
@@ -248,7 +248,7 @@
 
 /* 빠른 설정 (PWA 설치 + 알림 토글 + 진단) */
 .my-quick-settings {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-3);
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -262,7 +262,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--surface-3);
 }
 .my-install-info {
   display: flex;
@@ -273,18 +273,18 @@
 .my-install-title {
   font-size: 13px;
   font-weight: 700;
-  color: #1a2e3b;
+  color: var(--text);
   margin: 0 0 1px;
 }
 .my-install-desc {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-4);
   margin: 0;
 }
 .my-install-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .my-install-btn {
   padding: 5px 14px;
-  background: #4F46E5;
+  background: var(--pri);
   color: white;
   border: none;
   border-radius: 20px;
@@ -295,13 +295,13 @@
 .my-install-dismiss {
   background: none;
   border: none;
-  color: #cbd5e1;
+  color: var(--border-2);
   font-size: 14px;
   cursor: pointer;
   padding: 2px 4px;
   line-height: 1;
 }
-.my-install-dismiss:hover { color: #64748b; }
+.my-install-dismiss:hover { color: var(--text-3); }
 
 .my-notif-row {
   display: flex;
@@ -311,33 +311,33 @@
 }
 .my-notif-info { display: flex; align-items: center; gap: 10px; }
 .my-notif-icon { font-size: 18px; }
-.my-notif-label { font-size: 13px; font-weight: 700; color: #1a2e3b; }
+.my-notif-label { font-size: 13px; font-weight: 700; color: var(--text); }
 .my-notif-toggle {
   padding: 5px 16px;
   border-radius: 20px;
-  border: 2px solid #e0e0e0;
-  background: #f1f5f9;
-  color: #94a3b8;
+  border: 2px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text-4);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
   min-width: 48px;
 }
-.my-notif-toggle.on { background: #4F46E5; border-color: #4F46E5; color: white; }
+.my-notif-toggle.on { background: var(--pri); border-color: var(--pri); color: white; }
 .my-notif-toggle:disabled { opacity: 0.6; cursor: not-allowed; }
 .my-notif-test-prompt {
   margin-top: 8px;
   padding: 12px;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 .my-notif-test-q {
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-2);
   text-align: center;
 }
 .my-notif-test-actions {
@@ -356,14 +356,14 @@
   border: 1px solid transparent;
 }
 .my-notif-test-yes {
-  background: #EEF2FF;
-  color: #4F46E5;
-  border-color: #C7D2FE;
+  background: var(--pri-bg);
+  color: var(--pri);
+  border-color: var(--border-pri);
 }
 .my-notif-test-no {
-  background: #FEF2F2;
-  color: #EF4444;
-  border-color: #FECACA;
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red-border);
 }
 
 .my-notif-blocked-hint {
@@ -371,16 +371,16 @@
   margin-left: 6px;
   font-size: 11px;
   font-weight: 600;
-  color: #e53e3e;
-  background: #fff5f5;
-  border: 1px solid #fca5a5;
+  color: var(--red);
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
   border-radius: 4px;
   padding: 1px 6px;
 }
 
 /* 알림 진단 (접이식) */
 .my-fcm-debug {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-3);
   padding-top: 8px;
   margin-top: 4px;
 }
@@ -394,20 +394,20 @@
   padding: 4px 0;
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-4);
   cursor: pointer;
 }
-.my-fcm-debug-header:hover { color: #64748b; }
+.my-fcm-debug-header:hover { color: var(--text-3); }
 .my-fcm-debug-chevron { font-size: 10px; }
 .my-fcm-debug-body { padding-top: 8px; }
 .my-fcm-debug-token {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-3);
   margin: 0 0 8px;
 }
 .my-fcm-debug-btn {
   padding: 7px 14px;
-  background: #4F46E5;
+  background: var(--pri);
   color: white;
   border: none;
   border-radius: 8px;
@@ -421,6 +421,6 @@
   font-size: 11px;
   line-height: 1.8;
   word-break: break-all;
-  color: #475569;
+  color: var(--text-2);
 }
 .my-fcm-debug-log p { margin: 0; }

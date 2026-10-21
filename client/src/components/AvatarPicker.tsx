@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { uploadAvatarPhoto } from '../lib/avatarUpload';
 import './AvatarPicker.css';
+import { Icon } from './Icon';
 
 const AVATARS = [
   {
@@ -124,7 +125,7 @@ export function AvatarPicker({ current, onSelect, onClose }: Props) {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            {uploading ? '업로드 중...' : '📷 사진 올리기'}
+            {uploading ? '업로드 중...' : '사진 올리기'}
           </button>
           {uploadError && <p className="avpick-upload-error">{uploadError}</p>}
 
@@ -133,7 +134,7 @@ export function AvatarPicker({ current, onSelect, onClose }: Props) {
               className="avpick-remove"
               onClick={() => { onSelect(null); onClose(); }}
             >
-              🗑️ 현재 아바타 제거
+              <Icon name="trash" /> 현재 아바타 제거
             </button>
           )}
 

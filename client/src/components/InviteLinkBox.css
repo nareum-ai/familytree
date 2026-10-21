@@ -1,6 +1,6 @@
 .invite-box {
-  background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
-  border: 1.5px solid #C7D2FE;
+  background: var(--pri-bg);
+  border: 1.5px solid var(--border-pri);
   border-radius: 14px;
   padding: 16px;
   display: flex;
@@ -11,7 +11,7 @@
 .invite-label {
   font-size: 12px;
   font-weight: 700;
-  color: #4F46E5;
+  color: var(--pri);
   margin: 0;
   display: flex;
   align-items: center;
@@ -20,30 +20,30 @@
 
 .invite-expiry {
   font-weight: 500;
-  color: #818CF8;
+  color: var(--pri-light);
   font-size: 11px;
 }
 
 /* 핵심 안내 문구 */
 .invite-desc-block {
-  background: white;
+  background: var(--surface);
   border-radius: 10px;
   padding: 14px 16px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(79,70,229,0.10);
+  box-shadow: 0 2px 8px rgba(46,94,78,0.10);
 }
 
 .invite-desc-main {
   margin: 0;
   font-size: 15px;
-  color: #374151;
+  color: var(--text-2);
   line-height: 1.7;
 }
 
 .invite-name-highlight {
   font-size: 22px;
   font-weight: 800;
-  color: #4F46E5;
+  color: var(--pri);
   display: block;
   margin: 4px 0 2px;
   letter-spacing: -0.5px;
@@ -51,7 +51,7 @@
 
 .invite-desc-sub {
   font-size: 15px;
-  color: #374151;
+  color: var(--text-2);
   font-weight: 500;
 }
 
@@ -64,17 +64,17 @@
   flex: 1;
   font-size: 11px;
   padding: 7px 8px;
-  border: 1px solid #C7D2FE;
+  border: 1px solid var(--border-pri);
   border-radius: 8px;
-  background: white;
-  color: #6B7280;
+  background: var(--surface);
+  color: var(--text-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .btn-copy {
-  background: #4F46E5;
+  background: var(--pri);
   color: white;
   border: none;
   border-radius: 8px;
@@ -86,7 +86,7 @@
   transition: background 0.15s;
   font-family: inherit;
 }
-.btn-copy:hover { background: #3730A3; }
+.btn-copy:hover { background: var(--pri-dark); }
 
 /* 공유 버튼 행 */
 .invite-share-row {
@@ -118,7 +118,7 @@
 .invite-share-btn.kakao:hover { opacity: 0.88; }
 
 .invite-share-btn.sms {
-  background: #4F46E5;
+  background: var(--pri);
   color: white;
 }
 .invite-share-btn.sms:hover { opacity: 0.88; }

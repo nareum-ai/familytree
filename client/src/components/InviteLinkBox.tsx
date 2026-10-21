@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { buildInviteMessage } from '../lib/inviteMessage';
 import './InviteLinkBox.css';
+import { Icon } from './Icon';
 
 /** 생성된 초대 링크 표시 + 복사/공유 */
 export function InviteLinkBox({ link, personName }: { link: string; personName: string }) {
@@ -27,7 +28,7 @@ export function InviteLinkBox({ link, personName }: { link: string; personName: 
 
   return (
     <div className="invite-box">
-      <p className="invite-label">🔗 초대 링크 생성됨 <span className="invite-expiry">30일 유효</span></p>
+      <p className="invite-label"><Icon name="link" /> 초대 링크 생성됨 <span className="invite-expiry">30일 유효</span></p>
       <div className="invite-desc-block">
         <p className="invite-desc-main">
           이 링크로 가입하면<br/>

@@ -6,6 +6,7 @@ import { validateNewPassword } from '../../utils/password';
 import { FcmDebugPanel } from '../FcmDebugPanel';
 import { GoogleIcon } from '../GoogleIcon';
 import { AdminModal, StatusMessage } from './AdminModal';
+import { Icon } from '../Icon';
 
 type Msg = { ok: boolean; msg: string } | null;
 
@@ -54,12 +55,12 @@ export function GoogleLinkModal({ googleEmail, onChange, onClose }: {
       <h3 style={{ fontSize: 16, marginBottom: 6 }}>구글 계정 연동</h3>
       {googleEmail ? (
         <>
-          <p style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, marginBottom: 4 }}>● 연결됨</p>
-          <p style={{ fontSize: 13, color: '#4a5568', marginBottom: 16 }}>{googleEmail}</p>
+          <p style={{ fontSize: 13, color: '#3F7D4F', fontWeight: 600, marginBottom: 4 }}>● 연결됨</p>
+          <p style={{ fontSize: 13, color: '#5F5648', marginBottom: 16 }}>{googleEmail}</p>
           <StatusMessage msg={msg} style={{ marginBottom: 10 }} />
           <div className="confirm-actions">
             <button className="btn-cancel-confirm" onClick={onClose}>닫기</button>
-            <button className="btn-delete-confirm" style={{ background: '#e53e3e' }}
+            <button className="btn-delete-confirm" style={{ background: '#B3412E' }}
               disabled={loading} onClick={handleUnlink}>
               {loading ? '처리 중...' : '연결 해제'}
             </button>
@@ -67,7 +68,7 @@ export function GoogleLinkModal({ googleEmail, onChange, onClose }: {
         </>
       ) : (
         <>
-          <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: '#9C907C', marginBottom: 16 }}>
             구글 계정을 연결하면 비밀번호 없이 로그인할 수 있습니다.
           </p>
           <StatusMessage msg={msg} style={{ marginBottom: 10 }} />
@@ -113,7 +114,7 @@ export function AdminPasswordModal({ onClose }: { onClose: () => void }) {
 
   return (
     <AdminModal onClose={onClose} style={{ width: 340 }}>
-      <h3>🔑 관리자 비밀번호 변경</h3>
+      <h3><Icon name="key" /> 관리자 비밀번호 변경</h3>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
         <input className="map-search-input" type="password" value={oldPw}
           onChange={e => setOldPw(e.target.value)} placeholder="현재 비밀번호" autoFocus />
@@ -138,8 +139,8 @@ export function AdminPasswordModal({ onClose }: { onClose: () => void }) {
 export function AlarmDiagModal({ onClose }: { onClose: () => void }) {
   return (
     <AdminModal onClose={onClose}>
-      <h3>🔧 관리자 알림 진단</h3>
-      <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px' }}>
+      <h3><Icon name="wrench" /> 관리자 알림 진단</h3>
+      <p style={{ fontSize: 12, color: '#9C907C', margin: '0 0 16px' }}>
         관리자 앱(PWA)에서 알림을 받으려면 토큰을 등록하세요.
       </p>
       <FcmDebugPanel field="fcm_token_admin" />
@@ -168,17 +169,17 @@ export function PushTimeModal({ onClose }: { onClose: () => void }) {
     setMsg(null);
     try {
       await savePushSendHour(sendHour);
-      setMsg({ ok: true, msg: '✅ 저장됐습니다.' });
+      setMsg({ ok: true, msg: '저장됐습니다.' });
     } catch {
-      setMsg({ ok: false, msg: '❌ 저장 중 오류가 발생했습니다.' });
+      setMsg({ ok: false, msg: '저장 중 오류가 발생했습니다.' });
     }
     setTimeout(() => setMsg(null), 3000);
   };
 
   return (
     <AdminModal onClose={onClose}>
-      <h3>🔔 알림 발송 시간</h3>
-      <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px' }}>
+      <h3><Icon name="bell" /> 알림 발송 시간</h3>
+      <p style={{ fontSize: 12, color: '#9C907C', margin: '0 0 16px' }}>
         알림 시기·범위·종류는 각 회원의 My 페이지에서 개별 설정합니다.
       </p>
       {loading ? <p className="admin-empty">불러오는 중...</p> : (

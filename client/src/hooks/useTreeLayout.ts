@@ -378,7 +378,7 @@ export function useTreeLayout(
         source: srcId,
         target: tgtId,
         type: 'familyEdge',
-        style: { stroke: '#2AABE2', strokeWidth: 2 },
+        style: { stroke: '#B8A68A', strokeWidth: 2 },
       });
     }
 

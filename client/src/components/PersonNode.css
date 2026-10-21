@@ -5,11 +5,11 @@
 }
 
 .anon-hex {
-  background: linear-gradient(135deg, #CBD5E1, #94A3B8) !important;
+  background: linear-gradient(135deg, var(--border-2), var(--text-4)) !important;
   filter: none !important;
 }
 .anon-icon { font-size: 20px; }
-.anon-name { color: #94A3B8 !important; font-style: italic; }
+.anon-name { color: var(--text-4) !important; font-style: italic; }
 
 .hex-wrapper { width: 64px; height: 64px; position: relative; }
 
@@ -22,15 +22,18 @@
   position: relative;
 }
 
-.male   .hex-shape { background: linear-gradient(150deg, #0EA5E9, #0369A1); }
-.female .hex-shape { background: linear-gradient(150deg, #EC4899, #DB2777); }
-.person-node.me .hex-shape { background: linear-gradient(150deg, #4F46E5, #6D28D9); }
+.male   .hex-shape { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
+.female .hex-shape { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
+.person-node.me .hex-shape { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
 
 .person-node:hover .hex-shape { transform: scale(1.06); filter: brightness(1.05); }
 .person-node.selected .hex-shape {
-  filter: drop-shadow(0 0 10px rgba(79,70,229,0.7));
+  filter: drop-shadow(0 0 10px rgba(46,94,78,0.7));
 }
-.person-node.deceased .hex-shape { filter: grayscale(65%) brightness(0.85); }
+/* 고인: 테두리는 회갈색, 아바타는 살짝 바래게, 이름은 연하게 */
+.person-node.deceased .hex-shape { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.person-node.deceased .avatar-hex-inner img { filter: grayscale(45%); opacity: 0.88; }
+.person-node.deceased .person-name { color: var(--text-3); }
 
 /* 아바타 이미지 — 컬러 테두리를 남기고 내부 작은 헥사곤에 표시 */
 .avatar-hex-inner {
@@ -50,19 +53,19 @@
 .avatar-initial { font-size: 22px; font-weight: 800; color: white; }
 
 .person-name {
-  font-size: 12px; font-weight: 700; color: #1A1A2E;
+  font-size: 12px; font-weight: 700; color: var(--text);
   margin-top: 7px; text-align: center;
   max-width: 90px; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
   font-family: 'Pretendard Variable', sans-serif;
 }
 
-.person-age { font-weight: 400; color: #94A3B8; font-size: 11px; margin-left: 2px; }
+.person-age { font-weight: 400; color: var(--text-4); font-size: 11px; margin-left: 2px; }
 
 .hidden-badge {
   position: absolute; bottom: -18px; left: 50%;
   transform: translateX(-50%);
-  background: #94A3B8; color: white;
+  background: var(--text-3); color: white;
   font-size: 10px; font-weight: 700;
   padding: 2px 8px; border-radius: 10px;
   white-space: nowrap; pointer-events: none; z-index: 10;
@@ -70,19 +73,19 @@
 
 .chusu-badge {
   position: absolute; top: -6px; left: -6px;
-  background: #4F46E5; color: white;
+  background: var(--pri); color: white;
   font-size: 10px; font-weight: 800;
   border-radius: 50%; width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
-  z-index: 10; box-shadow: 0 2px 6px rgba(79,70,229,0.4);
+  z-index: 10; box-shadow: 0 2px 6px rgba(46,94,78,0.4);
 }
 
 .me-badge {
   position: absolute; top: -6px; right: -6px;
-  background: #F97316; color: white;
+  background: var(--gold); color: white;
   font-size: 9px; font-weight: 800;
   border-radius: 50%; width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
-  z-index: 10; box-shadow: 0 2px 6px rgba(249,115,22,0.4);
+  z-index: 10; box-shadow: 0 2px 6px rgba(183,134,43,0.4);
 }
 

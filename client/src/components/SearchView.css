@@ -1,7 +1,7 @@
 .search-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(42,38,32,0.4);
   z-index: 1000;
   display: flex;
   justify-content: center;
@@ -16,9 +16,9 @@
   width: 480px;
   max-width: 96vw;
   max-height: 75vh;
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 20px 60px rgba(42,38,32,0.25);
   display: flex;
   flex-direction: column;
   animation: slideDown 0.18s ease;
@@ -32,13 +32,13 @@
   align-items: center;
   gap: 10px;
   padding: 16px 16px 12px;
-  border-bottom: 1px solid #e8f0f5;
+  border-bottom: 1px solid var(--pri-bg);
 }
 
 .search-input {
   flex: 1;
   padding: 10px 14px;
-  border: 1.5px solid #4F46E5;
+  border: 1.5px solid var(--pri);
   border-radius: 10px;
   font-size: 15px;
   outline: none;
@@ -48,18 +48,18 @@
   background: none;
   border: none;
   font-size: 18px;
-  color: #aaa;
+  color: var(--text-4);
   cursor: pointer;
   padding: 4px;
   flex-shrink: 0;
 }
-.search-close:hover { color: #333; }
+.search-close:hover { color: var(--text); }
 
 .search-count {
   padding: 6px 16px;
   font-size: 12px;
-  color: #94a3b8;
-  border-bottom: 1px solid #f0f0f0;
+  color: var(--text-4);
+  border-bottom: 1px solid var(--surface-2);
 }
 
 .search-list {
@@ -72,12 +72,12 @@
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--surface-2);
   cursor: pointer;
   transition: background 0.1s;
 }
 
-.search-item:hover { background: #f0f9ff; }
+.search-item:hover { background: var(--pri-bg-2); }
 .search-item.unclassified { cursor: default; opacity: 0.6; }
 .search-item.unclassified:hover { background: none; }
 
@@ -94,10 +94,11 @@
   flex-shrink: 0;
 }
 
-.search-hex.male    { background: linear-gradient(135deg, #4F46E5, #3730A3); }
-.search-hex.female  { background: linear-gradient(135deg, #e27ba2, #c25a82); }
-.search-hex.root    { background: linear-gradient(135deg, #e2a32a, #c5861a); }
-.search-hex.deceased { filter: grayscale(70%); }
+.search-hex.male    { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
+.search-hex.female  { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
+.search-hex.root    { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
+.search-hex.deceased { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.search-hex.deceased img { filter: grayscale(45%); opacity: 0.88; }
 
 .search-info {
   flex: 1;
@@ -110,7 +111,7 @@
 .search-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1a2e3b;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -119,15 +120,15 @@
 .search-chusu {
   font-size: 11px;
   font-weight: 700;
-  color: #4F46E5;
-  background: #EEF2FF;
+  color: var(--pri);
+  background: var(--pri-bg);
   padding: 1px 6px;
   border-radius: 10px;
 }
 
 .search-meta {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-4);
 }
 
 .search-branches {
@@ -144,18 +145,18 @@
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 8px;
-  background: #f0f4f8;
-  color: #64748b;
+  background: var(--surface-2);
+  color: var(--text-3);
 }
 
 .unclassified-tag {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--gold-bg);
+  color: var(--gold-dark);
 }
 
 .search-empty {
   padding: 30px 16px;
   text-align: center;
-  color: #94a3b8;
+  color: var(--text-4);
   font-size: 14px;
 }

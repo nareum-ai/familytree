@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './LoginScreen.css';
 import './InviteVerifyScreen.css';
+import { Icon } from './Icon';
 
 interface Props {
   invitePersonName: string;   // 초대 링크에 해당하는 사람 이름 (예: 전현숙)
@@ -25,7 +26,7 @@ export function InviteVerifyScreen({ invitePersonName, onConfirm, onCancel }: Pr
   return (
     <div className="login-screen">
       <div className="login-card verify-card">
-        <div className="login-icon">🙋</div>
+        <div className="login-icon"><Icon name="hand" /></div>
         <h1 className="login-title">본인 확인</h1>
         <p className="verify-desc">
           가계도에 아래 이름으로 등록되어 있어요.<br />

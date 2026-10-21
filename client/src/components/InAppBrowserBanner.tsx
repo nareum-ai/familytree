@@ -42,7 +42,7 @@ function Banner() {
         <>
           <button
             className="inapp-open-btn"
-            style={copied ? { background: '#16A34A' } : {}}
+            style={copied ? { background: '#3F7D4F' } : {}}
             onClick={handleCopy}
           >
             {copied ? '복사됨 ✓' : '링크 복사'}

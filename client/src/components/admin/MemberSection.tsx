@@ -11,6 +11,7 @@ import { describeUserAgent, isMobileUserAgent } from '../../utils/userAgent';
 import { AdminModal, ConfirmDeleteModal } from './AdminModal';
 import { AdminPager } from './AdminPager';
 import { paginate } from '../../utils/paginate';
+import { Icon } from '../Icon';
 
 const PAGE_SIZE = 25;
 
@@ -42,20 +43,20 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
   const handleCopyEmails = async () => {
     if (!googleEmails.length) { flash('이메일 정보가 없습니다.'); return; }
     await navigator.clipboard.writeText(googleEmails.join('\n'));
-    flash(`📋 이메일 ${googleEmails.length}개 복사됨`);
+    flash(`이메일 ${googleEmails.length}개 복사됨`);
   };
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
     await deleteMember(confirmDelete.id);
-    flash(`🗑️ "${confirmDelete.username}" 계정 삭제됨`);
+    flash(`"${confirmDelete.username}" 계정 삭제됨`);
     setConfirmDelete(null);
     reload();
   };
 
   const handleLoginAs = (m: Member) => {
     if (!m.family_id || !m.person_id) {
-      flash('⚠️ 가족 또는 인물이 매핑되지 않은 계정입니다.');
+      flash('가족 또는 인물이 매핑되지 않은 계정입니다.');
       return;
     }
     startImpersonation({
@@ -77,11 +78,11 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
   return (
     <section className="admin-section">
       <div className="member-header">
-        <h2>👤 회원 관리 ({members.length}명)</h2>
+        <h2><Icon name="user" /> 회원 관리 ({members.length}명)</h2>
         <div className="member-header-right">
           <button className="btn-copy-emails" onClick={handleCopyEmails}
             title="Google 계정 이메일 목록을 클립보드에 복사">
-            📋 이메일 복사 ({googleEmails.length})
+            <Icon name="clipboard" /> 이메일 복사 ({googleEmails.length})
           </button>
           <input
             className="member-search"
@@ -119,7 +120,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
                     ? <button className="btn-log" onClick={() => setLogMember(m)}>
                         {formatCompactDateTime(m.last_login_at)}
                       </button>
-                    : <span style={{ color: '#ccc' }}>미접속</span>}
+                    : <span style={{ color: '#D6C8B0' }}>미접속</span>}
                 </span>
                 <span className="col-actions">
                   {m.family_id && m.person_id && (
@@ -140,7 +141,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
 
       {confirmDelete && (
         <ConfirmDeleteModal
-          title="⚠️ 계정 삭제"
+          title="계정 삭제"
           confirmLabel="삭제"
           onConfirm={handleDelete}
           onCancel={() => setConfirmDelete(null)}
@@ -156,7 +157,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
           members={members}
           families={families}
           onMapped={(person) => {
-            flash(`✅ "${mappingMember.username}" → "${person.name}" 매핑 완료`);
+            flash(`"${mappingMember.username}" → "${person.name}" 매핑 완료`);
             setMappingMember(null);
             reload();
           }}
@@ -202,7 +203,7 @@ function MemberMappingModal({ member, members, families, onMapped, onClose }: {
 
   return (
     <AdminModal onClose={onClose} className="mapping-box">
-      <h3>👤 사람 매핑</h3>
+      <h3><Icon name="user" /> 사람 매핑</h3>
       <p><strong>{member.username}</strong> 회원을 트리의 누구와 연결할까요?</p>
       <div className="map-search-row">
         <input
@@ -260,7 +261,7 @@ function LoginLogModal({ member, onClose }: { member: Member; onClose: () => voi
   return (
     <AdminModal onClose={onClose} className="log-box">
       <div className="log-header">
-        <h3>📋 {member.username} 접속 로그</h3>
+        <h3><Icon name="clipboard" /> {member.username} 접속 로그</h3>
         <button className="log-close-btn" onClick={onClose}>✕</button>
       </div>
       {logs === null ? (
@@ -274,7 +275,7 @@ function LoginLogModal({ member, onClose }: { member: Member; onClose: () => voi
               <span className="log-num">{i + 1}</span>
               <span className="log-date">{formatCompactDateTime(l.logged_in_at)}</span>
               <span className="log-device">
-                {isMobileUserAgent(l.user_agent) ? '📱' : '💻'} {describeUserAgent(l.user_agent)}
+                {isMobileUserAgent(l.user_agent) ? <Icon name="phone" /> : <Icon name="laptop" />} {describeUserAgent(l.user_agent)}
               </span>
             </div>
           ))}

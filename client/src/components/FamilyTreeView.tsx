@@ -323,12 +323,12 @@ export function FamilyTreeView() {
     const isMe = (p?: Person) => p?.id === mePersonId;
     if (node.type === 'coupleNode') {
       const d = node.data as { persons?: Person[] };
-      return d.persons?.some(isMe) ? '#4F46E5' : '#0EA5E9';
+      return d.persons?.some(isMe) ? '#B7862B' : '#3D7563';
     }
     const p = node.data?.person as Person | undefined;
-    if (isMe(p)) return '#4F46E5';
-    if (node.data?.anon) return '#CBD5E1';
-    return p?.gender === 'male' ? '#0EA5E9' : '#EC4899';
+    if (isMe(p)) return '#B7862B';
+    if (node.data?.anon) return '#D6C8B0';
+    return p?.gender === 'male' ? '#3D7563' : '#C0603C';
   }, [mePersonId]);
 
   return (
@@ -361,14 +361,14 @@ export function FamilyTreeView() {
         >
           <FitToMeController meNodeId={meNodeId} activeBranch={activeBranch} skip={!!focusTargetId} />
           <FocusTargetController personId={focusTargetId} nodes={nodes} />
-          <Background color="#E8EAF0" gap={28} size={1} />
+          <Background color="#E6DCCB" gap={28} size={1} />
           <ZoomControls />
           <FocusMeButton meNodeId={meNodeId} />
           <MiniMap
             position="bottom-right"
             pannable zoomable
             nodeColor={miniMapNodeColor}
-            style={{ background: '#ffffff' }}
+            style={{ background: '#FFFDF8' }}
           />
         </ReactFlow>
 

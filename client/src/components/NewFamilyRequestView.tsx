@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import './NewFamilyRequestView.css';
+import { Icon } from './Icon';
 
 interface Props {
   requestedName: string;
@@ -31,7 +32,7 @@ export function NewFamilyRequestView({ requestedName, onBack }: Props) {
   return (
     <div className="nfr-screen">
       <div className="nfr-card">
-        <div className="nfr-icon">🌳</div>
+        <div className="nfr-icon"><Icon name="tree" /></div>
 
         {state === 'confirm' && (
           <>

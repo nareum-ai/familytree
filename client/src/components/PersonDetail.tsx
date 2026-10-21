@@ -14,6 +14,7 @@ import { EditGrantSection } from './EditGrantSection';
 import { InviteLinkBox } from './InviteLinkBox';
 import { buildInviteLink, buildInviteMessage } from '../lib/inviteMessage';
 import './PersonDetail.css';
+import { Icon } from './Icon';
 
 interface Props {
   person: Person;
@@ -170,7 +171,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               const isPrimary = r.is_primary === true || spouseRels.length === 1;
               return (
                 <span key={r.id} className={`meta-chip marriage-chip ${isPrimary ? 'marriage-primary' : 'marriage-secondary'}`}>
-                  💍 {sp.name}
+                  <Icon name="ring" /> {sp.name}
                   {r.marriage_date && <span className="marriage-date">({formatDotDate(r.marriage_date, !!r.marriage_lunar)})</span>}
                   {canEdit && spouseRels.length > 1 && !isPrimary && (
                     <button className="btn-set-primary" onClick={() => handleSetPrimary(r.id)}>대표 지정</button>
@@ -182,7 +183,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
           {person.recent_status && person.recent_status.length > 0 && (
             <div className="detail-recent-status">
               <div className="recent-status-head">
-                <span className="contact-icon">💬</span>
+                <span className="contact-icon"><Icon name="chat" /></span>
                 <span className="recent-status-label">근황</span>
               </div>
               {person.recent_status.map((s, i) => (
@@ -198,7 +199,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               {person.phone && (
                 <div className="contact-row-wrap">
                   <a className="contact-row" href={`tel:${person.phone}`}>
-                    <span className="contact-icon">📱</span>{person.phone}
+                    <span className="contact-icon"><Icon name="phone" /></span>{person.phone}
                   </a>
                   {canInvite && (
                     <button className="btn-contact-invite" onClick={handleDirectSMSInvite}>SMS 초대</button>
@@ -208,7 +209,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               {person.email && (
                 <div className="contact-row-wrap">
                   <a className="contact-row" href={`mailto:${person.email}`}>
-                    <span className="contact-icon">📧</span>{person.email}
+                    <span className="contact-icon"><Icon name="mail" /></span>{person.email}
                   </a>
                   {canInvite && (
                     <button className="btn-contact-invite email" onClick={handleDirectEmailInvite}>이메일 초대</button>
@@ -221,19 +222,19 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
           {canEdit && (
             <div className="detail-action-row">
               <button className="btn-action" onClick={() => setEditing(true)}>
-                <span className="btn-action-icon">✏️</span>편집
+                <span className="btn-action-icon"><Icon name="edit" /></span>편집
               </button>
               {canManageEditGrants && (
                 <button
                   className={`btn-action ${showGrantSection ? 'active' : ''}`}
                   onClick={() => setShowGrantSection(s => !s)}
                 >
-                  <span className="btn-action-icon">🔑</span>권한 관리
+                  <span className="btn-action-icon"><Icon name="key" /></span>권한 관리
                 </button>
               )}
               {!person.is_root && !alreadyMapped && (
                 <button className="btn-action danger" onClick={handleDelete}>
-                  <span className="btn-action-icon">🗑️</span>삭제
+                  <span className="btn-action-icon"><Icon name="trash" /></span>삭제
                 </button>
               )}
             </div>
@@ -249,11 +250,11 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
         </button>
         {person.is_deceased ? null : alreadyMapped ? (
           <div className="action-mapped-notice">
-            🔒 이미 계정에 연결된 인물입니다
+            <Icon name="lock" /> 이미 계정에 연결된 인물입니다
           </div>
         ) : (
           <button className="action-btn secondary" onClick={handleInvite}>
-            <span className="action-icon">🔗</span>{person.name} 님을 가계도로 초대하기
+            <span className="action-icon"><Icon name="link" /></span>{person.name} 님을 가계도로 초대하기
           </button>
         )}
       </div>
@@ -262,7 +263,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
 
       {infoRequests.length > 0 && (
         <div className="info-req-section">
-          <p className="info-req-title">📬 정보공개 요청 ({infoRequests.length}건)</p>
+          <p className="info-req-title"><Icon name="inbox" /> 정보공개 요청 ({infoRequests.length}건)</p>
           {infoRequests.map(req => (
             <div key={req.id} className="info-req-row">
               <span className="info-req-name">{req.requesterName}님</span>

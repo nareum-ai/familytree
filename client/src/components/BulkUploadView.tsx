@@ -8,6 +8,7 @@ import type { CSVRow, ImportError, NameMatch } from '../utils/csvImport';
 import type { Person } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import './BulkUploadView.css';
+import { Icon } from './Icon';
 
 interface TargetFamily { id: string; rootName: string; }
 
@@ -138,7 +139,7 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
         {/* 헤더 */}
         <div className="bulk-header">
           <div>
-            <h2>📥 {isExisting ? `"${targetFamily.rootName}" 에 추가` : '새 가족 일괄 등록'}</h2>
+            <h2><Icon name="download" /> {isExisting ? `"${targetFamily.rootName}" 에 추가` : '새 가족 일괄 등록'}</h2>
             <p className="bulk-sub">CSV 파일로 가족 구성원을 한번에 등록합니다</p>
           </div>
           <button className="bulk-close" onClick={onClose}>✕</button>
@@ -157,13 +158,13 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
                 onClick={() => fileRef.current?.click()}
               >
                 <input ref={fileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={onFileChange} />
-                <span className="drop-icon">📂</span>
+                <span className="drop-icon"><Icon name="folder" /></span>
                 <p>CSV 파일을 드래그하거나 클릭해서 선택</p>
                 <p className="drop-hint">UTF-8 인코딩 권장</p>
               </div>
 
               <div className="bulk-template-box">
-                <p>📋 <strong>CSV 형식이 처음이라면 템플릿을 먼저 다운로드하세요</strong></p>
+                <p><Icon name="clipboard" /> <strong>CSV 형식이 처음이라면 템플릿을 먼저 다운로드하세요</strong></p>
                 <button className="btn-template" onClick={() => downloadCSV('가계도_업로드_템플릿.csv', CSV_TEMPLATE)}>
                   템플릿 다운로드
                 </button>
@@ -285,7 +286,7 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
                 ))}
               </div>
               {rows.filter(r => !mergeChecked.has(r.ref)).length === 0 && matches.length === rows.length && (
-                <div className="match-warn">⚠️ 전체가 기존 인물로 처리됩니다. 새로 등록될 인원이 없습니다.</div>
+                <div className="match-warn"><Icon name="alert" /> 전체가 기존 인물로 처리됩니다. 새로 등록될 인원이 없습니다.</div>
               )}
               <div className="bulk-actions">
                 <button className="btn-back" onClick={() => setStep('preview')}>← 이전</button>
@@ -305,7 +306,7 @@ export function BulkUploadView({ targetFamily, onClose, onDone }: Props) {
           {/* ── STEP: done ── */}
           {step === 'done' && result && (
             <div className="done-box">
-              <div className="done-icon">✅</div>
+              <div className="done-icon"><Icon name="check" /></div>
               <h3>업로드 완료!</h3>
               <p>
                 <strong>{result.persons}명</strong> 신규 등록&nbsp;·&nbsp;

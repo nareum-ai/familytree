@@ -4,6 +4,7 @@ import type { Person } from '../types';
 import { useFamilyStore } from '../store/familyStore';
 import { getManAge, getAgeAtDeath } from '../utils/age';
 import './CoupleNode.css';
+import { Icon } from './Icon';
 
 interface CoupleNodeData {
   persons: Person[];
@@ -27,7 +28,7 @@ function HexAvatar({
       <div className="chex anon-chex" onClick={onClick}>
         {chusu !== null && chusu > 0 && <div className="chusu-badge">{chusu}촌</div>}
         <div className="chex-shape-wrapper">
-          <div className="chex-shape anon-hex"><span className="anon-icon">🔒</span></div>
+          <div className="chex-shape anon-hex"><span className="anon-icon"><Icon name="lock" /></span></div>
         </div>
         <div className="chex-name anon-name">비공개</div>
       </div>
@@ -48,7 +49,7 @@ function HexAvatar({
             : <span className="chex-initial">{person.name[0]}</span>}
         </div>
       </div>
-      <div className="chex-name">{person.name}</div>
+      <div className="chex-name">{deceased && <span className="deceased-prefix">故</span>}{person.name}</div>
       {person.birth_date && (
         <div className="chex-age">
           {person.is_deceased && person.death_date

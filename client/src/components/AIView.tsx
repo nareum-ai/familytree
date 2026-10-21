@@ -3,6 +3,7 @@ import { useFamilyStore } from '../store/familyStore';
 import { callGemini } from '../lib/gemini';
 import { getMyPersonId } from '../lib/session';
 import './AIView.css';
+import { Icon } from './Icon';
 
 interface Props {
   onClose: () => void;
@@ -75,9 +76,9 @@ export function AIView({ onClose }: Props) {
     }
   };
 
-  const title = service === 'birthday' ? '🎂 나와 같은 날 태어난 유명인'
-    : service === 'history'  ? '📜 오늘 일어난 역사적 사건'
-    : '✨ AI 서비스';
+  const title = service === 'birthday' ? '나와 같은 날 태어난 유명인'
+    : service === 'history'  ? '오늘 일어난 역사적 사건'
+    : 'AI 서비스';
 
   return (
     <div className="ai-backdrop" onClick={onClose}>
@@ -95,7 +96,7 @@ export function AIView({ onClose }: Props) {
           {!service && (
             <div className="ai-menu">
               <button className="ai-menu-card" onClick={() => runService('birthday')}>
-                <span className="ai-menu-icon">🎂</span>
+                <span className="ai-menu-icon"><Icon name="cake" /></span>
                 <span className="ai-menu-text">
                   <span className="ai-menu-name">나와 같은 날 태어난 유명인 및 연예인</span>
                   <span className="ai-menu-desc">
@@ -104,7 +105,7 @@ export function AIView({ onClose }: Props) {
                 </span>
               </button>
               <button className="ai-menu-card" onClick={() => runService('history')}>
-                <span className="ai-menu-icon">📜</span>
+                <span className="ai-menu-icon"><Icon name="scroll" /></span>
                 <span className="ai-menu-text">
                   <span className="ai-menu-name">오늘 일어난 역사적 사건</span>
                   <span className="ai-menu-desc">{`오늘(${today.month}월 ${today.day}일)의 역사를 알려드려요`}</span>

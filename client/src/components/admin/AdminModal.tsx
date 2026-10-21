@@ -38,5 +38,5 @@ export function ConfirmDeleteModal({ title, children, confirmLabel, onConfirm, o
 
 export function StatusMessage({ msg, style }: { msg: { ok: boolean; msg: string } | null; style?: CSSProperties }) {
   if (!msg) return null;
-  return <p style={{ fontSize: 13, ...style, color: msg.ok ? '#16a34a' : '#e53e3e' }}>{msg.msg}</p>;
+  return <p style={{ fontSize: 13, ...style, color: msg.ok ? '#3F7D4F' : '#B3412E' }}>{msg.msg}</p>;
 }

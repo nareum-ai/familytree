@@ -98,7 +98,7 @@ export function PersonEditForm({ person, spouseRel, onDone }: Props) {
       )}
 
       {spouseRel && (
-        <DateWithLunarField label="💍 결혼기념일 (선택)" max={today}
+        <DateWithLunarField label="결혼기념일 (선택)" max={today}
           date={marriageDate} onDate={setMarriageDate} lunar={marriageLunar} onLunar={setMarriageLunar} />
       )}
 

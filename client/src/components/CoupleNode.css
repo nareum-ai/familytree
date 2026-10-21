@@ -33,12 +33,12 @@
   position: relative;
 }
 
-.chex.male .chex-shape    { background: linear-gradient(150deg, #0EA5E9, #0369A1); }
-.chex.female .chex-shape  { background: linear-gradient(150deg, #EC4899, #DB2777); }
-.chex.me .chex-shape      { background: linear-gradient(150deg, #4F46E5, #6D28D9); }
+.chex.male .chex-shape    { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
+.chex.female .chex-shape  { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
+.chex.me .chex-shape      { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
 
 .chex.selected .chex-shape {
-  filter: drop-shadow(0 0 8px rgba(14,165,233,0.8));
+  filter: drop-shadow(0 0 8px rgba(46,94,78,0.6));
 }
 
 .chex-img {
@@ -65,7 +65,7 @@
   bottom: -18px;
   left: 50%;
   transform: translateX(-50%);
-  background: #94a3b8;
+  background: var(--text-3);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -77,18 +77,19 @@
 }
 
 .anon-chex { cursor: default; }
-.anon-chex .anon-hex { background: linear-gradient(135deg, #9ca3af, #6b7280) !important; }
+.anon-chex .anon-hex { background: linear-gradient(135deg, var(--text-4), var(--text-3)) !important; }
 .anon-chex .anon-icon { font-size: 18px; }
-.anon-chex .anon-name { color: #9ca3af !important; font-style: italic; }
+.anon-chex .anon-name { color: var(--text-4) !important; font-style: italic; }
 
-.chex.deceased .chex-shape {
-  filter: grayscale(70%) brightness(0.85);
-}
+/* 고인: 테두리는 회갈색, 아바타는 살짝 바래게, 이름은 연하게 */
+.chex.deceased .chex-shape { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.chex.deceased .avatar-hex-inner img { filter: grayscale(45%); opacity: 0.88; }
+.chex.deceased .chex-name { color: var(--text-3); }
 
 .chex-name {
   font-size: 12px;
   font-weight: 700;
-  color: #1A1A2E;
+  color: var(--text);
   margin-top: 6px;
   text-align: center;
   max-width: 64px;
@@ -100,14 +101,14 @@
 
 .chex-age {
   font-weight: 400;
-  color: #7f8c8d;
+  color: var(--text-3);
   font-size: 12px;
   margin-left: 2px;
 }
 
 .chex-birth {
   font-size: 11px;
-  color: #7f8c8d;
+  color: var(--text-3);
   margin-top: 1px;
 }
 
@@ -115,7 +116,7 @@
   position: absolute;
   top: -6px;
   left: -6px;
-  background: #2AABE2;
+  background: var(--pri);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -126,14 +127,14 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(42,38,32,0.2);
 }
 
 .me-badge {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #e74c3c;
+  background: var(--gold);
   color: white;
   font-size: 9px;
   font-weight: 800;
@@ -144,6 +145,6 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(42,38,32,0.2);
 }
 

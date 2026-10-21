@@ -9,6 +9,7 @@ import {
 import { formatCompactDateTime } from '../../utils/date';
 import { AdminPager } from './AdminPager';
 import { paginate } from '../../utils/paginate';
+import { Icon } from '../Icon';
 
 type Msg = { ok: boolean; msg: string } | null;
 
@@ -35,7 +36,7 @@ export function TempUnlockSection({ flash }: { flash: (msg: string) => void }) {
     try {
       const next = !tempUnlockAll;
       await setTempUnlockAll(next);
-      flash(next ? '🔓 임시 권한 해제 — 모든 정보공개·편집 권한이 전체 허용됩니다.' : '🔒 임시 권한 해제 종료 — 기존 권한 정책으로 복귀합니다.');
+      flash(next ? '임시 권한 해제 — 모든 정보공개·편집 권한이 전체 허용됩니다.' : '임시 권한 해제 종료 — 기존 권한 정책으로 복귀합니다.');
     } finally {
       setLoading(false);
     }
@@ -43,13 +44,13 @@ export function TempUnlockSection({ flash }: { flash: (msg: string) => void }) {
 
   return (
     <section className={`admin-section ${tempUnlockAll ? 'section-urgent' : ''}`}>
-      <h2>🔓 임시 권한 해제</h2>
-      <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 12px' }}>
+      <h2><Icon name="unlock" /> 임시 권한 해제</h2>
+      <p style={{ fontSize: 13, color: '#9C907C', margin: '0 0 12px' }}>
         켜면 전체 노드에 대한 모든 정보공개 요청이 자동 승인되고, 모든 인물의 편집 권한이 전체 회원에게 허용됩니다.
         끄면 기존 정보공개 요청 승인 정책과 편집 권한 부여 정책으로 돌아갑니다.
       </p>
       <button className={tempUnlockAll ? 'btn-disable' : 'btn-enable'} disabled={loading} onClick={handleToggle}>
-        {loading ? '처리 중...' : tempUnlockAll ? '🔓 켜짐 — 끄기' : '🔒 꺼짐 — 켜기'}
+        {loading ? '처리 중...' : tempUnlockAll ? '켜짐 — 끄기' : '꺼짐 — 켜기'}
       </button>
     </section>
   );
@@ -64,18 +65,18 @@ export function ApprovalSection({ requests, loading, flash, reload }: {
 }) {
   const handleApprove = async (req: ApprovalRequest) => {
     await approveRequest(req.id, req.requested_name);
-    flash(`✅ "${req.requested_name}" 승인됨`);
+    flash(`"${req.requested_name}" 승인됨`);
     reload();
   };
   const handleReject = async (req: ApprovalRequest) => {
     await rejectRequest(req.id);
-    flash(`❌ "${req.requested_name}" 거절됨`);
+    flash(`"${req.requested_name}" 거절됨`);
     reload();
   };
 
   return (
     <section className={`admin-section ${requests.length > 0 ? 'section-urgent' : ''}`}>
-      <PendingHeading count={requests.length}>📋 승인 대기</PendingHeading>
+      <PendingHeading count={requests.length}><Icon name="clipboard" /> 승인 대기</PendingHeading>
       {loading ? <p className="admin-empty">불러오는 중...</p> :
        requests.length === 0 ? <p className="admin-empty">현재 대기 중인 신청이 없습니다.</p> : (
         <div className="admin-list">
@@ -122,7 +123,7 @@ export function PasswordResetSection({ requests, onResolved, loading, flash }: {
 
   return (
     <section className={`admin-section ${requests.length > 0 ? 'section-urgent' : ''}`}>
-      <PendingHeading count={requests.length}>🔑 비밀번호 초기화 요청</PendingHeading>
+      <PendingHeading count={requests.length}><Icon name="key" /> 비밀번호 초기화 요청</PendingHeading>
       {loading ? <p className="admin-empty">불러오는 중...</p> :
        requests.length === 0 ? <p className="admin-empty">현재 대기 중인 요청이 없습니다.</p> : (
         <div className="admin-list">
@@ -132,7 +133,7 @@ export function PasswordResetSection({ requests, onResolved, loading, flash }: {
                 <span className="req-name">아이디: {r.username}</span>
                 {r.person_name && <span className="req-meta">이름: {r.person_name}</span>}
                 <span className="req-meta">연락 이메일: {r.contact_email}</span>
-                {r.message && <span className="req-meta req-message">💬 {r.message}</span>}
+                {r.message && <span className="req-meta req-message"><Icon name="chat" /> {r.message}</span>}
                 <span className="req-meta">{formatCompactDateTime(r.created_at)}</span>
               </div>
               <div className="req-btns">
@@ -163,12 +164,12 @@ export function BroadcastSection({ members }: { members: Member[] }) {
     setMsg(null);
     try {
       await sendBroadcastPush(title.trim(), body.trim(), target === 'all' ? null : target);
-      setMsg({ ok: true, msg: '✅ 발송 요청됐습니다. 수 초 내 전달됩니다.' });
+      setMsg({ ok: true, msg: '발송 요청됐습니다. 수 초 내 전달됩니다.' });
       setTitle('');
       setBody('');
       setTarget('all');
     } catch {
-      setMsg({ ok: false, msg: '❌ 발송 요청 중 오류가 발생했습니다.' });
+      setMsg({ ok: false, msg: '발송 요청 중 오류가 발생했습니다.' });
     } finally {
       setLoading(false);
       setTimeout(() => setMsg(null), 4000);
@@ -177,8 +178,8 @@ export function BroadcastSection({ members }: { members: Member[] }) {
 
   return (
     <section className="admin-section">
-      <h2>📢 공지 푸시 발송</h2>
-      <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 12px' }}>
+      <h2><Icon name="megaphone" /> 공지 푸시 발송</h2>
+      <p style={{ fontSize: 12, color: '#9C907C', margin: '0 0 12px' }}>
         앱을 설치한 회원에게만 전달됩니다.
       </p>
       <div className="push-settings">
@@ -233,7 +234,7 @@ export function ActivityLogSection() {
     <section className="admin-section">
       <div className="section-head">
         <h2>
-          📝 활동 로그
+          <Icon name="note" /> 활동 로그
           {logs && <span className="req-count-zero"> ({logs.length}건)</span>}
         </h2>
         <button className="btn-bulk-new" onClick={handleLoad} disabled={loading}>
@@ -294,7 +295,7 @@ export function AdminChatSection() {
 
   return (
     <section className="admin-section admin-chat-section">
-      <h2>🤖 AI 채팅 (Gemini)</h2>
+      <h2><Icon name="sparkle" /> AI 채팅 (Gemini)</h2>
       <div className="admin-chat-messages">
         {messages.length === 0 && <p className="admin-chat-empty">메시지를 입력하세요.</p>}
         {messages.map((m, i) => (

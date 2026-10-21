@@ -4,26 +4,26 @@
 }
 
 .viewpoint-banner {
-  background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
-  border-bottom: 1px solid #C7D2FE;
+  background: var(--pri-bg);
+  border-bottom: 1px solid var(--border-pri);
   padding: 8px 20px;
   display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; font-weight: 600; color: #3730A3;
+  font-size: 13px; font-weight: 600; color: var(--pri-dark);
   flex-shrink: 0;
 }
 .viewpoint-banner button {
-  background: white; border: 1px solid #818CF8;
-  border-radius: 8px; color: #4F46E5;
+  background: var(--surface); border: 1px solid var(--pri-light);
+  border-radius: 8px; color: var(--pri);
   font-size: 12px; font-weight: 600; padding: 4px 12px; cursor: pointer;
   transition: all 0.15s;
 }
-.viewpoint-banner button:hover { background: #EEF2FF; }
+.viewpoint-banner button:hover { background: var(--pri-bg); }
 
 /* 탭 */
 .branch-tabs {
   display: flex;
-  background: white;
-  border-bottom: 1px solid #E4E6F0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   padding: 0 16px;
   gap: 4px;
   flex-shrink: 0;
@@ -32,7 +32,7 @@
 .branch-tab {
   flex: 1; padding: 13px 8px;
   font-size: 14px; font-weight: 600;
-  color: #94A3B8;
+  color: var(--text-3);
   background: none; border: none;
   border-bottom: 3px solid transparent;
   cursor: pointer; transition: all 0.15s;
@@ -42,10 +42,10 @@
   font-family: inherit;
 }
 
-.branch-tab:hover { color: #4F46E5; }
+.branch-tab:hover { color: var(--pri); }
 .branch-tab.active {
-  color: #4F46E5;
-  border-bottom-color: #4F46E5;
+  color: var(--pri);
+  border-bottom-color: var(--pri);
   font-weight: 700;
 }
 
@@ -58,23 +58,23 @@
 .react-flow__minimap {
   border-radius: 12px !important;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07) !important;
-  border: 1px solid #E4E6F0 !important;
+  box-shadow: 0 4px 20px rgba(42,38,32,0.13), 0 1px 6px rgba(42,38,32,0.07) !important;
+  border: 1px solid var(--border) !important;
   bottom: 46px !important;
   right: 4px !important;
   left: auto !important;
   width: 148px !important;
   height: 100px !important;
-  background: white !important;
+  background: var(--surface) !important;
 }
 
 .flow-wrapper {
   flex: 1; position: relative;
-  background: #F4F5FA;
+  background: var(--bg);
 }
 
 /* React Flow 배경 */
-.react-flow__background { background: #F4F5FA; }
+.react-flow__background { background: var(--bg); }
 
 /* ── 줌 슬라이더 — 미니맵과 독립, 오른쪽 하단 ─────────────────────────── */
 .zoom-controls-panel {
@@ -87,12 +87,12 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
   padding: 0 10px;
   height: 34px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07);
-  border: 1px solid #E4E6F0;
+  box-shadow: 0 4px 20px rgba(42,38,32,0.13), 0 1px 6px rgba(42,38,32,0.07);
+  border: 1px solid var(--border);
   width: 148px;
   box-sizing: border-box;
 }
@@ -100,13 +100,13 @@
 .zoom-step-btn {
   width: 26px; height: 26px;
   display: flex; align-items: center; justify-content: center;
-  background: #EEF2FF;
+  background: var(--pri-bg);
   border: none; border-radius: 50%;
-  color: #4F46E5; cursor: pointer;
+  color: var(--pri); cursor: pointer;
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.zoom-step-btn:hover { background: #C7D2FE; }
+.zoom-step-btn:hover { background: var(--border-pri); }
 
 .zoom-slider-input {
   flex: 1;
@@ -114,7 +114,7 @@
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  background: #E0E7FF;
+  background: var(--pri-bg);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -123,16 +123,16 @@
   -webkit-appearance: none;
   width: 14px; height: 14px;
   border-radius: 50%;
-  background: #4F46E5;
+  background: var(--pri);
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(79,70,229,0.4);
+  box-shadow: 0 1px 4px rgba(46,94,78,0.4);
   transition: transform 0.1s;
 }
 .zoom-slider-input::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 .zoom-pct {
   font-size: 11px; font-weight: 700;
-  color: #6B7280; min-width: 32px; text-align: right;
+  color: var(--text-3); min-width: 32px; text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
@@ -145,18 +145,18 @@
 
 .focus-me-btn {
   display: flex; align-items: center; gap: 5px;
-  background: white;
+  background: var(--surface);
   border: none; border-radius: 20px;
   padding: 8px 14px 8px 10px;
-  color: #4F46E5;
+  color: var(--pri);
   font-size: 13px; font-weight: 700;
   cursor: pointer; font-family: inherit;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(42,38,32,0.14), 0 1px 4px rgba(42,38,32,0.08);
   transition: all 0.15s;
 }
 .focus-me-btn:hover {
-  background: #EEF2FF;
-  box-shadow: 0 4px 16px rgba(79,70,229,0.2);
+  background: var(--pri-bg);
+  box-shadow: 0 4px 16px rgba(46,94,78,0.2);
   transform: translateY(-1px);
 }
 .focus-me-btn:active { transform: translateY(0); }
@@ -168,4 +168,4 @@
   color: var(--text-2); pointer-events: none;
 }
 .empty-branch p { margin: 4px 0; font-size: 15px; }
-.empty-branch .empty-hint { font-size: 13px; color: #aaa; }
+.empty-branch .empty-hint { font-size: 13px; color: var(--text-4); }

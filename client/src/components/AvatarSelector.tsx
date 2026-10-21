@@ -1,4 +1,5 @@
 import './AvatarSelector.css';
+import { Icon } from './Icon';
 
 interface Props {
   photoUrl: string | null;
@@ -18,10 +19,10 @@ export function AvatarSelector({ photoUrl, name, gender, onOpen, onRemove }: Pro
         {photoUrl
           ? <img src={photoUrl} alt="아바타" className="avatar-preview" />
           : <span className={`avatar-initial-circle ${gender}`}>{name[0] || '?'}</span>}
-        <span className="avatar-camera-badge" aria-hidden>📷</span>
+        <span className="avatar-camera-badge" aria-hidden><Icon name="camera" /></span>
       </button>
       <button type="button" className="avatar-selector-cta" onClick={onOpen}>
-        {photoUrl ? '사진·아바타 변경' : '📷 사진·아바타 선택'}
+        {photoUrl ? '사진·아바타 변경' : '사진·아바타 선택'}
       </button>
       {photoUrl && onRemove && (
         <button type="button" className="avatar-remove-link" onClick={onRemove}>아바타 삭제</button>

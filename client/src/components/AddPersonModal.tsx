@@ -8,6 +8,7 @@ import { InviteLinkBox } from './InviteLinkBox';
 import { buildInviteLink } from '../lib/inviteMessage';
 import { todayStr } from '../utils/date';
 import './AddPersonModal.css';
+import { Icon } from './Icon';
 
 interface Props {
   targetPerson: Person;
@@ -213,7 +214,7 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
     return (
       <div className="modal-backdrop" onClick={finish}>
         <div className="modal-box" onClick={e => e.stopPropagation()}>
-          <h2 className="modal-title">✅ 추가 완료</h2>
+          <h2 className="modal-title"><Icon name="check" /> 추가 완료</h2>
           <p className="modal-subtitle">
             <strong>{added.name}</strong>님을 가계도에 추가했어요.<br />
             지금 초대 링크를 보내 함께 채워보세요.
@@ -222,7 +223,7 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
             <InviteLinkBox link={inviteLink} personName={added.name} />
           ) : (
             <button type="button" className="btn-save add-invite-btn" onClick={handleCreateInvite} disabled={creatingInvite}>
-              {creatingInvite ? '링크 만드는 중...' : `💌 ${added.name}님 초대하기`}
+              {creatingInvite ? '링크 만드는 중...' : `${added.name}님 초대하기`}
             </button>
           )}
           <button type="button" className="btn-cancel add-invite-later" onClick={finish}>

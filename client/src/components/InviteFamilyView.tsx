@@ -9,6 +9,7 @@ import { getRelationLabel } from '../utils/relationLabel';
 import { InviteLinkBox } from './InviteLinkBox';
 import './SearchView.css';
 import './InviteFamilyView.css';
+import { Icon } from './Icon';
 
 interface Props {
   onClose: () => void;
@@ -66,7 +67,7 @@ export function InviteFamilyView({ onClose }: Props) {
     <div className="search-backdrop" onClick={onClose}>
       <div className="search-panel" onClick={e => e.stopPropagation()}>
         <div className="search-header">
-          <h2 className="invfam-title">💌 가족 초대</h2>
+          <h2 className="invfam-title"><Icon name="mail" /> 가족 초대</h2>
           <button className="search-close" onClick={onClose}>✕</button>
         </div>
 
@@ -81,7 +82,7 @@ export function InviteFamilyView({ onClose }: Props) {
           ) : pending.length === 0 ? (
             <p className="search-empty invfam-empty">
               {joined.length > 0
-                ? '모든 가족이 가입했어요 🎉'
+                ? '모든 가족이 가입했어요'
                 : '초대할 가족이 없어요.\n가계도에서 가족을 먼저 추가해 주세요.'}
             </p>
           ) : pending.map(({ person: p, chusu, label }) => (

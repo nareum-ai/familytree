@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import './DateInput.css';
+import { Icon } from './Icon';
 
 interface Props {
   value: string;
@@ -46,7 +47,7 @@ export function DateInput({ value, onChange, max, placeholder = 'YYYY-MM-DD' }: 
         maxLength={10}
       />
       <button type="button" className="date-cal-btn" onClick={openPicker} title="날짜 선택">
-        📅
+        <Icon name="calendar" />
       </button>
       {/* 숨긴 native date picker — 캘린더 아이콘 클릭 시 열림 */}
       <input

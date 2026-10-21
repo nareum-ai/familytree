@@ -1,25 +1,64 @@
 /* ── 디자인 토큰 ─────────────────────────────────────────────────────────── */
+/* A안 "따뜻한 기록": 크림 바탕 + 숲 초록(주색) + 테라코타(강조) */
 :root {
-  --pri:        #4F46E5;
-  --pri-dark:   #3730A3;
-  --pri-light:  #818CF8;
-  --pri-bg:     #EEF2FF;
-  --acc:        #F97316;
-  --bg:         #F4F5FA;
-  --surface:    #FFFFFF;
-  --text:       #1A1A2E;
-  --text-2:     #64748B;
-  --border:     #E4E6F0;
-  --green:      #10B981;
-  --red:        #EF4444;
-  --gold:       #F59E0B;
+  /* 주색 · 강조색 */
+  --pri:         #2E5E4E;
+  --pri-dark:    #1F4337;
+  --pri-light:   #6E9A88;
+  --pri-bg:      #E3EDE6;
+  --pri-bg-2:    #F0F5F1;
+  --border-pri:  #C9DCCF;
+  --acc:         #A9502F;
+  --acc-dark:    #8A3F24;
+  --acc-bg:      #F6E3D8;
+
+  /* 바탕 · 표면 */
+  --bg:          #F7F2E9;
+  --surface:     #FFFDF8;
+  --surface-2:   #FBF7F0;
+  --surface-3:   #F1EADD;
+
+  /* 글자 (본문 → 보조 → 흐림 순) */
+  --text:        #2A2620;
+  --text-2:      #5F5648;
+  --text-3:      #7A6F5E;
+  --text-4:      #9C907C;
+
+  --border:      #E6DCCB;
+  --border-2:    #D6C8B0;
+
+  /* 상태색 */
+  --green:       #3F7D4F;
+  --green-bg:    #E5F0E3;
+  --red:         #B3412E;
+  --red-dark:    #8E3222;
+  --red-bg:      #F8E4DE;
+  --red-border:  #EBC2B6;
+  --gold:        #B7862B;
+  --gold-dark:   #7A5A16;
+  --gold-bg:     #FBF1DA;
+  --gold-border: #EBD3A0;
+
+  /* 가계도 노드 */
+  --male:        #3D7563;
+  --male-dark:   #24503F;
+  --female:      #C0603C;
+  --female-dark: #93452A;
+  --female-bg:   #F8E8DF;
+  --deceased:      #A89D8A;
+  --deceased-dark: #7F7563;
+
+  /* 글꼴 */
+  --font-body:    'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Gowun Batang', 'Noto Serif KR', serif;
+
   --r-sm:       8px;
   --r-md:       12px;
   --r-lg:       16px;
-  --r-xl:       24px;
-  --shadow-sm:  0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg:  0 8px 32px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  --r-xl:       20px;
+  --shadow-sm:  0 1px 4px rgba(60,45,25,0.06), 0 1px 2px rgba(60,45,25,0.04);
+  --shadow-md:  0 4px 16px rgba(60,45,25,0.08), 0 2px 4px rgba(60,45,25,0.04);
+  --shadow-lg:  0 24px 48px -24px rgba(60,45,25,0.25), 0 2px 8px rgba(60,45,25,0.06);
   --header-h:   58px;
 }
 
@@ -28,11 +67,16 @@
 
 html, body, #root {
   height: 100%; width: 100%;
-  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  font-family: var(--font-body);
+  word-break: keep-all;
+  overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
   color: var(--text);
+  background: var(--bg);
 }
+
+button, input, select, textarea { font-family: inherit; }
+::selection { background: var(--pri-bg); color: var(--pri-dark); }
 
 /* ── 앱 래퍼 ──────────────────────────────────────────────────────────────── */
 .app {
@@ -45,13 +89,13 @@ html, body, #root {
 /* ── 헤더 ─────────────────────────────────────────────────────────────────── */
 .app-header {
   height: var(--header-h);
-  background: #FFFFFF;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   padding: 0 20px;
   flex-shrink: 0;
-  box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 12px rgba(42,38,32,0.06);
   z-index: 100;
   gap: 12px;
 }
@@ -67,17 +111,16 @@ html, body, #root {
 /* 로고 심볼 (인디고 계층형) */
 .logo-symbol {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, #4F46E5, #6D28D9);
+  background: var(--pri);
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
 .logo-text {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--pri);
 }
 
 .header-user {
@@ -97,22 +140,28 @@ html, body, #root {
 .header-ann-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 6px 7px;
+  padding: 8px 10px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   line-height: 1;
   border-radius: var(--r-sm);
-  transition: background 0.15s;
-  color: #475569;
+  transition: background 0.15s, color 0.15s;
+  color: var(--text-2);
 }
 .header-ann-btn:hover { background: var(--pri-bg); color: var(--pri); }
+.nav-svg { width: 20px; height: 20px; flex-shrink: 0; display: block; }
 
 .header-my-btn { position: relative; }
 
 .header-notify-dot {
   position: absolute;
   top: 2px; right: 2px;
-  background: #EF4444;
+  background: var(--red);
   color: white;
   font-size: 9px; font-weight: 800;
   border-radius: 50%;
@@ -154,11 +203,11 @@ html, body, #root {
 /* ── iOS 홈 화면 추가 안내 모달 ─────────────────────────────────────────────── */
 .ios-install-backdrop {
   position: fixed; inset: 0; z-index: 9000;
-  background: rgba(0,0,0,0.5);
+  background: rgba(42,38,32,0.5);
   display: flex; align-items: flex-end; justify-content: center;
 }
 .ios-install-guide {
-  background: white;
+  background: var(--surface);
   border-radius: 24px 24px 0 0;
   width: 100%; max-width: 480px;
   padding: 28px 28px calc(28px + env(safe-area-inset-bottom));
@@ -167,14 +216,14 @@ html, body, #root {
 }
 .ios-install-close {
   position: absolute; top: 16px; right: 16px;
-  background: #F1F5F9; border: none; border-radius: 50%;
+  background: var(--surface-3); border: none; border-radius: 50%;
   width: 30px; height: 30px; font-size: 13px;
-  cursor: pointer; color: #64748B;
+  cursor: pointer; color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
 }
 .ios-install-icon { font-size: 36px; text-align: center; margin-bottom: 10px; }
 .ios-install-title {
-  font-size: 18px; font-weight: 800; color: #1A1A2E;
+  font-size: 18px; font-weight: 800; color: var(--text);
   text-align: center; margin-bottom: 20px;
 }
 .ios-install-steps {
@@ -184,7 +233,7 @@ html, body, #root {
 .ios-install-steps li {
   counter-increment: step;
   display: flex; align-items: flex-start; gap: 12px;
-  font-size: 15px; color: #334155; line-height: 1.5;
+  font-size: 15px; color: var(--text-2); line-height: 1.5;
 }
 .ios-install-steps li::before {
   content: counter(step);
@@ -196,7 +245,7 @@ html, body, #root {
 }
 .ios-install-arrow-hint {
   margin-top: 20px; text-align: center;
-  font-size: 13px; color: #94A3B8;
+  font-size: 13px; color: var(--text-4);
 }
 
 /* 뒤로가기 이중확인 토스트 */
@@ -205,7 +254,7 @@ html, body, #root {
   bottom: 90px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(26,26,46,0.88);
+  background: rgba(42,38,32,0.88);
   color: white;
   padding: 11px 22px;
   border-radius: 22px;
@@ -239,14 +288,14 @@ html, body, #root {
   padding: 40px 28px; max-width: 320px; text-align: center;
 }
 .family-disabled-msg {
-  font-size: 15px; font-weight: 600; color: #e53e3e; line-height: 1.6; margin: 0;
+  font-size: 15px; font-weight: 600; color: var(--red); line-height: 1.6; margin: 0;
 }
 .family-disabled-email {
-  font-size: 14px; color: #2AABE2; text-decoration: underline;
+  font-size: 14px; color: var(--pri); text-decoration: underline;
 }
 .family-disabled-logout {
   margin-top: 8px; padding: 10px 28px;
-  background: #f0f4f8; border: 1.5px solid #e0e0e0; border-radius: 8px;
+  background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 8px;
   font-size: 14px; cursor: pointer;
 }
 
@@ -269,7 +318,7 @@ html, body, #root {
   animation: spin 0.8s linear infinite;
 }
 
-.loading-slow { font-size: 12px; color: #aaa; margin-top: 4px; }
+.loading-slow { font-size: 12px; color: var(--text-4); margin-top: 4px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -292,9 +341,9 @@ html, body, #root {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     height: 76px;
-    background: #FFFFFF;
+    background: var(--surface);
     border-top: 1px solid var(--border);
-    box-shadow: 0 -4px 24px rgba(79,70,229,0.10);
+    box-shadow: 0 -4px 24px rgba(46,94,78,0.10);
     z-index: 200;
     justify-content: space-around;
     align-items: stretch;
@@ -315,7 +364,7 @@ html, body, #root {
   border: none;
   cursor: pointer;
   padding: 10px 4px 6px;
-  color: #94A3B8;
+  color: var(--text-3);
   transition: color 0.15s;
   border-radius: 0;
   position: relative;
@@ -323,9 +372,11 @@ html, body, #root {
 
 .mobile-nav-btn:active { color: var(--pri); background: var(--pri-bg); }
 
+.mobile-nav-icon .nav-svg { width: 24px; height: 24px; }
 .mobile-nav-icon {
   font-size: 24px;
   line-height: 1;
+  width: 24px; height: 24px;
   position: relative;
   display: inline-block;
 }
@@ -340,7 +391,7 @@ html, body, #root {
 .mobile-notify-dot {
   position: absolute;
   top: -3px; right: -6px;
-  background: #EF4444;
+  background: var(--red);
   color: white;
   font-size: 9px;
   font-weight: 800;
@@ -353,22 +404,22 @@ html, body, #root {
 /* ── 공통 확인 모달 ───────────────────────────────────────────────────────── */
 .confirm-backdrop {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(42,38,32,0.45);
   z-index: 2000;
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-box {
-  background: white; border-radius: 16px;
+  background: var(--surface); border-radius: 16px;
   padding: 28px; width: 300px;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 20px 60px rgba(42,38,32,0.25);
 }
 .confirm-box h3 { font-size: 17px; font-weight: 700; color: var(--text); margin: 0 0 20px; }
 .confirm-actions { display: flex; gap: 10px; }
 .btn-cancel-confirm {
   flex: 1; padding: 11px;
   border: 1.5px solid var(--border); border-radius: 8px;
-  background: white; color: var(--text-2);
+  background: var(--surface); color: var(--text-2);
   font-size: 14px; font-family: inherit; cursor: pointer;
 }
 .btn-delete-confirm {
@@ -389,7 +440,7 @@ html, body, #root {
 .invite-landing {
   display: flex; align-items: center; justify-content: center;
   height: 100%;
-  background: linear-gradient(135deg, #EEF2FF, #F4F5FA);
+  background: linear-gradient(135deg, var(--pri-bg), var(--bg));
 }
 
 .invite-card {
@@ -415,33 +466,33 @@ html, body, #root {
 
 .invite-person-name { color: var(--pri); font-weight: 700; }
 .invite-btn-group { display: flex; flex-direction: column; gap: 10px; }
-.invite-note { font-size: 11px; color: #aaa; margin-top: 12px; }
+.invite-note { font-size: 11px; color: var(--text-4); margin-top: 12px; }
 
 .invite-inapp-warn {
-  background: #FFF7ED;
-  border: 1.5px solid #FED7AA;
+  background: var(--gold-bg);
+  border: 1.5px solid var(--gold-border);
   border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 20px;
   text-align: center;
 }
-.invite-inapp-warn p { font-size: 13px; color: #92400E; margin: 0 0 10px; line-height: 1.6; }
-.invite-inapp-warn strong { color: #78350F; }
+.invite-inapp-warn p { font-size: 13px; color: var(--gold-dark); margin: 0 0 10px; line-height: 1.6; }
+.invite-inapp-warn strong { color: var(--gold-dark); }
 .invite-inapp-btn {
   width: 100%;
   padding: 10px;
-  background: #F97316;
+  background: var(--acc);
   color: white; border: none; border-radius: 10px;
   font-size: 14px; font-weight: 700;
   cursor: pointer; font-family: inherit;
   margin-bottom: 8px;
 }
 .invite-inapp-btn:active { opacity: 0.85; }
-.invite-inapp-hint { font-size: 11px; color: #B45309; margin: 0 !important; line-height: 1.7; }
+.invite-inapp-hint { font-size: 11px; color: var(--gold-dark); margin: 0 !important; line-height: 1.7; }
 
 .invite-app-banner {
-  background: #EEF2FF;
-  border: 1.5px solid #C7D2FE;
+  background: var(--pri-bg);
+  border: 1.5px solid var(--border-pri);
   border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 16px;
@@ -457,4 +508,62 @@ html, body, #root {
   margin-bottom: 8px;
 }
 .invite-app-open-btn:active { opacity: 0.85; }
-.invite-app-hint { font-size: 11px; color: #6366F1; margin: 0 !important; line-height: 1.7; }
+.invite-app-hint { font-size: 11px; color: var(--pri-light); margin: 0 !important; line-height: 1.7; }
+
+/* ── 제목 글꼴 (명조) ─────────────────────────────────────────────────────── */
+.logo-text,
+.ios-install-title,
+.invite-title,
+.modal-title,
+.ai-title,
+.avpick-title,
+.help-header-title h2,
+.help-section-title,
+.help-quickstart-title,
+.invfam-title,
+.nfr-title,
+.nb-title,
+.detail-name,
+.info-req-title,
+.my-header h2,
+.ann-header h2,
+.search-header h2,
+.bulk-header h2,
+.member-header h2,
+.confirm-box h3,
+.admin-logo {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* 좁은 데스크톱에서는 메뉴 글자를 숨기고 아이콘만 */
+@media (max-width: 1000px) {
+  .header-nav-label { display: none; }
+}
+
+/* ── 선 아이콘 (components/Icon.tsx) ───────────────────────────────────── */
+.icon {
+  display: inline-block;
+  vertical-align: -0.14em;
+  flex-shrink: 0;
+}
+
+/* 화면 중앙의 큰 단독 아이콘 — 주색으로 */
+.invite-icon, .ios-install-icon, .irp-lock-icon, .irp-sent-icon, .nfr-icon,
+.nb-top-icon, .done-icon, .fgr-done-icon, .login-icon, .help-logo,
+.ai-menu-icon, .help-section-icon, .help-quickstart-icon, .help-sub-icon,
+.my-install-icon, .drop-icon, .nb-step-icon, .fgr-notice-icon {
+  color: var(--pri);
+  line-height: 1;
+}
+.anon-icon { color: var(--surface); }
+.help-warn .icon { color: var(--gold-dark); }
+.help-tip .icon:first-child { color: var(--pri); }
+
+/* 고인 이름 앞 故 표시 (PersonNode·CoupleNode 공용) */
+.deceased-prefix {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--deceased-dark);
+  margin-right: 2px;
+}

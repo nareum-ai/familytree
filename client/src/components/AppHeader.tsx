@@ -1,12 +1,31 @@
 export type AppView = 'my' | 'search' | 'anniversary' | 'invite' | 'ai' | 'help';
 
-const NAV_ITEMS: Array<{ view: AppView; icon: string; label: string; title: string }> = [
-  { view: 'my',          icon: '👤', label: 'My',     title: 'My 메뉴' },
-  { view: 'search',      icon: '🔍', label: '검색',   title: '검색' },
-  { view: 'anniversary', icon: '📅', label: '기념일', title: '기념일' },
-  { view: 'invite',      icon: '💌', label: '초대',   title: '가족 초대' },
-  { view: 'ai',          icon: '🤖', label: 'AI',     title: 'AI' },
-  { view: 'help',        icon: '❓', label: '도움말', title: '사용 안내' },
+/** 선 아이콘 (24px 격자, currentColor) */
+function NavIcon({ d }: { d: React.ReactNode }) {
+  return (
+    <svg className="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+  );
+}
+
+const ICONS = {
+  my:          <NavIcon d={<><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></>} />,
+  search:      <NavIcon d={<><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></>} />,
+  anniversary: <NavIcon d={<><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></>} />,
+  invite:      <NavIcon d={<><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></>} />,
+  ai:          <NavIcon d={<><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></>} />,
+  help:        <NavIcon d={<><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17.2v.1"/></>} />,
+};
+
+const SHIELD_ICON = <NavIcon d={<path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/>} />;
+
+const NAV_ITEMS: Array<{ view: AppView; label: string; title: string }> = [
+  { view: 'my',          label: 'My',     title: 'My 메뉴' },
+  { view: 'search',      label: '검색',   title: '검색' },
+  { view: 'anniversary', label: '기념일', title: '기념일' },
+  { view: 'invite',      label: '초대',   title: '가족 초대' },
+  { view: 'ai',          label: 'AI',     title: 'AI' },
+  { view: 'help',        label: '도움말', title: '사용 안내' },
 ];
 
 interface Props {
@@ -57,7 +76,7 @@ export function AppHeader({ displayName, pendingRequestCount, onOpen, onLogout, 
       </div>
       <div className="header-user">
         {onReturnToAdmin && (
-          <button className="header-ann-btn" title="관리자로 돌아가기" onClick={onReturnToAdmin}>🛡️</button>
+          <button className="header-ann-btn" title="관리자로 돌아가기" aria-label="관리자로 돌아가기" onClick={onReturnToAdmin}>{SHIELD_ICON}</button>
         )}
         <div className="header-nav-buttons">
           {NAV_ITEMS.map(item => (
@@ -67,13 +86,15 @@ export function AppHeader({ displayName, pendingRequestCount, onOpen, onLogout, 
               onClick={() => onOpen(item.view)}
               title={item.title}
             >
-              {item.icon}{item.view === 'my' && badge}
+              {ICONS[item.view]}
+              <span className="header-nav-label">{item.label}</span>
+              {item.view === 'my' && badge}
             </button>
           ))}
         </div>
         <span className="header-username">{displayName}</span>
         {onShowIOSInstall && (
-          <button className="header-install-btn" onClick={onShowIOSInstall}>📲 설치</button>
+          <button className="header-install-btn" onClick={onShowIOSInstall}>앱 설치</button>
         )}
         <button className="header-logout" onClick={onLogout}>로그아웃</button>
       </div>
@@ -88,7 +109,7 @@ export function MobileBottomNav({ pendingRequestCount, onOpen }: Pick<Props, 'pe
       {NAV_ITEMS.map(item => (
         <button key={item.view} className="mobile-nav-btn" onClick={() => onOpen(item.view)}>
           <span className="mobile-nav-icon">
-            {item.icon}
+            {ICONS[item.view]}
             {item.view === 'my' && pendingRequestCount > 0 && (
               <span className="mobile-notify-dot">{pendingRequestCount}</span>
             )}

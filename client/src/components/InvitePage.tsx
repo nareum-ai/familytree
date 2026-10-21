@@ -5,6 +5,7 @@ import { findDocs } from '../lib/firestore';
 import { isInAppBrowser, isIOS as detectIOS, isKakaoTalk, openInExternalBrowserFromKakao } from '../lib/device';
 import { LS, SS } from '../lib/storageKeys';
 import type { Person } from '../types';
+import { Icon } from './Icon';
 
 function buildOpenInChromeUrl() {
   const path     = window.location.href.replace(/^https?:\/\//, '');
@@ -72,7 +73,7 @@ export function InvitePage({ token }: Props) {
   if (error) return (
     <div className="invite-landing">
       <div className="invite-card">
-        <div className="invite-icon">❌</div>
+        <div className="invite-icon"><Icon name="cancel" /></div>
         <h1 className="invite-title">초대 링크 오류</h1>
         <p className="invite-desc">{error}</p>
         <div className="invite-btn-group">
@@ -96,7 +97,7 @@ export function InvitePage({ token }: Props) {
   return (
     <div className="invite-landing">
       <div className="invite-card">
-        <div className="invite-icon">👨‍👩‍👧‍👦</div>
+        <div className="invite-icon"><Icon name="family" /></div>
         <h1 className="invite-title">가계도 초대</h1>
         <p className="invite-desc">
           <strong>{senderName ?? '누군가'}님</strong>이 가계도에 초대했습니다.<br />
@@ -109,13 +110,13 @@ export function InvitePage({ token }: Props) {
             아래 버튼으로 {isIOS ? <strong>Safari</strong> : <strong>Chrome</strong>}에서 열어주세요.</p>
             {kakao ? (
               <button className="invite-inapp-btn" onClick={() => openInExternalBrowserFromKakao()}>
-                🌐 {isIOS ? 'Safari로' : '브라우저로'} 열기
+                <Icon name="globe" /> {isIOS ? 'Safari로' : '브라우저로'} 열기
               </button>
             ) : isIOS ? (
               <>
                 <button
                   className="invite-inapp-btn"
-                  style={copied ? { background: '#16A34A' } : {}}
+                  style={copied ? { background: '#3F7D4F' } : {}}
                   onClick={handleCopy}
                 >
                   {copied ? '복사됨 ✓' : '링크 복사'}
@@ -128,7 +129,7 @@ export function InvitePage({ token }: Props) {
             ) : (
               <>
                 <button className="invite-inapp-btn" onClick={() => { window.location.href = buildOpenInChromeUrl(); }}>
-                  🌐 Chrome으로 열기
+                  <Icon name="globe" /> Chrome으로 열기
                 </button>
               </>
             )}

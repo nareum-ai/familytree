@@ -14,6 +14,7 @@ import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import { validateNewPassword } from '../utils/password';
 import './MyMenuView.css';
 import './NotifBlockedModal.css';
+import { Icon } from './Icon';
 
 interface Props { onClose: () => void; }
 
@@ -200,23 +201,23 @@ export function MyMenuView({ onClose }: Props) {
     <div className="my-backdrop" onClick={onClose}>
       <div className="my-panel" onClick={e => e.stopPropagation()}>
         <div className="my-header">
-          <h2>👤 {username}</h2>
+          <h2><Icon name="user" /> {username}</h2>
           <button className="my-close" onClick={onClose}>✕</button>
         </div>
 
         <div className="my-tabs">
           <button className={`my-tab ${tab === 'requests' ? 'active' : ''}`}
             onClick={() => setTab('requests')}>
-            📬 정보공개 요청 {requests.length > 0 && <span className="my-badge">{requests.length}</span>}
+            <Icon name="inbox" /> 정보공개 요청 {requests.length > 0 && <span className="my-badge">{requests.length}</span>}
           </button>
           <button className={`my-tab ${tab === 'password' ? 'active' : ''}`}
             onClick={() => setTab('password')}>
-            🔒 비밀번호
+            <Icon name="lock" /> 비밀번호
           </button>
           {!isAdminContext && (
             <button className={`my-tab ${tab === 'google' ? 'active' : ''}`}
               onClick={() => setTab('google')}>
-              🔗 구글{googleEmail === null && <span className="my-badge my-badge-warn">!</span>}
+              <Icon name="link" /> 구글{googleEmail === null && <span className="my-badge my-badge-warn">!</span>}
             </button>
           )}
         </div>
@@ -317,7 +318,7 @@ export function MyMenuView({ onClose }: Props) {
             {showInstallBanner && (
               <div className="my-install-row">
                 <div className="my-install-info">
-                  <span className="my-install-icon">📲</span>
+                  <span className="my-install-icon"><Icon name="install" /></span>
                   <div>
                     <p className="my-install-title">앱 설치</p>
                     <p className="my-install-desc">홈 화면에 추가하면 더 편리해요</p>
@@ -337,7 +338,7 @@ export function MyMenuView({ onClose }: Props) {
               <div className="my-notif-row">
                 <div className="my-notif-info">
                   <span className="my-notif-icon">
-                    {notifDenied ? '🔕' : '🔔'}
+                    {notifDenied ? <Icon name="bell-off" /> : <Icon name="bell" />}
                   </span>
                   <span className="my-notif-label">
                     기념일 알림
@@ -400,7 +401,7 @@ export function MyMenuView({ onClose }: Props) {
           </p>
           {adminEmail
             ? <a href={`mailto:${adminEmail}?subject=계정 탈퇴 요청`} className="my-contact-email">{adminEmail}</a>
-            : <span className="my-contact-email" style={{ color: '#aaa' }}>{adminEmailLoading ? '이메일 불러오는 중...' : '관리자에게 직접 연락해 주세요.'}</span>
+            : <span className="my-contact-email" style={{ color: '#9C907C' }}>{adminEmailLoading ? '이메일 불러오는 중...' : '관리자에게 직접 연락해 주세요.'}</span>
           }
         </div>
       </div>

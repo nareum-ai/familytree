@@ -12,6 +12,7 @@ import { MemberSection } from './admin/MemberSection';
 import { FamilySection } from './admin/FamilySection';
 import { AdminPasswordModal, AlarmDiagModal, GoogleLinkModal, PushTimeModal } from './admin/AdminSettingsModals';
 import './AdminView.css';
+import { Icon } from './Icon';
 
 const FLASH_MS = 3000;
 
@@ -83,21 +84,21 @@ export function AdminView({ onLogout }: Props) {
   return (
     <div className="admin-wrap">
       <div className="admin-header">
-        <div className="admin-logo">🛡️ 관리자 패널</div>
+        <div className="admin-logo"><Icon name="shield" /> 관리자 패널</div>
         <div className="admin-header-right">
           {requests.length > 0 && (
             <span className="admin-pending-badge">{requests.length}건 승인 대기</span>
           )}
           <div className="admin-settings-wrap" ref={settingsRef}>
-            <button className="admin-icon-btn" onClick={() => setShowSettingsMenu(v => !v)} title="설정">⚙️</button>
+            <button className="admin-icon-btn" onClick={() => setShowSettingsMenu(v => !v)} title="설정"><Icon name="gear" /></button>
             {showSettingsMenu && (
               <div className="admin-settings-dropdown" onClick={() => setShowSettingsMenu(false)}>
                 <button onClick={() => setSettingsModal('google')}>
-                  🔗 구글 연동{adminGoogleEmail ? ' ✓' : ''}
+                  <Icon name="link" /> 구글 연동{adminGoogleEmail ? ' ✓' : ''}
                 </button>
-                <button onClick={() => setSettingsModal('password')}>🔑 비밀번호 변경</button>
-                <button onClick={() => setSettingsModal('alarm')}>🔧 알림 진단</button>
-                <button onClick={() => setSettingsModal('pushTime')}>🔔 알림 발송 시간</button>
+                <button onClick={() => setSettingsModal('password')}><Icon name="key" /> 비밀번호 변경</button>
+                <button onClick={() => setSettingsModal('alarm')}><Icon name="wrench" /> 알림 진단</button>
+                <button onClick={() => setSettingsModal('pushTime')}><Icon name="bell" /> 알림 발송 시간</button>
               </div>
             )}
           </div>

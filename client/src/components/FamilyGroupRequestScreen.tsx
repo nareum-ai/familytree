@@ -5,6 +5,7 @@ import { DateInput } from './DateInput';
 import { todayStr } from '../utils/date';
 import './LoginScreen.css';
 import './FamilyGroupRequestScreen.css';
+import { Icon } from './Icon';
 
 interface Props {
   memberUsername: string;
@@ -75,7 +76,7 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
           <>
             <h1 className="login-title">신청 대기 중</h1>
             <div className="fgr-pending-box">
-              <p className="fgr-pending-name">👤 {pendingName}</p>
+              <p className="fgr-pending-name"><Icon name="user" /> {pendingName}</p>
               <p className="fgr-pending-date">신청일: {pendingDate}</p>
               <p className="fgr-pending-msg">관리자 승인을 기다리고 있습니다.</p>
             </div>
@@ -103,7 +104,7 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
             </p>
 
             <div className="fgr-notice">
-              <span className="fgr-notice-icon">💡</span>
+              <span className="fgr-notice-icon"><Icon name="bulb" /></span>
               <p>이미 있는 가계도에 참여하시려면<br />
               <strong>초대링크를 통해 로그인</strong>하셔야 합니다.</p>
             </div>
@@ -196,7 +197,7 @@ export function FamilyGroupRequestScreen({ memberUsername, onLogout }: Props) {
 
         {step === 'done' && (
           <>
-            <div className="fgr-done-icon">⏳</div>
+            <div className="fgr-done-icon"><Icon name="hourglass" /></div>
             <h1 className="login-title">신청 완료</h1>
             <p className="fgr-desc">
               관리자가 승인하면 가족그룹이 생성됩니다.<br />

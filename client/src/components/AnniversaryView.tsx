@@ -11,6 +11,7 @@ import { NotifBlockedModal } from './NotifBlockedModal';
 import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import './AnniversaryView.css';
 import './NotifBlockedModal.css';
+import { Icon } from './Icon';
 
 interface PushPrefs {
   enabled: boolean;
@@ -206,7 +207,7 @@ export function AnniversaryView({ onClose }: Props) {
     <div className="ann-backdrop" onClick={onClose}>
       <div className="ann-panel" onClick={e => e.stopPropagation()}>
         <div className="ann-header">
-          <h2>{mode === 'settings' ? '🔔 알림 설정' : '📅 다가오는 기념일'}</h2>
+          <h2>{mode === 'settings' ? '알림 설정' : '다가오는 기념일'}</h2>
           <div className="ann-header-actions">
             {!isAdminContext && hasPersonId && mode === 'list' && (
               <button
@@ -214,7 +215,7 @@ export function AnniversaryView({ onClose }: Props) {
                 onClick={() => notifDenied ? setShowNotifBlocked(true) : setMode('settings')}
                 title={notifDenied ? '알림이 차단되어 있어요' : '알림 설정'}
               >
-                {notifDenied ? '🔕' : '🔔'}
+                {notifDenied ? <Icon name="bell-off" /> : <Icon name="bell" />}
               </button>
             )}
             <button className="ann-close" onClick={mode === 'settings' ? () => setMode('list') : onClose}>
@@ -298,13 +299,13 @@ export function AnniversaryView({ onClose }: Props) {
                     <input type="checkbox" disabled={!pushPrefs.enabled}
                       checked={pushPrefs.enableBirthday}
                       onChange={e => setPushPrefs(p => ({ ...p, enableBirthday: e.target.checked }))} />
-                    🎂 생일
+                    <Icon name="cake" /> 생일
                   </label>
                   <label className={`ann-push-chip ${pushPrefs.enableDeathDay ? 'on' : ''} ${!pushPrefs.enabled ? 'dim' : ''}`}>
                     <input type="checkbox" disabled={!pushPrefs.enabled}
                       checked={pushPrefs.enableDeathDay}
                       onChange={e => setPushPrefs(p => ({ ...p, enableDeathDay: e.target.checked }))} />
-                    🕯️ 기일
+                    <Icon name="candle" /> 기일
                   </label>
                 </div>
               </div>
