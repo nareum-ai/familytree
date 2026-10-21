@@ -3,6 +3,9 @@
   "target": {
     "namespace": "android_app",
     "package_name": "app.web.familytree_3221b.twa",
-    "sha256_cert_fingerprints": ["BF:02:6E:F2:B8:CF:AE:1F:6C:57:31:9E:19:5C:12:EF:2A:F1:E6:A1:81:94:83:74:94:E0:52:04:39:6F:1C:EF"]
+    "sha256_cert_fingerprints": [
+      "41:8C:E2:B7:57:4C:DE:AD:2C:0E:2B:85:B1:46:DE:CE:3E:CF:FC:96:6D:6A:E0:0B:81:16:C7:96:44:BB:34:5E",
+      "BF:02:6E:F2:B8:CF:AE:1F:6C:57:31:9E:19:5C:12:EF:2A:F1:E6:A1:81:94:83:74:94:E0:52:04:39:6F:1C:EF"
+    ]
   }
 }]
