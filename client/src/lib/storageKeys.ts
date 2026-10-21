@@ -16,6 +16,7 @@ const BASE_LS = {
   FCM_TOKEN_SAVED:      'familyTreeFcmTokenSaved',
   NOTIF_CONFIRMED_BLOCKED: 'familyTreeNotifConfirmedBlocked',
   PENDING_INVITE_TOKEN: 'familyTreePendingInviteToken',
+  LAST_ACTIVITY: 'familyTreeLastActivity',
 } as const;
 
 type LSKey = keyof typeof BASE_LS;

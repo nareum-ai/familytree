@@ -95,10 +95,8 @@ export async function buildAnniversaries(
   persons: Person[],
   relationships: Relationship[] = [],
   chusuBasePerson?: Person,   // 뷰포인트 인물 (없으면 is_root=1 사용)
-  allPersons?: Person[]       // 결혼기념일 상대방 이름 조회용 전체 목록
 ): Promise<AnniversaryItem[]> {
   const chusuRoot = chusuBasePerson ?? persons.find(p => p.is_root === 1) ?? persons[0];
-  const lookupPersons = allPersons ?? persons;
   const t = midnight();
   const items: AnniversaryItem[] = [];
 
@@ -166,8 +164,8 @@ export async function buildAnniversaries(
     if (parts.length !== 3 || parts.some(isNaN)) continue;
     const [my, mm, md] = parts;
 
-    const p1 = lookupPersons.find(p => p.id === rel.person1_id);
-    const p2 = lookupPersons.find(p => p.id === rel.person2_id);
+    const p1 = persons.find(p => p.id === rel.person1_id);
+    const p2 = persons.find(p => p.id === rel.person2_id);
     if (!p1 || !p2) continue;
 
     const { date: next, converted } = await resolveNextDate(mm, md, !!rel.marriage_lunar);

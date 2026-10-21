@@ -19,7 +19,6 @@ import { PersonNode } from './PersonNode';
 import { CoupleNode } from './CoupleNode';
 import { FamilyEdge } from './FamilyEdge';
 import { PersonDetail } from './PersonDetail';
-import { PetDetail } from './PetDetail';
 import { AddPersonModal } from './AddPersonModal';
 import { InfoRequestPanel } from './InfoRequestPanel';
 import './FamilyTreeView.css';
@@ -304,7 +303,7 @@ function getTabConfig(
 
 export function FamilyTreeView() {
   const { persons, relationships, selectedPersonId, viewpointPersonId, selectPerson,
-          focusRequest, clearFocusRequest, grantedPersonIds,
+          focusRequest, clearFocusRequest, grantedPersonIds, tempUnlockAll,
           infoRequestPersonId, openInfoRequest, closeInfoRequest } = useFamilyStore();
 
   const tabConfig = useMemo(
@@ -337,7 +336,7 @@ export function FamilyTreeView() {
 
   const { nodes, edges } = useTreeLayout(
     persons, relationships, activeBranch, viewpointPersonId,
-    currentUserName, grantedPersonIds
+    currentUserName, grantedPersonIds, tempUnlockAll
   );
 
   // "나" 노드 ID — 탭 전환 시 중심점 (focusTargetId와 무관)
@@ -454,18 +453,13 @@ export function FamilyTreeView() {
         />
       )}
 
-      {selectedPerson && (selectedPerson.is_pet ? (
-        <PetDetail
-          pet={selectedPerson}
-          onClose={() => selectPerson(null)}
-        />
-      ) : (
+      {selectedPerson && (
         <PersonDetail
           person={selectedPerson}
           onAddFamily={() => setShowAddModal(true)}
           onClose={() => selectPerson(null)}
         />
-      ))}
+      )}
 
       {showAddModal && selectedPerson && (
         <AddPersonModal

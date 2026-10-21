@@ -7,7 +7,6 @@ import { getManAge } from '../utils/age';
 import { DateInput } from './DateInput';
 import { AvatarPicker } from './AvatarPicker';
 import { LS, getCurrentUserName } from '../lib/storageKeys';
-import { AddPetModal } from './AddPetModal';
 import './PersonDetail.css';
 
 interface Props {
@@ -19,8 +18,8 @@ interface Props {
 export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const { persons, relationships, viewpointPersonId, updatePerson, deletePerson, createInvite,
           isPersonMapped, loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
-          updateRelationship, addRelationship, selectPerson,
-          editGrantedPersonIds, loadEditGrantsForPerson, grantEditAccess, revokeEditAccess } = useFamilyStore();
+          updateRelationship, addRelationship,
+          editGrantedPersonIds, loadEditGrantsForPerson, grantEditAccess, revokeEditAccess, tempUnlockAll } = useFamilyStore();
   const root       = persons.find(p => p.is_root === 1)!;
   const chusuBase  = (viewpointPersonId ? persons.find(p => p.id === viewpointPersonId) : null) ?? root;
 
@@ -64,7 +63,6 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [newStatusText, setNewStatusText] = useState('');
   const [photoUrl, setPhotoUrl]     = useState(person.photo_url ?? '');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [showAddPetModal, setShowAddPetModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState('');
@@ -259,7 +257,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
     return false;
   })();
   // 위임받은 편집 권한이 있으면 편집은 가능하되, 추가 위임(부여/회수)은 원 소유자만 가능
-  const canEdit = isOwnerOrCreator || editGrantedPersonIds.has(person.id);
+  const canEdit = isOwnerOrCreator || editGrantedPersonIds.has(person.id) || tempUnlockAll;
   const canManageEditGrants = isOwnerOrCreator;
   const relationName = chusuBase ? getRelationLabel(person.id, chusuBase, persons, relationships) : '';
 
@@ -357,26 +355,12 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               )}
             </div>
           )}
-          {!person.is_pet && persons.some(p => p.is_pet && p.owner_person_id === person.id) && (
-            <div className="detail-meta">
-              {persons.filter(p => p.is_pet && p.owner_person_id === person.id).map(pet => (
-                <span key={pet.id} className="meta-chip" style={{ cursor: 'pointer' }} onClick={() => selectPerson(pet.id)}>
-                  🐾 {pet.name}
-                </span>
-              ))}
-            </div>
-          )}
 
           {canEdit && (
             <div className="detail-action-row">
               <button className="btn-action" onClick={() => setEditing(true)}>
                 <span className="btn-action-icon">✏️</span>편집
               </button>
-              {!person.is_pet && (
-                <button className="btn-action" onClick={() => setShowAddPetModal(true)}>
-                  <span className="btn-action-icon">🐾</span>반려동물 추가
-                </button>
-              )}
               {canManageEditGrants && (
                 <button
                   className={`btn-action ${showGrantSection ? 'active' : ''}`}
@@ -425,7 +409,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
                   {granteeSearch.trim() && (
                     <div className="edit-grant-results">
                       {persons
-                        .filter(p => !p.is_pet && p.id !== person.id
+                        .filter(p => p.id !== person.id
                           && !editGrants.some(g => g.grantee_person_id === p.id)
                           && p.name.includes(granteeSearch.trim()))
                         .slice(0, 8)
@@ -648,14 +632,6 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
           current={photoUrl || null}
           onSelect={url => setPhotoUrl(url ?? '')}
           onClose={() => setShowAvatarPicker(false)}
-        />
-      )}
-
-      {showAddPetModal && (
-        <AddPetModal
-          targetPerson={person}
-          onClose={() => setShowAddPetModal(false)}
-          onDone={() => setShowAddPetModal(false)}
         />
       )}
     </div>

@@ -95,7 +95,8 @@ export function AdminView({ onLogout }: Props) {
           listFamilies, toggleFamilyStatus, deleteFamily,
           listMembers, mapMemberToPerson, deleteMember,
           loginMember, linkGoogleToMember, unlinkGoogleFromMember,
-          loadPasswordResetRequests, approvePasswordResetRequest, rejectPasswordResetRequest } = useFamilyStore();
+          loadPasswordResetRequests, approvePasswordResetRequest, rejectPasswordResetRequest,
+          tempUnlockAll, setTempUnlockAll } = useFamilyStore();
 
   const [requests, setRequests]           = useState<ApprovalRequest[]>([]);
   const [resetRequests, setResetRequests] = useState<import('../types').PasswordResetRequest[]>([]);
@@ -103,6 +104,7 @@ export function AdminView({ onLogout }: Props) {
   const [members,  setMembers]      = useState<Member[]>([]);
   const [loading,  setLoading]      = useState(true);
   const [actionMsg, setActionMsg]   = useState('');
+  const [tempUnlockLoading, setTempUnlockLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<FamilyInfo | null>(null);
   // 매핑 UI
   const [mappingMember, setMappingMember]     = useState<Member | null>(null);
@@ -230,6 +232,17 @@ export function AdminView({ onLogout }: Props) {
   }, []);
 
   const flash = (msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(''), 3000); };
+
+  const handleToggleTempUnlock = async () => {
+    setTempUnlockLoading(true);
+    try {
+      const next = !tempUnlockAll;
+      await setTempUnlockAll(next);
+      flash(next ? '🔓 임시 권한 해제 — 모든 정보공개·편집 권한이 전체 허용됩니다.' : '🔒 임시 권한 해제 종료 — 기존 권한 정책으로 복귀합니다.');
+    } finally {
+      setTempUnlockLoading(false);
+    }
+  };
 
   const handleAdminLinkGoogle = async () => {
     setGoogleLinkMsg(null);
@@ -558,6 +571,22 @@ export function AdminView({ onLogout }: Props) {
       {actionMsg && <div className="admin-msg">{actionMsg}</div>}
 
       <div className="admin-body">
+
+        {/* 임시 권한 해제 */}
+        <section className={`admin-section ${tempUnlockAll ? 'section-urgent' : ''}`}>
+          <h2>🔓 임시 권한 해제</h2>
+          <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 12px' }}>
+            켜면 전체 노드에 대한 모든 정보공개 요청이 자동 승인되고, 모든 인물의 편집 권한이 전체 회원에게 허용됩니다.
+            끄면 기존 정보공개 요청 승인 정책과 편집 권한 부여 정책으로 돌아갑니다.
+          </p>
+          <button
+            className={tempUnlockAll ? 'btn-disable' : 'btn-enable'}
+            disabled={tempUnlockLoading}
+            onClick={handleToggleTempUnlock}
+          >
+            {tempUnlockLoading ? '처리 중...' : tempUnlockAll ? '🔓 켜짐 — 끄기' : '🔒 꺼짐 — 켜기'}
+          </button>
+        </section>
 
         {/* 승인 대기 — 최우선 */}
         <section className={`admin-section ${requests.length > 0 ? 'section-urgent' : ''}`}>

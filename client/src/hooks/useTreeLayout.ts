@@ -280,9 +280,11 @@ export function canSeeFull(
   viewpointPersonId: string | null,
   root: Person | undefined,
   grantedPersonIds?: Set<string>,
-  relationships?: Relationship[]
+  relationships?: Relationship[],
+  tempUnlockAll?: boolean
 ): boolean {
   if (!currentUser) return true;
+  if (tempUnlockAll) return true;
 
   // 내 노드 — viewpointPersonId(비루트) 또는 MY_PERSON_ID(루트 포함) 로 판정
   const myPersonId = localStorage.getItem('familyTreeMyPersonId');
@@ -326,7 +328,8 @@ export function useTreeLayout(
   activeBranch: BranchType,
   viewpointPersonId: string | null = null,
   currentUserName: string | null = null,
-  grantedPersonIds?: Set<string>
+  grantedPersonIds?: Set<string>,
+  tempUnlockAll?: boolean
 ) {
   return useMemo(() => {
     const root = persons.find(p => p.is_root === 1);
@@ -337,16 +340,6 @@ export function useTreeLayout(
 
     // 빠른 조회용: personId → Person
     const personById = new Map(persons.map(p => [p.id, p]));
-
-    // 주인 personId → 반려동물 목록 (관계 그래프에 포함되지 않으므로 배지로만 표시)
-    const petsByOwner = new Map<string, Person[]>();
-    for (const p of persons) {
-      if (p.is_pet && p.owner_person_id) {
-        const list = petsByOwner.get(p.owner_person_id) ?? [];
-        list.push(p);
-        petsByOwner.set(p.owner_person_id, list);
-      }
-    }
 
     // ── Step 1: Build GLOBAL group map (1:N, supports polygamy) ─────────────────
     // Must run BEFORE branch filtering so we can pull in spouses that aren't
@@ -648,8 +641,7 @@ export function useTreeLayout(
             persons: u.persons,
             chusus: u.persons.map(p => getChusu(p.id, chusuBase, relationships)),
             hiddenDescendants: hiddenDesc,
-            anons: u.persons.map(p => !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships)),
-            pets: u.persons.map(p => petsByOwner.get(p.id) ?? []),
+            anons: u.persons.map(p => !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships, tempUnlockAll)),
           },
         };
       }
@@ -665,8 +657,7 @@ export function useTreeLayout(
           chusu: getChusu(p.id, chusuBase, relationships),
           isRoot: p.is_root === 1,
           hiddenDescendants: hiddenDesc,
-          anon: !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships),
-          pets: petsByOwner.get(p.id) ?? [],
+          anon: !canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships, tempUnlockAll),
         },
       };
     });
@@ -707,5 +698,5 @@ export function useTreeLayout(
     }
 
     return { nodes, edges };
-  }, [persons, relationships, activeBranch, viewpointPersonId, currentUserName, grantedPersonIds]);
+  }, [persons, relationships, activeBranch, viewpointPersonId, currentUserName, grantedPersonIds, tempUnlockAll]);
 }

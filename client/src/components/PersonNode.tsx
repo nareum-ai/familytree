@@ -11,18 +11,12 @@ interface PersonNodeData {
   isRoot: boolean;
   hiddenDescendants?: number;
   anon?: boolean;
-  pets?: Person[];
 }
 
 
 export const PersonNode = memo(({ data, selected }: NodeProps) => {
-  const { person, chusu, isRoot, hiddenDescendants, anon, pets } = data as unknown as PersonNodeData;
-  const { viewpointPersonId, selectPerson } = useFamilyStore();
-
-  const handlePetBadgeClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (pets && pets.length > 0) selectPerson(pets[0].id);
-  };
+  const { person, chusu, isRoot, hiddenDescendants, anon } = data as unknown as PersonNodeData;
+  const { viewpointPersonId } = useFamilyStore();
 
   const initial = person.name?.[0] ?? '?';
   const isMale = person.gender === 'male';
@@ -41,9 +35,6 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
         <div className="person-name anon-name">비공개</div>
         <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
         {hiddenDescendants ? <div className="hidden-badge">▼ {hiddenDescendants}명</div> : null}
-        {pets && pets.length > 0 && (
-          <div className="pet-badge" onClick={handlePetBadgeClick}>🐾{pets.length > 1 ? pets.length : ''}</div>
-        )}
       </div>
     );
   }
@@ -76,9 +67,6 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
       {hiddenDescendants ? (
         <div className="hidden-badge">▼ {hiddenDescendants}명</div>
       ) : null}
-      {pets && pets.length > 0 && (
-        <div className="pet-badge" onClick={handlePetBadgeClick}>🐾{pets.length > 1 ? pets.length : ''}</div>
-      )}
     </div>
   );
 });

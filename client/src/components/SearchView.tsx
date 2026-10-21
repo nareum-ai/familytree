@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function SearchView({ onClose }: Props) {
-  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds } = useFamilyStore();
+  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds, tempUnlockAll } = useFamilyStore();
   const [query, setQuery] = useState('');
 
   const root     = persons.find(p => p.is_root === 1);
@@ -32,9 +32,9 @@ export function SearchView({ onClose }: Props) {
     persons.filter(p => {
       const branches = classifyBranch(p.id, persons, relationships);
       if (!branches.some(b => (accessibleBranches as string[]).includes(b))) return false;
-      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships);
+      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships, tempUnlockAll);
     }),
-  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds]);
+  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds, tempUnlockAll]);
 
   const results = useMemo(() => {
     const base = visiblePersons;

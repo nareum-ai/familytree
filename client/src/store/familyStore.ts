@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -36,7 +37,7 @@ async function lookupInfoHolder(targetPersonId: string, persons: Person[]) {
   if (!holderSnap.empty) {
     const d = holderSnap.docs[0];
     holderMemberId = d.id;
-    holderName     = d.data().username as string;
+    holderName     = (d.data().person_name as string | null) ?? (d.data().username as string);
     holderIsAdmin  = d.data().is_admin === true;
   }
 
@@ -48,7 +49,7 @@ async function lookupInfoHolder(targetPersonId: string, persons: Person[]) {
     if (!creatorSnap.empty) {
       const d = creatorSnap.docs[0];
       holderMemberId = d.id;
-      holderName     = target.created_by;
+      holderName     = (d.data().person_name as string | null) ?? target.created_by;
       holderIsAdmin  = d.data().is_admin === true;
     } else {
       holderName = target.created_by;
@@ -73,6 +74,10 @@ interface FamilyState {
   loading: boolean;
   focusRequest: { personId: string; branchId: BranchType } | null;
   infoRequestPersonId: string | null;
+
+  // 임시 권한 해제 (관리자 토글)
+  tempUnlockAll: boolean;
+  setTempUnlockAll: (value: boolean) => Promise<void>;
 
   init: () => () => void;
   setViewpoint: (id: string | null) => void;
@@ -156,12 +161,23 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   infoRequestPersonId: null,
   grantedPersonIds: new Set<string>(),
   editGrantedPersonIds: new Set<string>(),
+  tempUnlockAll: false,
+
+  setTempUnlockAll: async (value) => {
+    await setDoc(doc(db, 'settings', 'permissions'), { tempUnlockAll: value }, { merge: true });
+    set({ tempUnlockAll: value });
+  },
 
   init: () => {
+    // 임시 권한 해제 설정 — 가족 데이터와 무관하게 항상 구독
+    const unsubPermissions = onSnapshot(doc(db, 'settings', 'permissions'), (snap) => {
+      set({ tempUnlockAll: snap.exists() ? !!snap.data().tempUnlockAll : false });
+    });
+
     const familyId = get().currentFamilyId;
     if (!familyId) {
       set({ loading: false });
-      return () => {};
+      return unsubPermissions;
     }
 
     const timeout = setTimeout(() => set({ loading: false }), 8000);
@@ -382,7 +398,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       }
     })();
 
-    return () => { clearTimeout(timeout); unsub1(); unsub2(); };
+    return () => { clearTimeout(timeout); unsub1(); unsub2(); unsubPermissions(); };
   },
 
   setViewpoint: (id) => {
@@ -416,9 +432,6 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       phone:       personData.phone  ?? null,
       email:       personData.email  ?? null,
       recent_status: personData.recent_status ?? null,
-      is_pet:           personData.is_pet ?? false,
-      species:          personData.species ?? null,
-      owner_person_id:  personData.owner_person_id ?? null,
     };
     const ref = await addDoc(collection(db, 'persons'), fields);
     const actorName = localStorage.getItem(LS_USER_KEY) ?? '알 수 없음';
@@ -576,8 +589,9 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
 
     const { holderMemberId, holderName, holderIsAdmin } = await lookupInfoHolder(targetPersonId, persons);
 
+    // 임시 권한 해제 중이면 → 즉시 자동 승인
     // 권한자가 관리자이거나 없으면 → 즉시 자동 승인
-    if (!holderMemberId || holderIsAdmin) {
+    if (!holderMemberId || holderIsAdmin || get().tempUnlockAll) {
       // 단일 where로 중복 체크 (복합 인덱스 불필요)
       const accessSnap = await getDocs(
         query(collection(db, 'info_access'), where('requester_member_id', '==', memberId))

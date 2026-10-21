@@ -21,9 +21,6 @@ export interface Person {
   phone?: string | null;
   email?: string | null;
   recent_status?: RecentStatus[] | null;  // 근황 (최신순 최대 3개 유지)
-  is_pet?: boolean;                  // 반려동물 여부
-  species?: string | null;           // 반려동물 종류 (예: 강아지, 고양이)
-  owner_person_id?: string | null;   // 반려동물의 주인 Person ID
 }
 
 export interface RecentStatus {

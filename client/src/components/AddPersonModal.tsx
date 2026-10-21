@@ -44,19 +44,22 @@ export function AddPersonModal({ targetPerson, onClose, onDone }: Props) {
     r.type === 'parent_child' && r.person2_id === targetPerson.id &&
     persons.find(p => p.id === r.person1_id)?.gender === 'female'
   );
-  const hasPrimarySpouse = relationships.some(r => {
+  // 모달이 열려 있는 동안 relationships/persons 스냅샷이 갱신되며 값이 바뀌면
+  // 다처 확인창이 떴다가 곧바로 사라지는 깜빡임이 생긴다. 모달을 연 시점의
+  // 값으로 고정해 모달 수명 동안 일관되게 유지한다.
+  const [hasPrimarySpouse] = useState(() => relationships.some(r => {
     if (r.type !== 'spouse') return false;
     if (r.person1_id !== targetPerson.id && r.person2_id !== targetPerson.id) return false;
     if (!r.is_primary) return false;
     const spouseId = r.person1_id === targetPerson.id ? r.person2_id : r.person1_id;
     return persons.some(p => p.id === spouseId);
-  });
-  const hasAnySpouse = relationships.some(r => {
+  }));
+  const [hasAnySpouse] = useState(() => relationships.some(r => {
     if (r.type !== 'spouse') return false;
     if (r.person1_id !== targetPerson.id && r.person2_id !== targetPerson.id) return false;
     const spouseId = r.person1_id === targetPerson.id ? r.person2_id : r.person1_id;
     return persons.some(p => p.id === spouseId);
-  });
+  }));
   const hasParents = relationships.some(r =>
     r.type === 'parent_child' && r.person2_id === targetPerson.id
   );

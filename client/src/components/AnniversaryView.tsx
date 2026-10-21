@@ -75,7 +75,7 @@ function AnniversaryRow({
 }
 
 export function AnniversaryView({ onClose }: Props) {
-  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds, saveFcmToken } = useFamilyStore();
+  const { persons, relationships, viewpointPersonId, requestFocus, grantedPersonIds, tempUnlockAll, saveFcmToken } = useFamilyStore();
   const root       = persons.find(p => p.is_root === 1);
   const mePersonId = viewpointPersonId ?? root?.id;
   const currentUserName = getCurrentUserName();
@@ -123,16 +123,16 @@ export function AnniversaryView({ onClose }: Props) {
       const branches = classifyBranch(p.id, persons, relationships);
       if (!branches.some(b => (accessibleBranches as string[]).includes(b))) return false;
       // 비공개 노드는 기념일에서 제외
-      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships);
+      return canSeeFull(p, currentUserName, viewpointPersonId, root, grantedPersonIds, relationships, tempUnlockAll);
     }),
-  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds]);
+  [persons, relationships, accessibleBranches, currentUserName, viewpointPersonId, root, grantedPersonIds, tempUnlockAll]);
 
   // 촌수 계산 기준: 뷰포인트 인물 (없으면 root)
   const chusuBasePerson = mePersonId ? persons.find(p => p.id === mePersonId) : root;
 
   useEffect(() => {
     setLoading(true);
-    buildAnniversaries(visiblePersons, relationships, chusuBasePerson, persons).then(result => {
+    buildAnniversaries(visiblePersons, relationships, chusuBasePerson).then(result => {
       setItems(result);
       setLoading(false);
     });

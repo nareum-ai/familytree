@@ -10,16 +10,14 @@ interface CoupleNodeData {
   chusus: (number | null)[];
   hiddenDescendants?: number;
   anons?: boolean[];
-  pets?: Person[][];
 }
 
 
 function HexAvatar({
-  person, chusu, selected, showME, anon, pets, onClick, onPetBadgeClick,
+  person, chusu, selected, showME, anon, onClick,
 }: {
   person: Person; chusu: number | null; selected: boolean; showME: boolean;
-  anon: boolean; pets: Person[]; onClick: (e: React.MouseEvent) => void;
-  onPetBadgeClick: (e: React.MouseEvent) => void;
+  anon: boolean; onClick: (e: React.MouseEvent) => void;
 }) {
   const isMale = person.gender === 'male';
   const deceased = person.is_deceased;
@@ -32,9 +30,6 @@ function HexAvatar({
           <div className="chex-shape anon-hex"><span className="anon-icon">🔒</span></div>
         </div>
         <div className="chex-name anon-name">비공개</div>
-        {pets.length > 0 && (
-          <div className="pet-badge" onClick={onPetBadgeClick}>🐾{pets.length > 1 ? pets.length : ''}</div>
-        )}
       </div>
     );
   }
@@ -61,15 +56,12 @@ function HexAvatar({
             : `(${getManAge(person.birth_date)})`}
         </div>
       )}
-      {pets.length > 0 && (
-        <div className="pet-badge" onClick={onPetBadgeClick}>🐾{pets.length > 1 ? pets.length : ''}</div>
-      )}
     </div>
   );
 }
 
 export const CoupleNode = memo(({ data }: { data: unknown }) => {
-  const { persons, chusus, hiddenDescendants, anons, pets } = data as CoupleNodeData;
+  const { persons, chusus, hiddenDescendants, anons } = data as CoupleNodeData;
   const { selectedPersonId, selectPerson, viewpointPersonId, openInfoRequest } = useFamilyStore();
 
   const toggle = (id: string, isAnon: boolean) => (e: React.MouseEvent) => {
@@ -79,11 +71,6 @@ export const CoupleNode = memo(({ data }: { data: unknown }) => {
     } else {
       selectPerson(selectedPersonId === id ? null : id);
     }
-  };
-
-  const petBadgeClick = (ownerPets: Person[]) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (ownerPets.length > 0) selectPerson(ownerPets[0].id);
   };
 
   const n = persons.length;
@@ -101,9 +88,7 @@ export const CoupleNode = memo(({ data }: { data: unknown }) => {
             selected={selectedPersonId === p.id}
             showME={viewpointPersonId ? viewpointPersonId === p.id : p.is_root === 1}
             anon={!!(anons?.[i])}
-            pets={pets?.[i] ?? []}
-            onClick={toggle(p.id, !!(anons?.[i]))}
-            onPetBadgeClick={petBadgeClick(pets?.[i] ?? [])} />
+            onClick={toggle(p.id, !!(anons?.[i]))} />
         ))}
       </div>
 

@@ -131,7 +131,7 @@
 }
 .btn-delete-sm:hover { background: #fff5f5; border-color: #e53e3e; }
 
-/* 통일된 관리 액션 그룹 (편집 / 반려동물 추가 / 권한 관리 / 삭제) */
+/* 통일된 관리 액션 그룹 (편집 / 권한 관리 / 삭제) */
 .detail-action-row {
   display: flex;
   flex-wrap: wrap;
