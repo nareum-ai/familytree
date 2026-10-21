@@ -85,7 +85,7 @@ export async function requestPasswordReset(
   const data = memberDoc.data();
   if ((data.person_name ?? '') !== personName) return { ok: false, notFound: false };
 
-  // 생년월일/이메일은 연결된 persons 문서에서 확인
+  // 생년월일/이메일은 연결된 persons 문서에서 확인 (생년월일 미등록이면 빈 값끼리 일치)
   if (!data.person_id) return { ok: false, notFound: false };
   const personSnap = await getDoc(doc(db, 'persons', data.person_id as string));
   if (!personSnap.exists()) return { ok: false, notFound: false };

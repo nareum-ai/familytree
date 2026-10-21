@@ -27,7 +27,10 @@ export function ForgotPasswordScreen({ onBack }: Props) {
     setError('');
     if (!username.trim())   { setError('아이디를 입력해주세요.'); return; }
     if (!personName.trim()) { setError('이름을 입력해주세요.'); return; }
-    if (!birthDate)         { setError('생년월일을 입력해주세요.'); return; }
+    // 생년월일은 가계도에 등록한 경우에만 확인 — 비워두면 미등록과 일치하는지로 판단
+    if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      setError('생년월일을 YYYY-MM-DD 형식으로 입력해주세요.'); return;
+    }
     if (!email.trim())      { setError('이메일을 입력해주세요.'); return; }
 
     setLoading(true);
@@ -145,7 +148,9 @@ export function ForgotPasswordScreen({ onBack }: Props) {
             placeholder="이름 (가계도에 등록된 이름)"
             maxLength={30}
           />
-          <DateInput value={birthDate} onChange={setBirthDate} max={todayStr()} />
+          <p className="reg-optional-label">생년월일 (가계도에 등록한 경우만 입력, 없으면 비워두세요)</p>
+          <DateInput value={birthDate} onChange={setBirthDate} max={todayStr()} placeholder="생년월일 YYYY-MM-DD" />
+          <p className="reg-optional-label">이메일 (가계도 내 정보에 등록한 이메일)</p>
           <input
             className="login-input"
             type="email"
@@ -169,6 +174,15 @@ export function ForgotPasswordScreen({ onBack }: Props) {
           <button className="login-btn" type="submit" disabled={loading}>
             {loading ? '확인 중...' : '비밀번호 초기화 링크 받기'}
           </button>
+          {!error && (
+            <button
+              type="button"
+              className="login-forgot-btn"
+              onClick={() => setStep('fallback')}
+            >
+              이메일을 등록하지 않았다면? 관리자에게 초기화 요청
+            </button>
+          )}
           <button type="button" className="reg-back-btn" onClick={onBack}>
             로그인으로 돌아가기
           </button>
