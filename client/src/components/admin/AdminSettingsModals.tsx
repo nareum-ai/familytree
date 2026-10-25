@@ -143,7 +143,7 @@ export function AlarmDiagModal({ onClose }: { onClose: () => void }) {
       <p style={{ fontSize: 12, color: '#9C907C', margin: '0 0 16px' }}>
         관리자 앱(PWA)에서 알림을 받으려면 토큰을 등록하세요.
       </p>
-      <FcmDebugPanel field="fcm_token_admin" />
+      <FcmDebugPanel scope="admin" />
       <div className="confirm-actions" style={{ marginTop: 16 }}>
         <button className="btn-cancel-confirm" onClick={onClose}>닫기</button>
       </div>

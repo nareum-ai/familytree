@@ -1,5 +1,5 @@
 /** 회원 인증·계정 관련 Firestore 작업 (store 상태와 무관) */
-import { addDoc, collection, deleteDoc, doc, getDoc, updateDoc, where } from 'firebase/firestore';
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, updateDoc, where } from 'firebase/firestore';
 import { signInWithPopup } from 'firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { auth, db, googleProvider } from '../lib/firebase';
@@ -141,10 +141,12 @@ export async function signInWithGoogle(): Promise<GoogleUser | null> {
   }
 }
 
-/** 구글 로그인 후 연결된 회원 조회 (없으면 member: null). 팝업 취소 시 null */
-export async function loginWithGoogle(): Promise<{ member: Member | null; googleUid: string; googleEmail: string; displayName: string } | null> {
+/** 구글 로그인 후 연결된 회원 조회 (없으면 member: null). 팝업 취소 시 null
+ *  onAuthenticated: 계정 선택이 끝나 회원 조회를 시작하는 시점 (로딩 화면 전환용) */
+export async function loginWithGoogle(onAuthenticated?: () => void): Promise<{ member: Member | null; googleUid: string; googleEmail: string; displayName: string } | null> {
   const google = await signInWithGoogle();
   if (!google) return null;
+  onAuthenticated?.();
   const snap = await findDocs('members', where('google_uid', '==', google.uid));
   return {
     member: snap.empty ? null : toMember(snap.docs[0]),
@@ -189,23 +191,56 @@ export function unlinkGoogleFromMember(memberId: string) {
 
 // ── 기기·접속 기록 ────────────────────────────────────────────────────────────
 
-export async function saveFcmToken(memberId: string, token: string, field = 'fcm_token') {
-  // 같은 토큰이 다른 멤버에 등록돼 있으면 제거
-  const dup = await findDocs('members', where(field, '==', token));
-  for (const d of dup.docs) {
-    if (d.id !== memberId) await updateMember(d.id, { [field]: null });
-  }
-  await updateMember(memberId, { [field]: token });
+export type PushScope = 'user' | 'admin';
+
+/** 기기 토큰 저장 필드 — 배열(다중 기기) + 구버전 단일 필드(하위호환) */
+export function fcmTokenFields(scope: PushScope) {
+  return scope === 'admin'
+    ? { arr: 'fcm_tokens_admin', legacy: 'fcm_token_admin' }
+    : { arr: 'fcm_tokens',       legacy: 'fcm_token' };
+}
+
+/**
+ * 현재 기기 FCM 토큰을 회원 문서에 추가한다 (기존 기기 토큰은 유지).
+ * - 같은 토큰이 다른 회원에 있으면 그쪽에서 제거 (기기를 다른 계정이 쓰게 된 경우)
+ * - 이 기기의 이전 토큰(prevToken)이 바뀌었으면 제거 (중복 수신 방지)
+ */
+export async function saveFcmToken(memberId: string, token: string, scope: PushScope = 'user', prevToken?: string | null) {
+  const { arr, legacy } = fcmTokenFields(scope);
+  const [dupArr, dupLegacy] = await Promise.all([
+    findDocs('members', where(arr, 'array-contains', token)),
+    findDocs('members', where(legacy, '==', token)),
+  ]);
+  for (const d of dupArr.docs)    if (d.id !== memberId) await updateMember(d.id, { [arr]: arrayRemove(token) });
+  for (const d of dupLegacy.docs) if (d.id !== memberId) await updateMember(d.id, { [legacy]: null });
+
+  // 같은 필드에 arrayRemove·arrayUnion을 한 번에 쓸 수 없어 2회로 나눈다
+  if (prevToken && prevToken !== token) await updateMember(memberId, { [arr]: arrayRemove(prevToken) });
+  await updateMember(memberId, {
+    [arr]: arrayUnion(token),
+    [legacy]: token,
+    fcm_tokens_updated_at: nowIso(),
+  });
+}
+
+/** 서버 테스트 푸시 요청 — Functions(onPushTestCreated)가 발송 후 결과를 문서에 기록 */
+export async function requestServerPushTest(memberId: string, scope: PushScope = 'user') {
+  const ref = await addDoc(collection(db, 'push_tests'), {
+    member_id: memberId, scope, created_at: nowIso(), done: false,
+  });
+  return ref.id;
 }
 
 export async function recordLogin(memberId: string) {
   const now = nowIso();
-  await updateMember(memberId, { last_login_at: now });
-  await addDoc(collection(db, 'login_logs'), {
-    member_id:    memberId,
-    logged_in_at: now,
-    user_agent:   navigator.userAgent,
-  });
+  await Promise.all([
+    updateMember(memberId, { last_login_at: now }),
+    addDoc(collection(db, 'login_logs'), {
+      member_id:    memberId,
+      logged_in_at: now,
+      user_agent:   navigator.userAgent,
+    }),
+  ]);
 }
 
 // ── 가족집단 신청 ─────────────────────────────────────────────────────────────
@@ -257,9 +292,13 @@ export async function submitFamilyGroupRequest(
 
 // ── 초대·가족 상태 ────────────────────────────────────────────────────────────
 
+/** 초대 사용 처리 — 삭제하지 않고 used_at을 남겨, 같은 링크로 다시 들어왔을 때 '이미 가입됨'으로 안내 */
 export async function consumeInviteToken(token: string) {
   const snap = await findDocs('invites', where('token', '==', token));
-  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+  await Promise.all(snap.docs.map(d => updateDoc(d.ref, {
+    used_at: nowIso(),
+    used_by_member_id: getMemberId() ?? null,
+  })));
 }
 
 export async function mapMemberToPerson(memberId: string, personId: string, familyId: string, personName: string) {

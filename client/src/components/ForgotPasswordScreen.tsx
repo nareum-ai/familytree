@@ -95,7 +95,7 @@ export function ForgotPasswordScreen({ onBack }: Props) {
               placeholder="관리자에게 전달할 메시지 (선택) — 예: 홍재억의 딸입니다."
               maxLength={300}
               rows={3}
-              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 14 }}
+              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 'var(--fs-14)' }}
             />
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>

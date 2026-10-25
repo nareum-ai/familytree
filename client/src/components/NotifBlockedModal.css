@@ -24,12 +24,12 @@
 }
 
 .nb-top-icon {
-  font-size: 44px;
+  font-size: var(--fs-44);
   line-height: 1;
 }
 
 .nb-title {
-  font-size: 20px;
+  font-size: var(--fs-20);
   font-weight: 800;
   color: var(--text);
   margin: 0;
@@ -38,7 +38,7 @@
 }
 
 .nb-desc {
-  font-size: 15px;
+  font-size: var(--fs-15);
   color: var(--text-2);
   margin: 0;
   line-height: 1.6;
@@ -64,7 +64,7 @@
 }
 
 .nb-step-num {
-  font-size: 17px;
+  font-size: var(--fs-17);
   font-weight: 800;
   color: var(--pri);
   flex-shrink: 0;
@@ -72,12 +72,12 @@
 }
 
 .nb-step-icon {
-  font-size: 20px;
+  font-size: var(--fs-20);
   flex-shrink: 0;
 }
 
 .nb-step-text {
-  font-size: 15px;
+  font-size: var(--fs-15);
   font-weight: 600;
   color: var(--text);
   line-height: 1.4;
@@ -91,7 +91,7 @@
   border: none;
   border-radius: 12px;
   padding: 14px;
-  font-size: 16px;
+  font-size: var(--fs-16);
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
@@ -113,7 +113,7 @@
   border: 1.5px solid var(--border);
   border-radius: 12px;
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--fs-15);
   font-weight: 600;
   color: var(--text-3);
   cursor: pointer;
@@ -123,7 +123,7 @@
 .nb-btn-later:hover { border-color: var(--text-4); }
 
 .nb-install-hint {
-  font-size: 13px;
+  font-size: var(--fs-13);
   color: var(--text-2);
   background: var(--pri-bg-2);
   border: 1px solid var(--pri-bg);

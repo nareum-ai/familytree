@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { isIOS as detectIOS, isStandalone as detectStandalone } from '../lib/device';
+import { isIOS as detectIOS, isStandalone as detectStandalone, openInAndroidApp, shouldOfferPlayApp } from '../lib/device';
+import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import { Icon, type IconName } from './Icon';
 
 const GHOST_CLICK_GUARD_MS = 350;
 
 interface Props {
   onClose: () => void;
-  onInstall?: () => void;
 }
 
-export function NotifBlockedModal({ onClose, onInstall }: Props) {
+export function NotifBlockedModal({ onClose }: Props) {
   const isStandalone = detectStandalone();
   const isIOS = detectIOS();
 
@@ -80,17 +80,51 @@ export function NotifBlockedModal({ onClose, onInstall }: Props) {
     );
   }
 
-  // Android 크롬·엣지 → PWA 설치 유도
+  // Android·PC 브라우저 → 설치 없이도 브라우저에서 알림을 받을 수 있다. 사이트 알림 권한 안내
+  //   + Play 스토어 출시 후: Play 앱 / 출시 전: 브라우저가 설치를 지원하면 홈 화면 설치(PWA)
+  const offerPlay = shouldOfferPlayApp();
+  const offerPwa = !offerPlay && !!getInstallPrompt();
   return (
     <div className="nb-overlay" onClick={handleOverlayClick}>
       <div className="nb-modal" onClick={e => e.stopPropagation()}>
-        <div className="nb-top-icon"><Icon name="install" /></div>
-        <h3 className="nb-title">알림을 받으려면 바탕화면에 설치해야 해요</h3>
-        <p className="nb-desc">설치 후 알림을 켜면 기념일을 미리 알려드려요</p>
-        <div className="nb-install-actions">
-          <button className="nb-btn" onClick={() => { onInstall?.(); onClose(); }}>지금 설치하기</button>
-          <button className="nb-btn-later" onClick={onClose}>나중에</button>
+        <div className="nb-top-icon"><Icon name="bell-off" /></div>
+        <h3 className="nb-title">이 브라우저에서 알림이<br/>차단되어 있어요</h3>
+        <div className="nb-steps">
+          <div className="nb-step">
+            <span className="nb-step-num">①</span>
+            <span className="nb-step-icon"><Icon name="gear" /></span>
+            <span className="nb-step-text">주소창 왼쪽 아이콘(사이트 정보)을 탭해요</span>
+          </div>
+          <div className="nb-step">
+            <span className="nb-step-num">②</span>
+            <span className="nb-step-icon"><Icon name="bell" /></span>
+            <span className="nb-step-text">「권한」→「알림」을 「허용」으로 바꿔요</span>
+          </div>
+          <div className="nb-step">
+            <span className="nb-step-num">③</span>
+            <span className="nb-step-icon"><Icon name="phone" /></span>
+            <span className="nb-step-text">페이지를 새로고침하고 알림을 켜요</span>
+          </div>
         </div>
+        {offerPlay ? (
+          <>
+            <p className="nb-desc">또는 Play 스토어 앱을 설치하면<br/>앱 알림으로 더 안정적으로 받을 수 있어요</p>
+            <div className="nb-install-actions">
+              <button className="nb-btn" onClick={() => { openInAndroidApp(); onClose(); }}>Play 스토어 앱으로 받기</button>
+              <button className="nb-btn-later" onClick={onClose}>닫기</button>
+            </div>
+          </>
+        ) : offerPwa ? (
+          <>
+            <p className="nb-desc">홈 화면에 설치해서 앱처럼 쓸 수도 있어요</p>
+            <div className="nb-install-actions">
+              <button className="nb-btn" onClick={() => { triggerInstall(); onClose(); }}>홈 화면에 설치</button>
+              <button className="nb-btn-later" onClick={onClose}>닫기</button>
+            </div>
+          </>
+        ) : (
+          <button className="nb-btn" onClick={onClose}>확인</button>
+        )}
       </div>
     </div>
   );

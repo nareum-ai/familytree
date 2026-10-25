@@ -5,9 +5,10 @@ import { LS, getCurrentUserName } from '../lib/storageKeys';
 import { getMemberId, isAdminContext as checkAdminContext } from '../lib/session';
 import { isStandalone as checkStandalone } from '../lib/device';
 import { getMemberData } from '../lib/firestore';
-import { enablePushOnDevice, setPushEnabled } from '../lib/pushNotifications';
+import { enablePushOnDevice, isDeviceRegistered, notificationPermission, setPushEnabled } from '../lib/pushNotifications';
 import { changePassword, linkGoogleAccount, unlinkGoogleFromMember } from '../services/authService';
 import { FcmDebugPanel } from './FcmDebugPanel';
+import { PushStatusPanel } from './PushStatusPanel';
 import { NotifBlockedModal } from './NotifBlockedModal';
 import { GoogleIcon } from './GoogleIcon';
 import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
@@ -54,6 +55,9 @@ export function MyMenuView({ onClose }: Props) {
   const [showNotifBlocked, setShowNotifBlocked] = useState(false);
   const [notifTestPrompt, setNotifTestPrompt] = useState(false);
   const notifDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+  // 설정값이 켜져 있어도 이 기기에 권한·토큰이 없으면 실제로는 못 받는다 → OFF로 표시
+  const [deviceReady, setDeviceReady] = useState(isDeviceRegistered);
+  const notifOn = !!notifEnabled && deviceReady;
 
   const username = getCurrentUserName() ?? '';
 
@@ -164,8 +168,8 @@ export function MyMenuView({ onClose }: Props) {
     if (notifLoading || notifEnabled === null) return;
     const memberId = getMemberId();
     if (!memberId) return;
-    const turningOn = !notifEnabled;
-    if (turningOn && Notification.permission === 'denied') {
+    const turningOn = !notifOn;
+    if (turningOn && (typeof Notification === 'undefined' || Notification.permission === 'denied')) {
       setShowNotifBlocked(true);
       return;
     }
@@ -173,7 +177,11 @@ export function MyMenuView({ onClose }: Props) {
     try {
       if (turningOn) {
         const { granted, testShown } = await enablePushOnDevice(memberId);
-        if (!granted) return;
+        if (!granted) {
+          if (notificationPermission() === 'denied') setShowNotifBlocked(true);
+          return;
+        }
+        setDeviceReady(isDeviceRegistered());
         if (testShown) setNotifTestPrompt(true);
       }
       await setPushEnabled(memberId, turningOn);
@@ -349,11 +357,11 @@ export function MyMenuView({ onClose }: Props) {
                 </div>
                 {!notifDenied && (
                   <button
-                    className={`my-notif-toggle ${notifEnabled ? 'on' : ''}`}
+                    className={`my-notif-toggle ${notifOn ? 'on' : ''}`}
                     onClick={handleNotifToggle}
                     disabled={notifLoading || notifEnabled === null}
                   >
-                    {notifLoading || notifEnabled === null ? '...' : notifEnabled ? 'ON' : 'OFF'}
+                    {notifLoading || notifEnabled === null ? '...' : notifOn ? 'ON' : 'OFF'}
                   </button>
                 )}
                 {notifDenied && (
@@ -385,12 +393,15 @@ export function MyMenuView({ onClose }: Props) {
               </div>
             )}
 
+            {/* 수신 상태 · 서버 테스트 · Play 스토어 앱 */}
+            {getMemberId() && <PushStatusPanel key={deviceReady ? 'r' : 'n'} memberId={getMemberId()!} />}
+
             {/* 알림 진단 */}
             <FcmDebugPanel />
           </div>
         )}
 
-        {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} onInstall={hasInstallPrompt ? handleInstall : undefined} />}
+        {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} />}
 
         {/* 문의 · 탈퇴 안내 */}
         <div className="my-contact-footer">
@@ -401,7 +412,7 @@ export function MyMenuView({ onClose }: Props) {
           </p>
           {adminEmail
             ? <a href={`mailto:${adminEmail}?subject=계정 탈퇴 요청`} className="my-contact-email">{adminEmail}</a>
-            : <span className="my-contact-email" style={{ color: '#9C907C' }}>{adminEmailLoading ? '이메일 불러오는 중...' : '관리자에게 직접 연락해 주세요.'}</span>
+            : <span className="my-contact-email" style={{ color: 'var(--text-4)' }}>{adminEmailLoading ? '이메일 불러오는 중...' : '관리자에게 직접 연락해 주세요.'}</span>
           }
         </div>
       </div>

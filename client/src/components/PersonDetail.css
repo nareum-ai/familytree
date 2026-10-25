@@ -38,7 +38,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 28px;
+  font-size: var(--fs-28);
   font-weight: 700;
   color: white;
 }
@@ -56,7 +56,7 @@
 .close-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: var(--fs-18);
   cursor: pointer;
   color: var(--text-4);
   padding: 4px;
@@ -72,7 +72,7 @@
 }
 
 .detail-name {
-  font-size: 22px;
+  font-size: var(--fs-22);
   font-weight: 700;
   color: var(--text);
   margin: 0;
@@ -87,7 +87,7 @@
 .meta-chip {
   background: var(--surface-2);
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 20px;
@@ -111,7 +111,7 @@
   border: 1.5px solid var(--border);
   border-radius: 6px;
   padding: 5px 14px;
-  font-size: 13px;
+  font-size: var(--fs-13);
   cursor: pointer;
   color: var(--text-2);
   transition: all 0.15s;
@@ -124,7 +124,7 @@
   border: 1.5px solid var(--red-border);
   border-radius: 6px;
   padding: 5px 14px;
-  font-size: 13px;
+  font-size: var(--fs-13);
   cursor: pointer;
   color: var(--red);
   transition: all 0.15s;
@@ -147,7 +147,7 @@
   border: 1.5px solid var(--border);
   border-radius: 8px;
   padding: 6px 12px;
-  font-size: 12.5px;
+  font-size: var(--fs-12_5);
   font-weight: 600;
   color: var(--text-2);
   cursor: pointer;
@@ -155,7 +155,7 @@
   font-family: inherit;
   white-space: nowrap;
 }
-.btn-action-icon { font-size: 13px; line-height: 1; }
+.btn-action-icon { font-size: var(--fs-13); line-height: 1; }
 .btn-action:hover { border-color: var(--pri); color: var(--pri); }
 .btn-action.active { border-color: var(--pri); color: var(--pri); background: var(--pri-bg); }
 .btn-action.danger { border-color: var(--red-border); color: var(--red); margin-left: auto; }
@@ -166,7 +166,7 @@
   background: none;
   border: none;
   color: var(--pri);
-  font-size: 12.5px;
+  font-size: var(--fs-12_5);
   font-weight: 600;
   cursor: pointer;
   padding: 2px 0;
@@ -184,7 +184,7 @@
 .deceased-mark {
   color: var(--text-2);
   margin-right: 4px;
-  font-size: 14px;
+  font-size: var(--fs-14);
 }
 
 .deceased-chip {
@@ -211,12 +211,12 @@
 }
 
 .marriage-date {
-  font-size: 11px;
+  font-size: var(--fs-11);
   opacity: 0.85;
 }
 
 .btn-set-primary {
-  font-size: 10px;
+  font-size: var(--fs-10);
   background: transparent;
   border: 1px solid var(--text-4);
   color: var(--text-3);
@@ -241,7 +241,7 @@
   padding: 9px 12px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-14);
   outline: none;
   transition: border-color 0.15s;
   font-family: inherit;
@@ -282,14 +282,14 @@
 }
 
 .recent-status-label {
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--gold-dark);
 }
 
 .recent-status-date {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--fs-11);
   color: var(--gold-dark);
 }
 
@@ -306,7 +306,7 @@
 }
 
 .recent-status-body {
-  font-size: 13px;
+  font-size: var(--fs-13);
   color: var(--text-2);
   white-space: pre-wrap;
   word-break: break-all;
@@ -314,7 +314,7 @@
 }
 
 .recent-status-hint {
-  font-size: 11px;
+  font-size: var(--fs-11);
   font-weight: 400;
   color: var(--text-4);
 }
@@ -339,14 +339,14 @@
 .recent-status-edit-text {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--fs-13);
   color: var(--text-2);
   white-space: pre-wrap;
   word-break: break-all;
 }
 
 .recent-status-edit-date {
-  font-size: 11px;
+  font-size: var(--fs-11);
   font-weight: 400;
   color: var(--text-4);
   white-space: nowrap;
@@ -358,7 +358,7 @@
   background: transparent;
   color: var(--gold);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-12);
   padding: 2px 4px;
 }
 .recent-status-remove-btn:hover { color: var(--red); }
@@ -384,7 +384,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-13);
   color: var(--pri);
   text-decoration: none;
   line-height: 1.4;
@@ -401,7 +401,7 @@
   border: none;
   border-radius: 6px;
   padding: 4px 9px;
-  font-size: 11px;
+  font-size: var(--fs-11);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -421,7 +421,7 @@
 
 .contact-icon {
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--fs-14);
 }
 
 
@@ -437,7 +437,7 @@
   padding: 11px 16px;
   border-radius: 10px;
   border: none;
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -447,7 +447,7 @@
 }
 
 .action-btn .action-icon {
-  font-size: 16px;
+  font-size: var(--fs-16);
 }
 
 .action-btn.primary {
@@ -472,7 +472,7 @@
   gap: 8px;
 }
 .info-req-title {
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--pri);
   margin: 0;
@@ -486,15 +486,15 @@
   border-radius: 8px;
   border: 1px solid var(--pri-bg);
 }
-.info-req-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.info-req-name { font-size: var(--fs-13); font-weight: 600; color: var(--text); }
 .info-req-btns { display: flex; gap: 6px; }
 .info-req-approve {
   background: var(--pri); color: white; border: none;
-  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+  border-radius: 6px; padding: 5px 10px; font-size: var(--fs-12); font-weight: 600; cursor: pointer;
 }
 .info-req-reject {
   background: var(--surface); color: var(--red); border: 1px solid var(--red-border);
-  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+  border-radius: 6px; padding: 5px 10px; font-size: var(--fs-12); font-weight: 600; cursor: pointer;
 }
 
 .edit-grant-section {
@@ -507,14 +507,14 @@
   gap: 8px;
 }
 .edit-grant-desc {
-  font-size: 12px;
+  font-size: var(--fs-12);
   color: var(--text-3);
   margin: 0;
   line-height: 1.5;
 }
 .edit-grant-revoke-btn {
   background: none; border: none; color: var(--text-4); cursor: pointer;
-  font-size: 11px; margin-left: 4px; padding: 0; line-height: 1;
+  font-size: var(--fs-11); margin-left: 4px; padding: 0; line-height: 1;
 }
 .edit-grant-revoke-btn:hover { color: var(--red); }
 .edit-grant-picker {
@@ -522,7 +522,7 @@
 }
 .edit-grant-search-input {
   padding: 9px 12px; border: 1.5px solid var(--border);
-  border-radius: 8px; font-size: 14px; outline: none;
+  border-radius: 8px; font-size: var(--fs-14); outline: none;
 }
 .edit-grant-search-input:focus { border-color: var(--pri); }
 .edit-grant-results {
@@ -531,21 +531,21 @@
 }
 .edit-grant-result-row {
   padding: 9px 12px; background: var(--surface-2); border-radius: 8px;
-  font-size: 13px; font-weight: 600; color: var(--text);
+  font-size: var(--fs-13); font-weight: 600; color: var(--text);
   cursor: pointer; transition: background 0.1s;
 }
 .edit-grant-result-row:hover { background: var(--pri-bg); }
 .edit-grant-cancel-btn {
   align-self: flex-start;
   background: var(--surface); color: var(--text-3); border: 1px solid var(--border);
-  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+  border-radius: 6px; padding: 5px 10px; font-size: var(--fs-12); font-weight: 600; cursor: pointer;
 }
 
 .action-mapped-notice {
   padding: 10px 14px;
   background: var(--surface-2);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--fs-13);
   color: var(--text-3);
   text-align: center;
 }

@@ -18,6 +18,7 @@ const BASE_LS = {
   PENDING_INVITE_TOKEN: 'familyTreePendingInviteToken',
   LAST_ACTIVITY: 'familyTreeLastActivity',
   PWA_INSTALL_DISMISSED: 'pwa_install_dismissed',
+  PUSH_PROMPT_SNOOZED_UNTIL: 'familyTreePushPromptSnoozedUntil',
 } as const;
 
 type LSKey = keyof typeof BASE_LS;

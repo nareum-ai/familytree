@@ -1,7 +1,7 @@
 .invfam-title {
   flex: 1;
   margin: 0;
-  font-size: 17px;
+  font-size: var(--fs-17);
   font-weight: 800;
   color: var(--text);
 }
@@ -9,7 +9,7 @@
 .invfam-desc {
   margin: 0;
   padding: 10px 16px;
-  font-size: 12.5px;
+  font-size: var(--fs-12_5);
   line-height: 1.6;
   color: var(--text-3);
   background: var(--surface-2);
@@ -38,7 +38,7 @@
   border-radius: 999px;
   background: var(--pri);
   color: white;
-  font-size: 13px;
+  font-size: var(--fs-13);
   font-weight: 700;
   cursor: pointer;
 }
@@ -47,21 +47,21 @@
 
 .invfam-creating {
   margin: 0 16px 14px;
-  font-size: 13px;
+  font-size: var(--fs-13);
   color: var(--text-4);
 }
 
 .invfam-section {
   margin: 0;
   padding: 14px 16px 6px;
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--text-4);
 }
 
 .invfam-joined {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--green);
 }

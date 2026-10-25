@@ -9,7 +9,7 @@
 }
 
 .invite-label {
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--pri);
   margin: 0;
@@ -21,7 +21,7 @@
 .invite-expiry {
   font-weight: 500;
   color: var(--pri-light);
-  font-size: 11px;
+  font-size: var(--fs-11);
 }
 
 /* 핵심 안내 문구 */
@@ -35,13 +35,13 @@
 
 .invite-desc-main {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-15);
   color: var(--text-2);
   line-height: 1.7;
 }
 
 .invite-name-highlight {
-  font-size: 22px;
+  font-size: var(--fs-22);
   font-weight: 800;
   color: var(--pri);
   display: block;
@@ -50,7 +50,7 @@
 }
 
 .invite-desc-sub {
-  font-size: 15px;
+  font-size: var(--fs-15);
   color: var(--text-2);
   font-weight: 500;
 }
@@ -62,7 +62,7 @@
 
 .invite-input {
   flex: 1;
-  font-size: 11px;
+  font-size: var(--fs-11);
   padding: 7px 8px;
   border: 1px solid var(--border-pri);
   border-radius: 8px;
@@ -79,7 +79,7 @@
   border: none;
   border-radius: 8px;
   padding: 7px 12px;
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -103,7 +103,7 @@
   padding: 10px 8px;
   border: none;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: var(--fs-13);
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;

@@ -23,10 +23,10 @@
   border-bottom: 1px solid var(--surface-3);
   flex-shrink: 0;
 }
-.avpick-title { font-size: 16px; font-weight: 800; color: var(--text); }
+.avpick-title { font-size: var(--fs-16); font-weight: 800; color: var(--text); }
 .avpick-close {
   background: var(--surface-3); border: none; border-radius: 50%;
-  width: 30px; height: 30px; font-size: 13px;
+  width: 30px; height: 30px; font-size: var(--fs-13);
   cursor: pointer; color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
 }
@@ -39,25 +39,25 @@
   width: 100%; padding: 10px;
   background: var(--pri-bg); color: var(--pri);
   border: 1px solid var(--border-pri); border-radius: 10px;
-  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-size: var(--fs-13); font-weight: 700; cursor: pointer;
   margin-bottom: 10px;
 }
 .avpick-upload:disabled { opacity: 0.6; cursor: default; }
 .avpick-upload-error {
-  font-size: 12px; color: var(--red); margin: -2px 0 12px; text-align: center;
+  font-size: var(--fs-12); color: var(--red); margin: -2px 0 12px; text-align: center;
 }
 
 .avpick-remove {
   width: 100%; padding: 10px;
   background: var(--red-bg); color: var(--red);
   border: 1px solid var(--red-border); border-radius: 10px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-size: var(--fs-13); font-weight: 600; cursor: pointer;
   margin-bottom: 16px;
 }
 
 .avpick-group { margin-bottom: 20px; }
 .avpick-group-label {
-  font-size: 12px; font-weight: 700; color: var(--text-4);
+  font-size: var(--fs-12); font-weight: 700; color: var(--text-4);
   text-transform: uppercase; letter-spacing: 0.5px;
   margin-bottom: 10px;
 }

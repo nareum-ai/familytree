@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { LS } from '../lib/storageKeys';
 
-const IDLE_MS = 10 * 60 * 1000;
+const IDLE_MS = 30 * 60 * 1000;
 
 const EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const;
 

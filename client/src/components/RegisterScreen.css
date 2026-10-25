@@ -2,7 +2,7 @@
   background: none;
   border: none;
   color: var(--pri);
-  font-size: 13px;
+  font-size: var(--fs-13);
   cursor: pointer;
   padding: 6px 0;
   text-decoration: underline;

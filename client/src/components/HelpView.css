@@ -26,16 +26,16 @@
 .help-header-title {
   display: flex; align-items: center; gap: 12px;
 }
-.help-logo { font-size: 32px; }
+.help-logo { font-size: var(--fs-32); }
 .help-header-title h2 {
-  font-size: 18px; font-weight: 800; color: white; margin: 0;
+  font-size: var(--fs-18); font-weight: 800; color: white; margin: 0;
 }
 .help-header-title p {
-  font-size: 12px; color: rgba(255,255,255,0.8); margin: 2px 0 0;
+  font-size: var(--fs-12); color: rgba(255,255,255,0.8); margin: 2px 0 0;
 }
 .help-close {
   background: rgba(255,255,255,0.2); border: none;
-  color: white; font-size: 16px; width: 32px; height: 32px;
+  color: white; font-size: var(--fs-16); width: 32px; height: 32px;
   border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
 }
@@ -68,11 +68,11 @@
 .help-section-header:hover { background: var(--pri-bg-2); }
 .help-section.open .help-section-header { background: var(--pri-bg); }
 
-.help-section-icon { font-size: 20px; flex-shrink: 0; }
+.help-section-icon { font-size: var(--fs-20); flex-shrink: 0; }
 .help-section-title {
-  flex: 1; font-size: 14px; font-weight: 700; color: var(--text);
+  flex: 1; font-size: var(--fs-14); font-weight: 700; color: var(--text);
 }
-.help-chevron { font-size: 10px; color: var(--text-4); flex-shrink: 0; }
+.help-chevron { font-size: var(--fs-10); color: var(--text-4); flex-shrink: 0; }
 
 .help-section-body {
   padding: 4px 16px 16px;
@@ -81,7 +81,7 @@
 
 /* ── 본문 요소들 ──────────────────────────────────────────── */
 .help-para {
-  font-size: 14px; color: var(--text-2); line-height: 1.7;
+  font-size: var(--fs-14); color: var(--text-2); line-height: 1.7;
   margin: 10px 0 8px;
 }
 
@@ -90,7 +90,7 @@
   display: flex; flex-direction: column; gap: 6px;
 }
 .help-list li {
-  font-size: 14px; color: var(--text-2); line-height: 1.6;
+  font-size: var(--fs-14); color: var(--text-2); line-height: 1.6;
 }
 
 .help-steps {
@@ -101,7 +101,7 @@
 .help-steps li {
   position: relative;
   padding-left: 32px;
-  font-size: 14px; color: var(--text-2); line-height: 1.6;
+  font-size: var(--fs-14); color: var(--text-2); line-height: 1.6;
   min-height: 24px;
 }
 .step-num {
@@ -111,11 +111,11 @@
   background: var(--pri); color: white;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800;
+  font-size: var(--fs-11); font-weight: 800;
 }
 
 .help-tip {
-  font-size: 12px; color: var(--pri-dark);
+  font-size: var(--fs-12); color: var(--pri-dark);
   background: var(--pri-bg);
   border-left: 3px solid var(--pri);
   border-radius: 0 8px 8px 0;
@@ -123,7 +123,7 @@
   line-height: 1.6;
 }
 .help-warn {
-  font-size: 12px; color: var(--gold-dark);
+  font-size: var(--fs-12); color: var(--gold-dark);
   background: var(--gold-bg);
   border-left: 3px solid var(--gold);
   border-radius: 0 8px 8px 0;
@@ -141,14 +141,14 @@
 }
 .help-sub-icon {
   flex-shrink: 0;
-  font-size: 20px;
+  font-size: var(--fs-20);
   width: 32px; height: 32px;
   background: var(--pri-bg); border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 800; color: var(--pri);
+  font-size: var(--fs-14); font-weight: 800; color: var(--pri);
 }
-.help-sub > div > b { font-size: 13px; color: var(--text); display: block; margin-bottom: 3px; }
-.help-sub p { font-size: 12px; color: var(--text-2); line-height: 1.6; margin: 0; }
+.help-sub > div > b { font-size: var(--fs-13); color: var(--text); display: block; margin-bottom: 3px; }
+.help-sub p { font-size: var(--fs-12); color: var(--text-2); line-height: 1.6; margin: 0; }
 
 /* 노드 색상 점 */
 .help-node-dot {
@@ -177,7 +177,7 @@
 /* 소제목 */
 .help-label {
   display: block;
-  font-size: 12px; font-weight: 700;
+  font-size: var(--fs-12); font-weight: 700;
   color: var(--pri);
   margin: 14px 0 6px;
   text-transform: uppercase;
@@ -192,13 +192,13 @@
   gap: 6px 10px;
   margin: 8px 0 12px;
 }
-.help-badge-desc { font-size: 12px; color: var(--text-3); }
+.help-badge-desc { font-size: var(--fs-12); color: var(--text-3); }
 
 /* 기념일 뱃지 샘플 — 실제 색상 */
 .badge-sample {
   display: inline-block;
   padding: 2px 10px; border-radius: 20px;
-  font-size: 11px; font-weight: 700;
+  font-size: var(--fs-11); font-weight: 700;
   white-space: nowrap;
 }
 .ann-today { background: var(--red); color: white; }
@@ -214,14 +214,14 @@
   flex-shrink: 0;
 }
 .help-search:focus-within { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(46,94,78,0.12); }
-.help-search-icon { font-size: 14px; opacity: 0.6; }
+.help-search-icon { font-size: var(--fs-14); opacity: 0.6; }
 .help-search-input {
   flex: 1; min-width: 0; border: none; outline: none; background: none;
-  padding: 11px 0; font-size: 15px; color: var(--text);
+  padding: 11px 0; font-size: var(--fs-15); color: var(--text);
 }
 .help-search-clear {
   border: none; background: var(--border); color: var(--text-3);
-  width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer;
+  width: 22px; height: 22px; border-radius: 50%; font-size: var(--fs-11); cursor: pointer;
 }
 
 /* ── 빠른 시작 ───────────────────────────────────────────── */
@@ -230,30 +230,30 @@
   border: 1px solid var(--border-pri); border-radius: 14px;
   padding: 14px 16px;
 }
-.help-quickstart-title { font-size: 14px; font-weight: 800; color: var(--pri-dark); margin: 0 0 10px; }
+.help-quickstart-title { font-size: var(--fs-14); font-weight: 800; color: var(--pri-dark); margin: 0 0 10px; }
 .help-quickstart-list {
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-direction: column; gap: 8px;
 }
 .help-quickstart-list li {
   display: flex; align-items: center; gap: 8px;
-  font-size: 14px; color: var(--text); font-weight: 600;
+  font-size: var(--fs-14); color: var(--text); font-weight: 600;
 }
 .help-quickstart-num {
   width: 20px; height: 20px; border-radius: 50%;
-  background: var(--pri); color: white; font-size: 11px; font-weight: 800;
+  background: var(--pri); color: white; font-size: var(--fs-11); font-weight: 800;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.help-quickstart-icon { font-size: 16px; }
+.help-quickstart-icon { font-size: var(--fs-16); }
 
 /* ── 그룹 ────────────────────────────────────────────────── */
 .help-group { display: flex; flex-direction: column; gap: 8px; }
 .help-group-label {
-  font-size: 12px; font-weight: 700; color: var(--text-3);
+  font-size: var(--fs-12); font-weight: 700; color: var(--text-3);
   margin: 8px 4px 0;
 }
 .help-empty {
-  text-align: center; font-size: 13px; color: var(--text-4); line-height: 1.7;
+  text-align: center; font-size: var(--fs-13); color: var(--text-4); line-height: 1.7;
   padding: 24px 0;
 }
 
@@ -263,12 +263,12 @@
   background: var(--surface); border: 1px dashed var(--border-2); border-radius: 14px;
   text-align: center;
 }
-.help-contact-title { font-size: 14px; font-weight: 800; color: var(--text); margin: 0 0 6px; }
-.help-contact-desc { font-size: 12px; color: var(--text-2); line-height: 1.6; margin: 0; }
-.help-contact-loading { display: inline-block; margin-top: 6px; font-size: 13px; color: var(--text-4); }
+.help-contact-title { font-size: var(--fs-14); font-weight: 800; color: var(--text); margin: 0 0 6px; }
+.help-contact-desc { font-size: var(--fs-12); color: var(--text-2); line-height: 1.6; margin: 0; }
+.help-contact-loading { display: inline-block; margin-top: 6px; font-size: var(--fs-13); color: var(--text-4); }
 .help-contact-link {
   display: inline-block; margin-top: 6px;
-  color: var(--pri); font-weight: 700; font-size: 13px; text-decoration: none;
+  color: var(--pri); font-weight: 700; font-size: var(--fs-13); text-decoration: none;
 }
 .help-contact-link:hover { text-decoration: underline; }
 

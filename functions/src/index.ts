@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getMessaging } from 'firebase-admin/messaging';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { getMessaging, type Message } from 'firebase-admin/messaging';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2';
@@ -20,20 +20,97 @@ const APP_URL  = 'https://familytree-3221b.web.app';
 const APP_NAME = '우리 가족 가계도';
 
 // ── FCM 전송 헬퍼 ─────────────────────────────────────────────────────────
-async function sendPush(token: string, title: string, body: string, link = '/') {
+// 회원 1명이 여러 기기(폰 TWA·PC 브라우저 등)를 쓸 수 있으므로 토큰은 배열로 관리한다.
+//   일반: fcm_tokens[] (+ 구버전 fcm_token)   관리자 PWA: fcm_tokens_admin[] (+ fcm_token_admin)
+// 발송 결과 만료·무효 토큰은 자동 삭제하고, 성공/실패 시각을 회원 문서에 남긴다.
+type PushScope = 'user' | 'admin';
+
+interface PushMsg { title: string; body: string; link?: string; ttlSec?: number; tag?: string; }
+interface PushResult { ok: number; fail: number; tokens: number; }
+
+const DEAD_TOKEN_CODES = new Set([
+  'messaging/registration-token-not-registered',
+  'messaging/invalid-registration-token',
+]);
+
+function tokenFields(scope: PushScope) {
+  return scope === 'admin'
+    ? { arr: 'fcm_tokens_admin', legacy: 'fcm_token_admin' }
+    : { arr: 'fcm_tokens',       legacy: 'fcm_token' };
+}
+
+function memberTokens(data: FirebaseFirestore.DocumentData | undefined, scope: PushScope): string[] {
+  if (!data) return [];
+  const { arr, legacy } = tokenFields(scope);
+  const list: unknown[] = Array.isArray(data[arr]) ? data[arr] : [];
+  if (data[legacy]) list.push(data[legacy]);
+  return [...new Set(list.filter((t): t is string => typeof t === 'string' && t.length > 0))];
+}
+
+function buildMessage(token: string, m: PushMsg): Message {
+  const link = m.link ?? '/';
   const absoluteLink = link.startsWith('http') ? link : `${APP_URL}${link}`;
-  try {
-    const messageId = await fcm.send({
-      token,
-      webpush: {
-        headers: { Urgency: 'high' },
-        data: { title, body, link: absoluteLink },
-      },
-    });
-    console.log(`FCM 전송 성공: ${messageId}`);
-  } catch (err) {
-    console.error('FCM 전송 실패:', (err as Error).message ?? err);
+  const data: Record<string, string> = { title: m.title, body: m.body, link: absoluteLink };
+  if (m.tag) data.tag = m.tag;
+  const headers: Record<string, string> = { Urgency: 'high' };
+  if (m.ttlSec) headers.TTL = String(m.ttlSec);
+  // data-only: 서비스 워커(백그라운드)·onMessage(포그라운드)가 직접 표시
+  return { token, webpush: { headers, data } };
+}
+
+/** 회원의 모든 기기로 메시지(1건 이상) 발송 + 무효 토큰 정리 + 결과 기록 */
+async function pushToMember(
+  ref: FirebaseFirestore.DocumentReference,
+  data: FirebaseFirestore.DocumentData | undefined,
+  scope: PushScope,
+  msgs: PushMsg | PushMsg[],
+): Promise<PushResult> {
+  const list = Array.isArray(msgs) ? msgs : [msgs];
+  const tokens = memberTokens(data, scope);
+  if (tokens.length === 0 || list.length === 0) return { ok: 0, fail: 0, tokens: 0 };
+
+  const messages: Message[] = [];
+  for (const m of list) for (const t of tokens) messages.push(buildMessage(t, m));
+
+  let ok = 0, fail = 0;
+  const dead = new Set<string>();
+  let lastError = '';
+  for (let i = 0; i < messages.length; i += 500) {
+    const chunk = messages.slice(i, i + 500);
+    try {
+      const res = await fcm.sendEach(chunk);
+      res.responses.forEach((r, j) => {
+        if (r.success) { ok++; return; }
+        fail++;
+        const code = r.error?.code ?? '';
+        lastError = code || (r.error?.message ?? 'unknown');
+        if (DEAD_TOKEN_CODES.has(code)) dead.add((chunk[j] as { token: string }).token);
+      });
+    } catch (err) {
+      fail += chunk.length;
+      lastError = (err as Error).message ?? String(err);
+    }
   }
+
+  const { arr, legacy } = tokenFields(scope);
+  const now = new Date().toISOString();
+  const patch: Record<string, unknown> = {};
+  if (ok > 0)   patch.push_last_ok_at = now;
+  if (fail > 0) { patch.push_last_fail_at = now; patch.push_last_error = lastError; }
+  if (dead.size > 0) {
+    patch[arr] = FieldValue.arrayRemove(...dead);
+    if (data?.[legacy] && dead.has(data[legacy] as string)) patch[legacy] = null;
+  }
+  try { await ref.update(patch); } catch (e) { console.error('푸시 결과 기록 실패:', (e as Error).message); }
+
+  console.log(`FCM ${ref.id}: 기기 ${tokens.length}, 성공 ${ok}, 실패 ${fail}, 무효토큰 삭제 ${dead.size}`);
+  return { ok, fail, tokens: tokens.length };
+}
+
+/** 관리자 전원(관리자 PWA 토큰)에게 발송 */
+async function pushToAdmins(msg: PushMsg) {
+  const adminsSnap = await db.collection('members').where('is_admin', '==', true).get();
+  await Promise.all(adminsSnap.docs.map(d => pushToMember(d.ref, d.data(), 'admin', msg)));
 }
 
 // ── 비밀번호 초기화 토큰 생성 → 이메일 자동 발송 ─────────────────────────────
@@ -84,22 +161,11 @@ export const onPasswordResetRequestCreated = onDocumentCreated(
     const data = event.data?.data();
     if (!data || data.status !== 'pending') return;
 
-    const adminsSnap = await db.collection('members')
-      .where('is_admin', '==', true)
-      .get();
-
     const username = (data.username as string) ?? '누군가';
-    const sends = adminsSnap.docs
-      .map(d => d.data().fcm_token_admin as string | undefined)
-      .filter((t): t is string => !!t)
-      .map(token => sendPush(
-        token,
-        '🔑 비밀번호 초기화 요청',
-        `${username}님이 비밀번호 초기화를 요청했습니다.`,
-        '/'
-      ));
-
-    await Promise.all(sends);
+    await pushToAdmins({
+      title: '🔑 비밀번호 초기화 요청',
+      body:  `${username}님이 비밀번호 초기화를 요청했습니다.`,
+    });
   }
 );
 
@@ -110,22 +176,11 @@ export const onApprovalRequestCreated = onDocumentCreated(
     const data = event.data?.data();
     if (!data || data.status !== 'pending') return;
 
-    const adminsSnap = await db.collection('members')
-      .where('is_admin', '==', true)
-      .get();
-
     const requesterName = (data.requested_name as string) ?? '누군가';
-    const sends = adminsSnap.docs
-      .map(d => d.data().fcm_token_admin as string | undefined)
-      .filter((t): t is string => !!t)
-      .map(token => sendPush(
-        token,
-        '📋 가족그룹 생성 신청',
-        `${requesterName}님이 가족그룹 생성을 신청했습니다.`,
-        '/'
-      ));
-
-    await Promise.all(sends);
+    await pushToAdmins({
+      title: '📋 가족그룹 생성 신청',
+      body:  `${requesterName}님이 가족그룹 생성을 신청했습니다.`,
+    });
   }
 );
 
@@ -142,11 +197,11 @@ export const onInfoRequestCreated = onDocumentCreated(
     if (!holderMemberId) return; // 권한자 없으면 자동 승인됨, 알림 불필요
 
     const memberSnap = await db.doc(`members/${holderMemberId}`).get();
-    const fcmToken = memberSnap.data()?.fcm_token as string | undefined;
-    if (!fcmToken) return;
-
     const requesterName = (data.requester_name as string) ?? '누군가';
-    await sendPush(fcmToken, '📬 정보공개 요청', `${requesterName}님이 정보공개를 요청했습니다.`);
+    await pushToMember(memberSnap.ref, memberSnap.data(), 'user', {
+      title: '📬 정보공개 요청',
+      body:  `${requesterName}님이 정보공개를 요청했습니다.`,
+    });
   }
 );
 
@@ -227,8 +282,11 @@ export const sendAnniversaryReminders = onSchedule(
     };
 
     interface MemberEntry {
-      memberId: string; personId: string; token: string;
+      ref: FirebaseFirestore.DocumentReference;
+      data: FirebaseFirestore.DocumentData;
+      personId: string;
       prefs: typeof DEFAULT_PREFS;
+      msgs: PushMsg[];
     }
 
     const membersSnap = await db.collection('members').where('status', '==', 'active').get();
@@ -236,7 +294,8 @@ export const sendAnniversaryReminders = onSchedule(
     const familyMap = new Map<string, MemberEntry[]>();
     for (const doc of membersSnap.docs) {
       const d = doc.data();
-      if (!d.family_id || !d.fcm_token || !d.person_id || d.is_admin) continue;
+      if (!d.family_id || !d.person_id || d.is_admin) continue;
+      if (memberTokens(d, 'user').length === 0) continue;
 
       // 개인 설정 읽기 (없으면 기본값)
       const pp = (d.push_prefs as Record<string, unknown>) ?? {};
@@ -250,13 +309,11 @@ export const sendAnniversaryReminders = onSchedule(
       if (!prefs.enabled) continue;
 
       const list = familyMap.get(d.family_id as string) ?? [];
-      list.push({ memberId: doc.id, personId: d.person_id as string, token: d.fcm_token as string, prefs });
+      list.push({ ref: doc.ref, data: d, personId: d.person_id as string, prefs, msgs: [] });
       familyMap.set(d.family_id as string, list);
     }
 
     if (familyMap.size === 0) return;
-
-    const sends: Promise<void>[] = [];
 
     for (const [familyId, memberList] of familyMap) {
       const [personsSnap, relsSnap] = await Promise.all([
@@ -302,7 +359,7 @@ export const sendAnniversaryReminders = onSchedule(
                 title = `⏰ ${chk.offset}일 후 ${p.name}님의 생일`;
                 body  = `${chk.offset}일 뒤 만 ${age}세 생일입니다.`;
               }
-              sends.push(sendPush(member.token, title, body));
+              member.msgs.push({ title, body, ttlSec: 86400 });
             }
           }
 
@@ -325,15 +382,21 @@ export const sendAnniversaryReminders = onSchedule(
                 title = `🕯️ ${chk.offset}일 후 ${p.name}님의 기일`;
                 body  = `${chk.offset}일 뒤 기일입니다.`;
               }
-              sends.push(sendPush(member.token, title, body));
+              member.msgs.push({ title, body, ttlSec: 86400 });
             }
           }
         }
       }
     }
 
-    await Promise.all(sends);
-    console.log(`기념일 알림 완료: ${sends.length}건`);
+    let total = 0, okMembers = 0;
+    const targets = [...familyMap.values()].flat().filter(m => m.msgs.length > 0);
+    await Promise.all(targets.map(async m => {
+      total += m.msgs.length;
+      const r = await pushToMember(m.ref, m.data, 'user', m.msgs);
+      if (r.ok > 0) okMembers++;
+    }));
+    console.log(`기념일 알림 완료: ${total}건 / 대상 ${targets.length}명 / 수신 성공 ${okMembers}명`);
   }
 );
 
@@ -358,22 +421,41 @@ export const onBroadcastPushCreated = onDocumentCreated(
     const targetMemberId = data.target_member_id as string | null;
     let count = 0;
 
+    const msg: PushMsg = { title, body };
     if (targetMemberId) {
       const targetSnap = await db.doc(`members/${targetMemberId}`).get();
-      const token = targetSnap.data()?.fcm_token as string | undefined;
-      if (token) { await sendPush(token, title, body); count = 1; }
+      const r = await pushToMember(targetSnap.ref, targetSnap.data(), 'user', msg);
+      if (r.ok > 0) count = 1;
     } else {
       const snap = await db.collection('members').where('status', '==', 'active').get();
-      const sends = snap.docs
-        .map(d => d.data().fcm_token as string | undefined)
-        .filter((t): t is string => !!t)
-        .map(token => sendPush(token, title, body));
-      await Promise.all(sends);
-      count = sends.length;
+      const results = await Promise.all(snap.docs.map(d => pushToMember(d.ref, d.data(), 'user', msg)));
+      count = results.filter(r => r.ok > 0).length;
     }
 
     await event.data!.ref.update({ sent: true, sent_at: new Date().toISOString(), sent_count: count });
     console.log(`공지 푸시 발송 완료: ${count}명`);
+  }
+);
+
+// ── 서버 테스트 알림 ────────────────────────────────────────────────────────
+// push_tests 문서 생성 시 해당 회원의 모든 기기로 테스트 푸시 → 결과를 같은 문서에 기록
+export const onPushTestCreated = onDocumentCreated(
+  'push_tests/{docId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.done) return;
+    const memberId = data.member_id as string | undefined;
+    if (!memberId) return;
+    const scope: PushScope = data.scope === 'admin' ? 'admin' : 'user';
+
+    const memberSnap = await db.doc(`members/${memberId}`).get();
+    const r = await pushToMember(memberSnap.ref, memberSnap.data(), scope, {
+      title: '🔔 서버 테스트 알림',
+      body:  '이 알림이 보이면 기념일·요청 알림도 정상적으로 받을 수 있어요.',
+      tag:   'server-test',
+      ttlSec: 600,
+    });
+    await event.data!.ref.update({ done: true, done_at: new Date().toISOString(), ...r });
   }
 );
 

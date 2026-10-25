@@ -77,9 +77,16 @@ Invite share text: NO person name in shared content (security). Recipients must 
 FamilyGroupRequestScreen shows adminEmail (from Firestore) as mailto link for withdrawal requests.
 
 --- PUSH_NOTIFICATIONS ---
-PWA-only. FCM token registered via useFCMToken hook on install.
+Works in: Play TWA, Android Chrome, desktop browsers (no install needed), iOS home-screen app only.
+Tokens: members.fcm_tokens[] (user) / fcm_tokens_admin[] (admin PWA). Legacy fcm_token / fcm_token_admin still written (last device) and read by Functions.
+Play Store TWA NOT released yet: lib/appConfig.ts PLAY_STORE_RELEASED=false hides all Play steering. Flip to true after release, then build+deploy.
+NEVER auto-request permission. Only from user click: PushPermissionPrompt, AnniversaryView toggle, MyMenu toggle.
+useFCMToken: sync token only if permission granted. useForegroundPush: onMessage -> showNotification + toast.
+Functions: pushToMember(ref,data,scope,msgs) -> sendEach, removes dead tokens, writes push_last_ok_at/fail_at/error.
+Server test: push_tests doc -> onPushTestCreated writes {done,ok,fail,tokens}.
+Logout does NOT remove tokens (idle auto-logout would kill anniversary push).
 Functions run hourly, check if UTC hour == sendHourKST-9, then send.
-Admin can change all settings via AdminView → settings/push doc. No redeploy.
+Admin can change all settings via AdminView -> settings/push doc. No redeploy.
 login_logs purged monthly (1yr retention) by cleanupLoginLogs function.
 
 --- USER_PREFERENCES ---
@@ -96,7 +103,7 @@ prefers fixing root cause over workarounds
 4. GoogleLinkScreen does NOT receive googleUid prop (removed — unused). App.tsx closes over googleLinkData.uid directly.
 5. PersonNode data cast requires `as unknown as PersonNodeData` due to NodeProps.data typing.
 6. Firestore rules: allow read, write: if true — no server-side auth enforcement.
-7. FCM push only works when app is installed as PWA. Browser tabs get nothing.
+7. iOS browser tab has no Notification API (typeof Notification === 'undefined') — guard every Notification access. Android/desktop browser tabs DO receive push.
 8. Admin email displayed to users comes from admin member's google_email field. If admin hasn't linked Google, field is null.
 9. settings/push defaults used in Functions when doc doesn't exist: {sendHourKST:8, offsets:[0,1,3,7], maxChusu:6, enableBirthday:true, enableDeathDay:true}
 10. CSS confirm-backdrop/confirm-box etc. defined in App.css globally — not in AdminView.css.

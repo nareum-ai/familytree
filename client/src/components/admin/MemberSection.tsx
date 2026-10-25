@@ -12,6 +12,7 @@ import { AdminModal, ConfirmDeleteModal } from './AdminModal';
 import { AdminPager } from './AdminPager';
 import { paginate } from '../../utils/paginate';
 import { Icon } from '../Icon';
+import { pushDeviceCount, pushHealth } from '../../utils/pushStatus';
 
 const PAGE_SIZE = 25;
 
@@ -33,6 +34,7 @@ function byLastLoginDesc(a: Member, b: Member) {
 
 export function MemberSection({ members, families, loading, flash, reload }: Props) {
   const [filter, setFilter] = useState('');
+  const [onlyNoPush, setOnlyNoPush] = useState(false);
   const [page, setPage] = useState(0);
   const [mappingMember, setMappingMember] = useState<Member | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Member | null>(null);
@@ -72,6 +74,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
   const q = filter.toLowerCase();
   const filtered = members
     .filter(m => !filter || m.username.toLowerCase().includes(q) || (m.person_name ?? '').includes(filter))
+    .filter(m => !onlyNoPush || (!m.is_admin && pushHealth(m) !== 'ok'))
     .sort(byLastLoginDesc);
   const { current, pageItems, totalPages } = paginate(filtered, page, PAGE_SIZE);
 
@@ -84,6 +87,10 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
             title="Google 계정 이메일 목록을 클립보드에 복사">
             <Icon name="clipboard" /> 이메일 복사 ({googleEmails.length})
           </button>
+          <label className="member-push-filter" title="알림 기기가 없거나 최근 발송이 실패한 회원만 보기">
+            <input type="checkbox" checked={onlyNoPush} onChange={e => { setOnlyNoPush(e.target.checked); setPage(0); }} />
+            알림 못 받는 회원 ({members.filter(m => !m.is_admin && pushHealth(m) !== 'ok').length})
+          </label>
           <input
             className="member-search"
             type="text"
@@ -102,6 +109,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
             <span className="col-id">아이디</span>
             <span className="col-map">매핑 인물</span>
             <span className="col-login">최종 접속</span>
+            <span className="col-push">알림</span>
             <span className="col-actions">관리</span>
           </div>
 
@@ -122,6 +130,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
                       </button>
                     : <span style={{ color: '#D6C8B0' }}>미접속</span>}
                 </span>
+                <span className="col-push"><PushBadge m={m} /></span>
                 <span className="col-actions">
                   {m.family_id && m.person_id && (
                     <button className="btn-login-as" onClick={() => handleLoginAs(m)}>접속</button>
@@ -168,6 +177,20 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
       {logMember && <LoginLogModal member={logMember} onClose={() => setLogMember(null)} />}
     </section>
   );
+}
+
+// ── 알림 수신 상태 배지 ───────────────────────────────────────────────────────
+function PushBadge({ m }: { m: Member }) {
+  const h = pushHealth(m);
+  const n = pushDeviceCount(m);
+  const title = [
+    `기기 ${n}대`,
+    `마지막 성공: ${m.push_last_ok_at ? formatCompactDateTime(m.push_last_ok_at) : '-'}`,
+    `마지막 실패: ${m.push_last_fail_at ? formatCompactDateTime(m.push_last_fail_at) : '-'}`,
+    m.push_last_error ? `오류: ${m.push_last_error}` : '',
+  ].filter(Boolean).join('\n');
+  const label = h === 'none' ? '미등록' : h === 'failing' ? `실패 ${n}` : `${n}대`;
+  return <span className={`push-badge ${h}`} title={title}>{label}</span>;
 }
 
 // ── 회원 ↔ 인물 매핑 ─────────────────────────────────────────────────────────

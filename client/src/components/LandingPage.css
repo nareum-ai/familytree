@@ -9,7 +9,7 @@
 .landing button { font-family: inherit; cursor: pointer; }
 
 .landing-kicker {
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--acc);
@@ -34,7 +34,7 @@
   color: var(--pri);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 20px;
+  font-size: var(--fs-20);
 }
 
 .landing-nav-btn {
@@ -44,7 +44,7 @@
   background: transparent;
   color: var(--pri);
   border-radius: 999px;
-  font-size: 15px;
+  font-size: var(--fs-15);
   font-weight: 600;
   transition: background 0.15s, color 0.15s;
 }
@@ -82,7 +82,7 @@
 
 .landing-sub {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--fs-18);
   line-height: 1.7;
   color: var(--text-2);
   max-width: 460px;
@@ -102,7 +102,7 @@
   color: var(--surface);
   border: none;
   border-radius: var(--r-md);
-  font-size: 16px;
+  font-size: var(--fs-16);
   font-weight: 600;
   transition: background 0.15s;
 }
@@ -114,7 +114,7 @@
   background: none;
   border: none;
   color: var(--pri);
-  font-size: 16px;
+  font-size: var(--fs-16);
   font-weight: 600;
 }
 .landing-cta-text:hover { color: var(--pri-dark); text-decoration: underline; }
@@ -142,8 +142,8 @@
   align-items: center;
   padding: 0 8px 20px;
 }
-.lt-card-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
-.lt-card-meta  { font-size: 13px; color: var(--text-3); }
+.lt-card-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-17); }
+.lt-card-meta  { font-size: var(--fs-13); color: var(--text-3); }
 
 .lt-tree { display: flex; flex-direction: column; align-items: center; }
 .lt-row  { display: flex; gap: 6px; }
@@ -211,7 +211,7 @@
   box-shadow: 0 0 0 2px var(--surface);
 }
 
-.lt-name { font-size: 12px; color: var(--text); white-space: nowrap; }
+.lt-name { font-size: var(--fs-12); color: var(--text); white-space: nowrap; }
 
 /* 떠 있는 기념일 카드 */
 .landing-float-ann {
@@ -227,8 +227,8 @@
   gap: 10px;
   box-shadow: 0 16px 32px -16px rgba(30,50,40,0.5);
 }
-.lfa-title { font-size: 13px; font-weight: 600; color: #CFE2D7; }
-.lfa-row { display: flex; justify-content: space-between; font-size: 14px; }
+.lfa-title { font-size: var(--fs-13); font-weight: 600; color: #CFE2D7; }
+.lfa-row { display: flex; justify-content: space-between; font-size: var(--fs-14); }
 .lfa-row b { color: #F3C9A8; }
 
 /* ── 개인정보 안심 ─────────────────────────────────────────────────── */
@@ -249,8 +249,8 @@
   display: block;
 }
 .landing-trust-text { flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px; }
-.landing-trust-text strong { font-family: var(--font-display); font-size: 22px; }
-.landing-trust-text span { font-size: 15px; color: #CFE2D7; line-height: 1.6; }
+.landing-trust-text strong { font-family: var(--font-display); font-size: var(--fs-22); }
+.landing-trust-text span { font-size: var(--fs-15); color: #CFE2D7; line-height: 1.6; }
 
 /* ── 사용 흐름 ────────────────────────────────────────────────────── */
 .landing-steps {
@@ -284,9 +284,9 @@
   flex-direction: column;
   gap: 10px;
 }
-.landing-step-num   { font-family: var(--font-display); font-size: 40px; color: var(--acc); line-height: 1; }
-.landing-step-title { font-size: 19px; }
-.landing-step-body  { margin: 0; font-size: 15px; line-height: 1.7; color: var(--text-2); }
+.landing-step-num   { font-family: var(--font-display); font-size: var(--fs-40); color: var(--acc); line-height: 1; }
+.landing-step-title { font-size: var(--fs-19); }
+.landing-step-body  { margin: 0; font-size: var(--fs-15); line-height: 1.7; color: var(--text-2); }
 
 /* ── 기능 카드 ────────────────────────────────────────────────────── */
 .landing-features {
@@ -317,8 +317,8 @@
   stroke-linecap: round; stroke-linejoin: round;
   display: block;
 }
-.landing-feature-title { margin: 0; font-size: 19px; font-weight: 700; }
-.landing-feature-desc  { margin: 0; font-size: 15px; line-height: 1.7; color: var(--text-2); }
+.landing-feature-title { margin: 0; font-size: var(--fs-19); font-weight: 700; }
+.landing-feature-desc  { margin: 0; font-size: var(--fs-15); line-height: 1.7; color: var(--text-2); }
 
 /* 기능 카드 미리보기 */
 .feature-mockup {
@@ -348,12 +348,12 @@
 }
 .mc-side.paternal { background: var(--pri-bg); }
 .mc-side.maternal { background: var(--female-bg); }
-.mc-label { font-size: 11px; font-weight: 700; color: var(--text-2); }
+.mc-label { font-size: var(--fs-11); font-weight: 700; color: var(--text-2); }
 .mc-pair  { display: flex; }
 .mc-couple { display: flex; align-items: center; }
 .mc-link { width: 16px; border-top: 1.5px dashed var(--border-2); margin-bottom: 18px; }
 .mockup-collab .lt-node { width: 54px; }
-.mockup-collab .lt-name { font-size: 11px; }
+.mockup-collab .lt-name { font-size: var(--fs-11); }
 
 /* 기념일 */
 .mockup-ann {
@@ -361,7 +361,7 @@
   flex-direction: column;
 }
 .mockup-ann-header {
-  font-size: 13px;
+  font-size: var(--fs-13);
   font-weight: 700;
   padding: 14px 18px 10px;
   border-bottom: 1px solid var(--border);
@@ -374,7 +374,7 @@
 }
 .mockup-ann-row.divided { border-bottom: 1px solid var(--surface-3); }
 .mockup-chip {
-  font-size: 11px;
+  font-size: var(--fs-11);
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 6px;
@@ -386,11 +386,11 @@
 .mockup-chip.soon  { background: var(--acc-bg); color: var(--acc-dark); }
 .mockup-chip.later { background: var(--surface-3); color: var(--text-2); }
 .mockup-ann-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.mockup-ann-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mockup-ann-rel  { font-size: 11px; color: var(--text-3); }
+.mockup-ann-name { font-size: var(--fs-13); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mockup-ann-rel  { font-size: var(--fs-11); color: var(--text-3); }
 .mockup-ann-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
-.mockup-ann-type  { font-size: 11px; color: var(--pri); font-weight: 600; }
-.mockup-ann-count { font-size: 11px; color: var(--text-3); }
+.mockup-ann-type  { font-size: var(--fs-11); color: var(--pri); font-weight: 600; }
+.mockup-ann-count { font-size: var(--fs-11); color: var(--text-3); }
 
 /* 초대 */
 .mockup-invite {
@@ -410,10 +410,10 @@
 .mockup-invite-hex.male   { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
 .mockup-invite-hex img { width: 100%; height: 100%; object-fit: cover; }
 .mockup-invite-person-info { display: flex; flex-direction: column; gap: 1px; }
-.mockup-invite-name { font-size: 14px; font-weight: 700; }
-.mockup-invite-rel  { font-size: 12px; color: var(--text-3); }
-.mockup-invite-label  { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.mockup-invite-expiry { font-size: 11px; font-weight: 400; color: var(--text-3); margin-left: 4px; }
+.mockup-invite-name { font-size: var(--fs-14); font-weight: 700; }
+.mockup-invite-rel  { font-size: var(--fs-12); color: var(--text-3); }
+.mockup-invite-label  { font-size: var(--fs-12); font-weight: 600; color: var(--text-2); }
+.mockup-invite-expiry { font-size: var(--fs-11); font-weight: 400; color: var(--text-3); margin-left: 4px; }
 .mockup-invite-link-row {
   display: flex;
   align-items: center;
@@ -423,8 +423,8 @@
   border-radius: var(--r-sm);
   padding: 7px 10px;
 }
-.mockup-invite-url  { flex: 1; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mockup-invite-copy { font-size: 11px; font-weight: 700; color: var(--pri); flex-shrink: 0; }
+.mockup-invite-url  { flex: 1; font-size: var(--fs-11); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mockup-invite-copy { font-size: var(--fs-11); font-weight: 700; color: var(--pri); flex-shrink: 0; }
 .mockup-invite-share-row { display: flex; gap: 6px; }
 .mockup-invite-share-btn {
   flex: 1;
@@ -434,7 +434,7 @@
   gap: 4px;
   padding: 7px 0;
   border-radius: var(--r-sm);
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 600;
 }
 .mockup-invite-share-btn.kakao { background: #FEE500; color: #3A1D1D; }
@@ -467,7 +467,7 @@
   color: var(--surface);
   border: none;
   border-radius: var(--r-md);
-  font-size: 17px;
+  font-size: var(--fs-17);
   font-weight: 600;
   transition: background 0.15s;
 }
@@ -482,9 +482,9 @@
 /* ── 모바일 ──────────────────────────────────────────────────────── */
 @media (max-width: 540px) {
   .landing-nav { padding: 16px; }
-  .landing-nav-logo { font-size: 17px; }
+  .landing-nav-logo { font-size: var(--fs-17); }
   .landing-hero { padding: 24px 16px 72px; gap: 40px; }
-  .landing-sub { font-size: 16px; }
+  .landing-sub { font-size: var(--fs-16); }
   .landing-hero-visual { padding-bottom: 76px; }
   .landing-float-ann { right: 8px; }
   .lt-card { padding: 20px 4px 24px; }
@@ -492,7 +492,7 @@
   .lt-node { --hex-w: 46px; }
   .lt-lg { --hex-w: 52px; }
   .lt-sm { --hex-w: 40px; }
-  .lt-name { font-size: 11px; }
+  .lt-name { font-size: var(--fs-11); }
   .landing-trust-inner, .landing-steps, .landing-features, .landing-final-inner { padding-left: 16px; padding-right: 16px; }
   .landing-steps { padding-top: 64px; }
   .landing-features { padding-bottom: 64px; }

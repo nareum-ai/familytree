@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   ReactFlow,
   Background,
   MiniMap,
   Panel,
+  useNodesInitialized,
   useReactFlow,
   useStore,
   type Node as RFNode,
@@ -38,7 +39,7 @@ const EMPTY_HINT: Record<BranchType, string> = {
 };
 
 const isMobileWidth = () => window.innerWidth <= 640;
-const focusZoom = () => (isMobileWidth() ? 0.95 : 0.65);
+const focusZoom = () => (isMobileWidth() ? 1.05 : 0.65);
 
 /** "나" 노드(없으면 전체)에 맞춰 화면 이동하는 fitView 옵션 */
 function fitToMeOptions(meNodeId: string | null, duration: number, fallbackPadding: number): FitViewOptions {
@@ -56,23 +57,46 @@ function findNodeOfPerson(nodes: RFNode[], personId: string | null | undefined):
   ) ?? null;
 }
 
-// ── 탭 전환 시 "나" 노드 중심 이동 ──────────────────────────────────────────
+// ── 첫 진입·탭 전환 시 "나" 노드 중심 이동 ────────────────────────────────────
+// 한 번만 이동하면 이후 화면 크기 측정·권한 로드·뷰포인트 보정으로 레이아웃이 바뀔 때
+// "나"가 화면 밖으로 밀려난다 → 사용자가 직접 화면을 움직이기 전까지는
+// "나" 노드 좌표·화면 크기가 바뀔 때마다 다시 중심을 맞춘다 (setCenter: 좌표 직접 계산)
 // focusTargetId가 있으면 skip=true로 동작 안 함
-function FitToMeController({ meNodeId, activeBranch, skip }: {
+function FitToMeController({ meNodeId, nodes, activeBranch, skip, userMovedRef }: {
   meNodeId: string | null;
+  nodes: RFNode[];
   activeBranch: string;
   skip: boolean;
+  userMovedRef: RefObject<boolean>;
 }) {
-  const { fitView, getNodes } = useReactFlow();
+  const { setCenter, fitView, getInternalNode } = useReactFlow();
+  const nodesInitialized = useNodesInitialized();
+  const width  = useStore(s => s.width);
+  const height = useStore(s => s.height);
+  const centeredOnceRef = useRef(false);
+
+  // 탭 전환(또는 "나" 변경) 시 자동 추적 재개 — 아래 중심 이동 effect보다 먼저 선언해야 먼저 실행됨
+  const key = `${activeBranch}|${meNodeId ?? ''}`;
+  useEffect(() => { userMovedRef.current = false; }, [key, userMovedRef]);
+
+  const me = meNodeId ? nodes.find(n => n.id === meNodeId) : undefined;
+  const meX = me?.position.x, meY = me?.position.y;
 
   useEffect(() => {
-    if (skip) return;
-    const t = setTimeout(() => {
-      if (getNodes().length === 0) return;
-      fitView(fitToMeOptions(meNodeId, 350, isMobileWidth() ? 0.4 : 0.3));
-    }, 100);
-    return () => clearTimeout(t);
-  }, [meNodeId, activeBranch, skip, fitView, getNodes]);
+    if (skip || userMovedRef.current || !width || !height) return;
+    // 첫 진입은 애니메이션 없이 바로 "나"로 — 전체 트리가 잠깐 보였다 이동하는 깜빡임 방지
+    const duration = centeredOnceRef.current ? 350 : 0;
+    if (!meNodeId || meX === undefined || meY === undefined) {
+      if (nodesInitialized && nodes.length > 0) fitView({ maxZoom: focusZoom(), duration, padding: 0.3 });
+      return;
+    }
+    const measured = getInternalNode(meNodeId)?.measured;
+    const x = meX + (measured?.width  ?? 90)  / 2;
+    const y = meY + (measured?.height ?? 110) / 2;
+    centeredOnceRef.current = true;
+    setCenter(x, y, { zoom: focusZoom(), duration });
+  }, [key, meNodeId, meX, meY, width, height, nodesInitialized, nodes.length, skip,
+      userMovedRef, setCenter, fitView, getInternalNode]);
 
   return null;
 }
@@ -299,6 +323,7 @@ export function FamilyTreeView() {
   // "나" 노드 ID — 탭 전환 시 중심점 (focusTargetId와 무관)
   const mePersonId = viewpointPersonId ?? rootId;
   const meNodeId = useMemo(() => findNodeOfPerson(nodes, mePersonId)?.id ?? null, [nodes, mePersonId]);
+  const userMovedRef = useRef(false);
 
   const selectedPerson = selectedPersonId
     ? persons.find(p => p.id === selectedPersonId) ?? null
@@ -353,13 +378,16 @@ export function FamilyTreeView() {
           edgeTypes={edgeTypes}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
-          fitView
-          fitViewOptions={{ padding: 0.3 }}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          // 사용자가 직접 끌거나 확대한 순간부터는 "나" 자동 추적 중단 (코드로 이동할 땐 event가 null)
+          onMoveStart={e => { if (e) userMovedRef.current = true; }}
           minZoom={0.1}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
         >
-          <FitToMeController meNodeId={meNodeId} activeBranch={activeBranch} skip={!!focusTargetId} />
+          <FitToMeController meNodeId={meNodeId} nodes={nodes} activeBranch={activeBranch}
+                             skip={!!focusTargetId} userMovedRef={userMovedRef} />
           <FocusTargetController personId={focusTargetId} nodes={nodes} />
           <Background color="#E6DCCB" gap={28} size={1} />
           <ZoomControls />

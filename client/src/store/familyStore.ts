@@ -187,7 +187,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
         get().loadEditGrants();
       };
 
-      // 마이그레이션이 필터 쿼리보다 반드시 앞서야 "0건 → 새 루트 생성" 버그 방지
+      // 루트 자동 생성이 없어졌으므로 옛 데이터 이관을 기다리지 않고 바로 구독 시작
+      // (이관이 일어나면 onSnapshot이 변경분을 다시 받아온다)
       const startListeners = () => {
         unsubPersons = onSnapshot(
           query(collection(db, 'persons'), where('family_id', '==', familyId)),
@@ -221,7 +222,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
         );
       };
 
-      migrateLegacyFamilyId(familyId).finally(startListeners);
+      startListeners();
+      migrateLegacyFamilyId(familyId).catch(() => {});
 
       return () => { clearTimeout(timeout); unsubPersons(); unsubRels(); unsubPermissions(); };
     },
@@ -326,7 +328,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
 
     createInvite: async (person_id) => {
       const snap = await findDocs('invites', where('person_id', '==', person_id));
-      if (!snap.empty) return snap.docs[0].data().token as string;
+      const reusable = snap.docs.find(d => !d.data().used_at);
+      if (reusable) return reusable.data().token as string;
       const token = uuidv4();
       await addDoc(collection(db, 'invites'), {
         token, person_id,

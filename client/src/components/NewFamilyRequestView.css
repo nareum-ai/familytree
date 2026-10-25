@@ -23,24 +23,24 @@
   to   { opacity:1; transform:translateY(0) }
 }
 
-.nfr-icon { font-size: 52px; margin-bottom: 14px; }
+.nfr-icon { font-size: var(--fs-52); margin-bottom: 14px; }
 
 .nfr-title {
-  font-size: 20px;
+  font-size: var(--fs-20);
   font-weight: 800;
   color: var(--text);
   margin: 0 0 8px;
 }
 
 .nfr-name {
-  font-size: 22px;
+  font-size: var(--fs-22);
   font-weight: 700;
   color: var(--pri);
   margin: 0 0 14px;
 }
 
 .nfr-desc {
-  font-size: 14px;
+  font-size: var(--fs-14);
   color: var(--text-3);
   line-height: 1.7;
   margin: 0 0 28px;
@@ -49,7 +49,7 @@
 .nfr-hint {
   display: block;
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--fs-12);
   color: var(--text-4);
 }
 
@@ -65,7 +65,7 @@
   border-radius: 10px;
   background: var(--surface);
   color: var(--text-3);
-  font-size: 14px;
+  font-size: var(--fs-14);
   cursor: pointer;
 }
 
@@ -76,7 +76,7 @@
   border-radius: 10px;
   background: var(--pri);
   color: white;
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;

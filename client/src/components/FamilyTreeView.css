@@ -8,13 +8,13 @@
   border-bottom: 1px solid var(--border-pri);
   padding: 8px 20px;
   display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; font-weight: 600; color: var(--pri-dark);
+  font-size: var(--fs-13); font-weight: 600; color: var(--pri-dark);
   flex-shrink: 0;
 }
 .viewpoint-banner button {
   background: var(--surface); border: 1px solid var(--pri-light);
   border-radius: 8px; color: var(--pri);
-  font-size: 12px; font-weight: 600; padding: 4px 12px; cursor: pointer;
+  font-size: var(--fs-12); font-weight: 600; padding: 4px 12px; cursor: pointer;
   transition: all 0.15s;
 }
 .viewpoint-banner button:hover { background: var(--pri-bg); }
@@ -31,7 +31,7 @@
 
 .branch-tab {
   flex: 1; padding: 13px 8px;
-  font-size: 14px; font-weight: 600;
+  font-size: var(--fs-14); font-weight: 600;
   color: var(--text-3);
   background: none; border: none;
   border-bottom: 3px solid transparent;
@@ -51,7 +51,7 @@
 
 @media (max-width: 640px) {
   .branch-tabs { padding: 0 8px; border-bottom-width: 2px; }
-  .branch-tab { padding: 12px 4px; font-size: 14px; font-weight: 700; }
+  .branch-tab { padding: 12px 4px; font-size: var(--fs-14); font-weight: 700; }
 }
 
 /* 미니맵 — 줌 슬라이더 위, 오른쪽 하단 */
@@ -131,7 +131,7 @@
 .zoom-slider-input::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 .zoom-pct {
-  font-size: 11px; font-weight: 700;
+  font-size: var(--fs-11); font-weight: 700;
   color: var(--text-3); min-width: 32px; text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -149,7 +149,7 @@
   border: none; border-radius: 20px;
   padding: 8px 14px 8px 10px;
   color: var(--pri);
-  font-size: 13px; font-weight: 700;
+  font-size: var(--fs-13); font-weight: 700;
   cursor: pointer; font-family: inherit;
   box-shadow: 0 2px 12px rgba(42,38,32,0.14), 0 1px 4px rgba(42,38,32,0.08);
   transition: all 0.15s;
@@ -167,5 +167,13 @@
   align-items: center; justify-content: center;
   color: var(--text-2); pointer-events: none;
 }
-.empty-branch p { margin: 4px 0; font-size: 15px; }
-.empty-branch .empty-hint { font-size: 13px; color: var(--text-4); }
+.empty-branch p { margin: 4px 0; font-size: var(--fs-15); }
+.empty-branch .empty-hint { font-size: var(--fs-13); color: var(--text-4); }
+
+/* 모바일: 줌 버튼·슬라이더를 손가락 크기로 (미니맵은 그만큼 위로) */
+@media (max-width: 640px) {
+  .zoom-slider-wrap { height: 42px; }
+  .zoom-step-btn { width: 32px; height: 32px; }
+  .zoom-slider-input::-webkit-slider-thumb { width: 20px; height: 20px; }
+  .react-flow__minimap { bottom: 54px !important; }
+}

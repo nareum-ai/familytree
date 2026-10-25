@@ -74,6 +74,13 @@ export interface Member {
   google_uid?: string | null;
   google_email?: string | null;
   fcm_token?: string | null;
+  fcm_tokens?: string[];
+  fcm_token_admin?: string | null;
+  fcm_tokens_admin?: string[];
+  fcm_tokens_updated_at?: string | null;
+  push_last_ok_at?: string | null;
+  push_last_fail_at?: string | null;
+  push_last_error?: string | null;
   last_login_at?: string | null;
 }
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useFamilyStore } from '../store/familyStore';
 import { callGemini } from '../lib/gemini';
 import { getMyPersonId } from '../lib/session';
@@ -32,6 +32,7 @@ export function AIView({ onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
+  const reqId = useRef(0);
 
   const myPerson = useMemo(() => {
     const myId = viewpointPersonId ?? getMyPersonId();
@@ -53,7 +54,9 @@ export function AIView({ onClose }: Props) {
   }, []);
 
   const runService = async (target: Service) => {
+    const myReq = ++reqId.current;   // 뒤로가기·재선택 시 이전 요청 결과 무시
     setService(target);
+    setLoading(false);
     setResult('');
     setError('');
     if (!target) return;
@@ -68,11 +71,13 @@ export function AIView({ onClose }: Props) {
       const { month, day } = target === 'birthday' ? myBirth! : today;
       const prompt = target === 'birthday' ? birthdayPrompt(month, day) : historyPrompt(month, day);
       const text = await callGemini(prompt, 0.4);
+      if (myReq !== reqId.current) return;
       setResult(text);
     } catch (e: unknown) {
+      if (myReq !== reqId.current) return;
       setError(`AI 조회 중 오류가 발생했습니다:\n${e instanceof Error ? e.message : '알 수 없는 오류'}`);
     } finally {
-      setLoading(false);
+      if (myReq === reqId.current) setLoading(false);
     }
   };
 

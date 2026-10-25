@@ -17,7 +17,7 @@
   align-items: center;
   cursor: pointer;
   position: relative;
-  width: 64px;
+  width: 76px; /* = useTreeLayout CHEX_W. 육각형은 64px 그대로, 이름 자리만 여유 */
   user-select: none;
 }
 
@@ -48,7 +48,7 @@
 }
 
 .chex-initial {
-  font-size: 24px;
+  font-size: var(--fs-24);
   font-weight: 700;
   color: white;
 }
@@ -67,7 +67,7 @@
   transform: translateX(-50%);
   background: var(--text-3);
   color: white;
-  font-size: 10px;
+  font-size: var(--fs-10);
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 10px;
@@ -78,7 +78,7 @@
 
 .anon-chex { cursor: default; }
 .anon-chex .anon-hex { background: linear-gradient(135deg, var(--text-4), var(--text-3)) !important; }
-.anon-chex .anon-icon { font-size: 18px; }
+.anon-chex .anon-icon { font-size: var(--fs-18); }
 .anon-chex .anon-name { color: var(--text-4) !important; font-style: italic; }
 
 /* 고인: 테두리는 회갈색, 아바타는 살짝 바래게, 이름은 연하게 */
@@ -87,12 +87,12 @@
 .chex.deceased .chex-name { color: var(--text-3); }
 
 .chex-name {
-  font-size: 12px;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--text);
   margin-top: 6px;
   text-align: center;
-  max-width: 64px;
+  max-width: 76px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -102,12 +102,12 @@
 .chex-age {
   font-weight: 400;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-12);
   margin-left: 2px;
 }
 
 .chex-birth {
-  font-size: 11px;
+  font-size: var(--fs-11);
   color: var(--text-3);
   margin-top: 1px;
 }
@@ -115,14 +115,16 @@
 .chusu-badge {
   position: absolute;
   top: -6px;
-  left: -6px;
+  left: calc(50% - 40px);
   background: var(--pri);
   color: white;
   font-size: 10px;
   font-weight: 700;
-  border-radius: 50%;
-  width: 22px;
+  border-radius: 11px;
+  min-width: 22px;
   height: 22px;
+  padding: 0 4px;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,7 +135,7 @@
 .me-badge {
   position: absolute;
   top: -6px;
-  right: -6px;
+  right: calc(50% - 40px);
   background: var(--gold);
   color: white;
   font-size: 9px;

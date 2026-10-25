@@ -1,6 +1,6 @@
 # 우리 가족 가계도 — 프로그램 명세서
 
-**버전**: 1.8.0  
+**버전**: 1.9.0  
 **최초 작성**: 2026-05-31  
 **플랫폼**: Firebase Hosting (SPA) + PWA  
 **URL**: https://familytree-3221b.web.app  
@@ -200,8 +200,14 @@ interface Member {
   last_login_at?: string | null;   // ISO 8601, 로그인 시마다 갱신
   google_uid?: string | null;      // Firebase Auth UID
   google_email?: string | null;    // 연결된 구글 계정 이메일
-  fcm_token?: string | null;       // FCM 디바이스 토큰 (일반 PWA)
-  fcm_token_admin?: string | null; // FCM 디바이스 토큰 (관리자 PWA)
+  fcm_tokens?: string[];           // FCM 디바이스 토큰 — 기기별 (일반: 폰 TWA·PC 브라우저 등)
+  fcm_tokens_admin?: string[];     // FCM 디바이스 토큰 — 기기별 (관리자 PWA)
+  fcm_token?: string | null;       // [하위호환] 마지막 등록 기기 토큰 (Functions가 배열과 합쳐 읽음)
+  fcm_token_admin?: string | null; // [하위호환] 관리자 PWA 마지막 등록 토큰
+  fcm_tokens_updated_at?: string | null; // 이 회원 기기 토큰 마지막 저장 시각
+  push_last_ok_at?: string | null;   // 마지막 푸시 발송 성공 (Functions 기록)
+  push_last_fail_at?: string | null; // 마지막 푸시 발송 실패
+  push_last_error?: string | null;   // 마지막 실패 코드
 }
 ```
 
@@ -414,9 +420,9 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
     │   │   │ · 편집 권한: 주인 있는 노드(alreadyMapped)는 본인/관리자만 편집 가능
     │   │   ├── DateInput
     │   │   ├── AvatarPicker      아바타 선택 모달 (인물·동물·기호 그룹)
-    │   │   └── NotifBlockedModal 알림 차단 시 PWA 설치 유도 모달
-    │   │         · 크롬·엣지: "지금 설치하기" 버튼 (beforeinstallprompt 이벤트)
-    │   │         · iOS: 홈 화면에 추가 단계 안내
+    │   │   └── NotifBlockedModal 알림 차단 안내 모달
+    │   │         · Android·PC 브라우저: 사이트 설정 → 알림 허용 안내 (+Play 출시 후: Play 앱 버튼 / 출시 전: PWA 설치 버튼)
+    │   │         · iOS 브라우저: 홈 화면에 추가 단계 안내
     │   │         · 이미 설치된 앱(standalone): 시스템 설정 → 알림 허용 안내
     │   ├── AddPersonModal
     │   └── InfoRequestPanel  정보공개 요청 (자동 승인 지원)
@@ -424,6 +430,10 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
     │   │ · 알림 차단 시 종 아이콘 🔕(빨간색) 표시, 클릭 시 NotifBlockedModal 표시
     ├── SearchView            인물 검색
     ├── MyMenuView            My 메뉴 (정보공개 요청/비밀번호/구글 연결/탈퇴 문의)
+    │   └── PushStatusPanel   이 기기 알림 상태·등록 기기 수·마지막 수신, 서버 테스트 알림, (Play 출시 후·Android 브라우저) Play 스토어 앱
+    ├── PushPermissionPrompt  알림 켜기 안내 배너 (사용자 클릭으로만 권한 요청, "나중에" 7일 스누즈)
+    │                         · 미결정 → 알림 켜기 / iOS 브라우저 → 홈 화면 추가 / Android 브라우저+앱 설치됨 → 앱에서 열기
+    ├── ForegroundPushToast   앱을 보고 있을 때 도착한 알림 토스트 (+시스템 알림)
     └── HelpView              사용 안내 (탈퇴 방법 포함)
 ```
 
@@ -443,7 +453,8 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
 | `unlinkGoogleFromMember` | google_uid 연결 해제 |
 | `recordLogin` | last_login_at 갱신 + login_logs 기록 |
 | `createInfoRequest` | 정보공개 요청 (2촌 이내·관리자 생성·권한자 없음 자동 승인) |
-| `saveFcmToken` | FCM 토큰 저장 (중복 토큰 다른 멤버에서 제거 후 저장) |
+| `saveFcmToken` | 기기 FCM 토큰을 배열에 추가 (다른 회원의 같은 토큰 제거, 이 기기의 이전 토큰 제거) |
+| `requestServerPushTest` | `push_tests` 문서 생성 → Functions가 회원 전 기기로 테스트 발송 후 결과 기록 |
 | `consumeInviteToken` | 초대 토큰 삭제 (재사용 방지) |
 | `isFamilyDisabled` | 가족 비활성화 여부 확인 (root 인물의 `family_disabled` 필드) |
 | `mapMemberToPerson` | 계정↔인물 연결 (`ALREADY_MAPPED` 에러로 중복 차단) |
@@ -457,7 +468,7 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
 | 파일 | 설명 |
 |------|------|
 | `useTreeLayout.ts` | 트리 레이아웃 엔진, `classifyBranch`, `getChusu`, `canSeeFull` |
-| `useFCMToken.ts` | PWA 설치 시 FCM 토큰 등록, 포그라운드 알림 처리 (관리자 PWA 시 `fcm_token_admin` 필드 사용) |
+| `useFCMToken.ts` | `useFCMToken`: 권한 허용 상태면 앱 시작 시 토큰 동기화 (권한은 묻지 않음, 토큰 변경·회원 변경·7일 경과 시 재저장). `useForegroundPush`: 포그라운드 수신(onMessage) → 시스템 알림 + 토스트 |
 | `useAdminEmail.ts` | 관리자 `google_email` 조회 훅 (HelpView·MyMenuView·FamilyGroupRequestScreen·비활성화 화면 공용) |
 | `useIdleTimeout.ts` | 30분 비활동 자동 로그아웃 (`mousemove`, `mousedown`, `keydown`, `touchstart`, `scroll` 감지) |
 
@@ -547,8 +558,11 @@ is_deceased, death_date, death_lunar, father_ref, mother_ref, spouse_ref
 
 | 종류 | 트리거 | 발송 주체 |
 |------|--------|-----------|
-| 기념일 알림 | 매시 정각 스케줄 (KST 설정 시각에만 실제 발송) | Cloud Functions |
+| 기념일 알림 | 매시 정각 스케줄 (KST 설정 시각에만 실제 발송, TTL 24시간) | Cloud Functions |
 | 정보공개 요청 알림 | `info_requests` 문서 생성 즉시 | Cloud Functions (Firestore 트리거) |
+| 관리자 알림 | 가족그룹 신청·비밀번호 초기화 요청 | Cloud Functions → 관리자 PWA 토큰 |
+| 공지 | `push_broadcasts` 생성 | Cloud Functions |
+| 서버 테스트 | `push_tests` 생성 (내메뉴) | Cloud Functions |
 
 ### 기념일 알림 동작
 
@@ -558,21 +572,37 @@ is_deceased, death_date, death_lunar, father_ref, mother_ref, spouse_ref
 - **알림 종류**: `enableBirthday`(생일), `enableDeathDay`(기일) 각각 토글
 - **음력 지원**: `solarlunar` 라이브러리로 양력 변환 후 비교
 
-### FCM 토큰 관리
+### FCM 토큰 관리 (다중 기기)
 
-- 일반 PWA: `members.fcm_token` 필드에 저장
-- 관리자 PWA: `members.fcm_token_admin` 필드에 저장 (세션 분리)
-- 토큰 저장 시 동일 토큰이 다른 멤버에 있으면 자동으로 null 처리
+- 일반: `members.fcm_tokens[]`, 관리자 PWA: `members.fcm_tokens_admin[]` (세션 분리)
+- 구버전 단일 필드(`fcm_token`/`fcm_token_admin`)도 마지막 토큰으로 계속 기록 — Functions는 배열+단일 필드를 합쳐 중복 제거 후 발송
+- 저장 시 같은 토큰이 다른 회원에 있으면 그쪽에서 제거, 이 기기의 이전 토큰(localStorage `FCM_TOKEN_SAVED`)이 바뀌었으면 제거
+- `FCM_TOKEN_SAVED`는 `{memberId, scope, token, at}` JSON. 회원·범위·토큰이 같고 7일 이내면 재저장 생략
+- 발송(`pushToMember`)은 `sendEach`로 회원 전 기기에 전송 → `registration-token-not-registered`/`invalid-registration-token` 토큰 자동 삭제 → `push_last_ok_at`/`push_last_fail_at`/`push_last_error` 기록
+- 로그아웃(유휴 자동 로그아웃 포함) 시 토큰을 지우지 않는다 — 로그아웃 상태에서도 기념일 알림 수신 유지. 기기를 다른 계정이 쓰면 다음 등록 때 이전 계정에서 빠짐
+
+### 권한 요청 정책
+
+- 앱 시작 시 자동 권한 요청 없음 (iOS 홈 화면 앱은 사용자 동작 없이 요청하면 실패, 크롬은 자동 요청을 조용히 숨김)
+- 요청 지점: `PushPermissionPrompt` 배너의 "알림 켜기", 기념일 창 알림 토글, 내메뉴 알림 토글
+- 토글 ON 표시는 `push_prefs.enabled && 이 기기 권한 허용 && 토큰 저장`일 때만 (설정만 켜져 있고 기기 미등록이면 OFF로 표시)
 
 ### 관리자 설정 변경
 
 AdminView → 푸시 알림 설정 섹션에서 실시간 변경 가능.  
 변경 즉시 `settings/push` Firestore 문서에 저장 → 다음 정각 실행 시 반영.
 
-### PWA 전용
+### 지원 환경
 
-FCM 토큰은 PWA 설치 후 첫 실행 시 알림 권한 허용 시에만 등록됨.  
-일반 브라우저 탭에서는 알림 미지원.
+| 환경 | 수신 | 비고 |
+|------|------|------|
+| Android Play 스토어 앱(TWA) | ✅ | 앱 알림. **출시 전** — `lib/appConfig.ts`의 `PLAY_STORE_RELEASED=false` 동안 Play 유도 전부 비활성. 출시 후 `true`로 바꾸면 매니페스트 `related_applications`/`prefer_related_applications` 적용 + Android 브라우저에 Play 앱 설치·열기 안내 |
+| Android 크롬·PC 브라우저 | ✅ | 설치 불필요 |
+| iOS 홈 화면 앱 (16.4+) | ✅ | Safari·크롬·엣지 모두 홈 화면 추가 가능, 안내는 브라우저별 단계 |
+| iOS 브라우저 탭 | ❌ | `Notification` API 없음 → 홈 화면 추가 안내 |
+| 인앱 브라우저(카카오톡 등) | ❌ | 외부 브라우저 열기 안내 우선 |
+
+알림 클릭 시 열린 창이 있으면 그 창을 알림 링크로 이동(`client.navigate`), 없으면 새 창.
 
 ---
 
@@ -585,7 +615,8 @@ FCM 토큰은 PWA 설치 후 첫 실행 시 알림 권한 허용 시에만 등�
 | `onApprovalRequestCreated` | Firestore 트리거 (`approval_requests/{id}` 생성) | 가족그룹 신청 즉시 관리자에게 FCM 알림 |
 | `onInfoRequestCreated` | Firestore 트리거 (`info_requests/{id}` 생성) | 권한자에게 즉시 FCM 푸시 |
 | `sendAnniversaryReminders` | 매시 정각 스케줄 (`0 * * * *` UTC) | `settings/push` 읽어 KST 시각 비교 후 기념일 알림 발송 |
-| `onBroadcastPushCreated` | Firestore 트리거 (`push_broadcasts/{id}` 생성) | 관리자가 작성한 수동 공지를 전체 또는 특정 회원에게 FCM 발송 |
+| `onBroadcastPushCreated` | Firestore 트리거 (`push_broadcasts/{id}` 생성) | 관리자가 작성한 수동 공지를 전체 또는 특정 회원에게 FCM 발송 (`sent_count` = 1대 이상 성공한 회원 수) |
+| `onPushTestCreated` | Firestore 트리거 (`push_tests/{id}` 생성) | 요청 회원의 전 기기로 테스트 발송 → `{done, ok, fail, tokens}` 기록 |
 | `cleanupLoginLogs` | 매월 1일 자정 UTC (`0 0 1 * *`) | `login_logs`·`activity_logs`에서 1년 초과 문서 일괄 삭제 (500건 배치) |
 
 **리전**: `asia-northeast3` (서울)
@@ -709,4 +740,5 @@ manifest: {
 *v1.5.0 — 2026-06-02 인물 아바타(AvatarPicker), 가족 비활성화/활성화(관리자), 유휴 30분 자동 로그아웃(useIdleTimeout), 관리자 PWA 별도 설치(adm_ 세션 분리), 초대 토큰 사용 후 삭제(재사용 방지), 2촌 이내 정보공개 자동 승인, 인물 활동 로그(activity_logs), 구글 관리자 로그인 직접 처리, 뒤로가기 모달 우선 닫기, 인물 삭제 시 Firestore 직접 쿼리 병행, FCM 토큰 중복 제거*  
 *v1.6.0 — 2026-06-02 랜딩 페이지(LandingPage) 추가, 인앱 브라우저 대응 전면 개선(InAppBrowserBanner 공통 컴포넌트, Google 버튼 숨김, 초대링크 ?from= 파라미터, 인앱 Firestore 조기 종료), SEO 설정(메타태그·OG·JSON-LD·sitemap.xml·robots.txt), Google Search Console 등록, 불필요 파일 정리(scripts/ server/ README.md)*  
 *v1.7.0 — 2026-06-03 알림 설정을 MyMenu에서 기념일 창으로 이동 (헤더 🔔 버튼 토글)*  
-*v1.8.0 — 2026-06-06 인물 상세 UX 개선 (연락처 SMS/이메일 직접 초대, 버튼 텍스트 개인화, 삭제 버튼 편집 옆으로 이동), 편집 권한 강화 (주인 있는 노드는 본인/관리자만), 알림 차단 시 PWA 설치 유도 모달(NotifBlockedModal) 추가, 알림 차단 종 아이콘 🔕 시각화*
+*v1.8.0 — 2026-06-06 인물 상세 UX 개선 (연락처 SMS/이메일 직접 초대, 버튼 텍스트 개인화, 삭제 버튼 편집 옆으로 이동), 편집 권한 강화 (주인 있는 노드는 본인/관리자만), 알림 차단 시 PWA 설치 유도 모달(NotifBlockedModal) 추가, 알림 차단 종 아이콘 🔕 시각화*  
+*v1.9.0 — 2026-10-23 푸시 수신율 개선: 다중 기기 토큰(fcm_tokens[]), 무효 토큰 자동 정리·발송 결과 기록, 포그라운드 수신 처리(onMessage), 알림 클릭 시 링크 이동, 자동 권한 요청 제거→알림 켜기 배너(PushPermissionPrompt), Android 브라우저 Play 스토어 앱 유도(PLAY_STORE_RELEASED 플래그, 출시 전 비활성), iOS 크롬·엣지 홈 화면 추가 안내, 내메뉴 수신 상태·서버 테스트(PushStatusPanel), 관리자 회원 목록 알림 상태·미수신 필터, iOS 브라우저 알림 토글 오류 수정*

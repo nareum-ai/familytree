@@ -21,8 +21,9 @@
   /* 글자 (본문 → 보조 → 흐림 순) */
   --text:        #2A2620;
   --text-2:      #5F5648;
-  --text-3:      #7A6F5E;
-  --text-4:      #9C907C;
+  /* text-3·4: 같은 색조로 조금 진하게 — 크림 바탕 대비 4.5:1 이상(WCAG AA) 확보 */
+  --text-3:      #6B604F;
+  --text-4:      #80745F;
 
   --border:      #E6DCCB;
   --border-2:    #D6C8B0;
@@ -60,6 +61,15 @@
   --shadow-md:  0 4px 16px rgba(60,45,25,0.08), 0 2px 4px rgba(60,45,25,0.04);
   --shadow-lg:  0 24px 48px -24px rgba(60,45,25,0.25), 0 2px 8px rgba(60,45,25,0.06);
   --header-h:   58px;
+
+  /* 글자 크기 토큰 — 컴포넌트 CSS는 px 대신 var(--fs-N)만 사용.
+     노안 사용자 기준으로 PC·모바일 모두 큰 글씨로 통일.
+     작은 글씨일수록 더 키우고 큰 제목(24px~)은 그대로 둬서 위계를 유지한다. */
+  --fs-9: 12px;  --fs-10: 13px; --fs-11: 15px; --fs-12: 16px; --fs-12_5: 16px;
+  --fs-13: 17px; --fs-14: 18px; --fs-15: 18px; --fs-16: 19px; --fs-17: 20px;
+  --fs-18: 21px; --fs-19: 22px; --fs-20: 22px; --fs-22: 24px; --fs-24: 24px;
+  --fs-26: 26px; --fs-28: 28px; --fs-32: 32px; --fs-36: 36px; --fs-40: 40px;
+  --fs-44: 44px; --fs-48: 48px; --fs-52: 52px; --fs-56: 56px;
 }
 
 /* ── 기본 리셋 ─────────────────────────────────────────────────────────────── */
@@ -118,7 +128,7 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 .logo-text {
-  font-size: 18px;
+  font-size: var(--fs-18);
   font-weight: 700;
   color: var(--pri);
 }
@@ -140,7 +150,7 @@ button, input, select, textarea { font-family: inherit; }
 .header-ann-btn {
   background: none;
   border: none;
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   cursor: pointer;
   padding: 8px 10px;
@@ -163,7 +173,7 @@ button, input, select, textarea { font-family: inherit; }
   top: 2px; right: 2px;
   background: var(--red);
   color: white;
-  font-size: 9px; font-weight: 800;
+  font-size: var(--fs-9); font-weight: 800;
   border-radius: 50%;
   min-width: 15px; height: 15px;
   display: flex; align-items: center; justify-content: center;
@@ -171,7 +181,7 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 .header-username {
-  font-size: 15px; font-weight: 700;
+  font-size: var(--fs-15); font-weight: 700;
   color: var(--text);
   max-width: 100px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -183,7 +193,7 @@ button, input, select, textarea { font-family: inherit; }
   border: none;
   border-radius: var(--r-sm);
   padding: 5px 10px;
-  font-size: 12px; font-weight: 700;
+  font-size: var(--fs-12); font-weight: 700;
   cursor: pointer; white-space: nowrap;
   transition: background 0.15s;
 }
@@ -194,7 +204,7 @@ button, input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: var(--fs-12);
   color: var(--text-2);
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
@@ -217,13 +227,13 @@ button, input, select, textarea { font-family: inherit; }
 .ios-install-close {
   position: absolute; top: 16px; right: 16px;
   background: var(--surface-3); border: none; border-radius: 50%;
-  width: 30px; height: 30px; font-size: 13px;
+  width: 30px; height: 30px; font-size: var(--fs-13);
   cursor: pointer; color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
 }
-.ios-install-icon { font-size: 36px; text-align: center; margin-bottom: 10px; }
+.ios-install-icon { font-size: var(--fs-36); text-align: center; margin-bottom: 10px; }
 .ios-install-title {
-  font-size: 18px; font-weight: 800; color: var(--text);
+  font-size: var(--fs-18); font-weight: 800; color: var(--text);
   text-align: center; margin-bottom: 20px;
 }
 .ios-install-steps {
@@ -233,19 +243,19 @@ button, input, select, textarea { font-family: inherit; }
 .ios-install-steps li {
   counter-increment: step;
   display: flex; align-items: flex-start; gap: 12px;
-  font-size: 15px; color: var(--text-2); line-height: 1.5;
+  font-size: var(--fs-15); color: var(--text-2); line-height: 1.5;
 }
 .ios-install-steps li::before {
   content: counter(step);
   min-width: 26px; height: 26px;
   background: var(--pri); color: white;
-  border-radius: 50%; font-size: 13px; font-weight: 700;
+  border-radius: 50%; font-size: var(--fs-13); font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .ios-install-arrow-hint {
   margin-top: 20px; text-align: center;
-  font-size: 13px; color: var(--text-4);
+  font-size: var(--fs-13); color: var(--text-4);
 }
 
 /* 뒤로가기 이중확인 토스트 */
@@ -258,7 +268,7 @@ button, input, select, textarea { font-family: inherit; }
   color: white;
   padding: 11px 22px;
   border-radius: 22px;
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   white-space: nowrap;
   z-index: 9999;
@@ -288,15 +298,15 @@ button, input, select, textarea { font-family: inherit; }
   padding: 40px 28px; max-width: 320px; text-align: center;
 }
 .family-disabled-msg {
-  font-size: 15px; font-weight: 600; color: var(--red); line-height: 1.6; margin: 0;
+  font-size: var(--fs-15); font-weight: 600; color: var(--red); line-height: 1.6; margin: 0;
 }
 .family-disabled-email {
-  font-size: 14px; color: var(--pri); text-decoration: underline;
+  font-size: var(--fs-14); color: var(--pri); text-decoration: underline;
 }
 .family-disabled-logout {
   margin-top: 8px; padding: 10px 28px;
   background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 8px;
-  font-size: 14px; cursor: pointer;
+  font-size: var(--fs-14); cursor: pointer;
 }
 
 .app-loading {
@@ -318,7 +328,7 @@ button, input, select, textarea { font-family: inherit; }
   animation: spin 0.8s linear infinite;
 }
 
-.loading-slow { font-size: 12px; color: var(--text-4); margin-top: 4px; }
+.loading-slow { font-size: var(--fs-12); color: var(--text-4); margin-top: 4px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -330,11 +340,11 @@ button, input, select, textarea { font-family: inherit; }
     padding: 0 14px;
     height: 52px;
   }
-  .logo-text { font-size: 16px; }
+  .logo-text { font-size: var(--fs-16); }
   .logo-symbol { width: 28px; height: 28px; border-radius: 7px; }
   .header-nav-buttons { display: none; }
-  .header-username { font-size: 14px; font-weight: 700; max-width: 80px; }
-  .header-logout { padding: 4px 8px; font-size: 11px; }
+  .header-username { font-size: var(--fs-14); font-weight: 700; max-width: 80px; }
+  .header-logout { padding: 4px 8px; font-size: var(--fs-11); }
 
   .mobile-bottom-nav {
     display: flex;
@@ -374,7 +384,7 @@ button, input, select, textarea { font-family: inherit; }
 
 .mobile-nav-icon .nav-svg { width: 24px; height: 24px; }
 .mobile-nav-icon {
-  font-size: 24px;
+  font-size: var(--fs-24);
   line-height: 1;
   width: 24px; height: 24px;
   position: relative;
@@ -382,7 +392,7 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 .mobile-nav-label {
-  font-size: 11px;
+  font-size: var(--fs-11);
   font-weight: 700;
   letter-spacing: 0;
   color: inherit;
@@ -393,7 +403,7 @@ button, input, select, textarea { font-family: inherit; }
   top: -3px; right: -6px;
   background: var(--red);
   color: white;
-  font-size: 9px;
+  font-size: var(--fs-9);
   font-weight: 800;
   border-radius: 50%;
   min-width: 15px; height: 15px;
@@ -414,19 +424,19 @@ button, input, select, textarea { font-family: inherit; }
   text-align: center;
   box-shadow: 0 20px 60px rgba(42,38,32,0.25);
 }
-.confirm-box h3 { font-size: 17px; font-weight: 700; color: var(--text); margin: 0 0 20px; }
+.confirm-box h3 { font-size: var(--fs-17); font-weight: 700; color: var(--text); margin: 0 0 20px; }
 .confirm-actions { display: flex; gap: 10px; }
 .btn-cancel-confirm {
   flex: 1; padding: 11px;
   border: 1.5px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--text-2);
-  font-size: 14px; font-family: inherit; cursor: pointer;
+  font-size: var(--fs-14); font-family: inherit; cursor: pointer;
 }
 .btn-delete-confirm {
   flex: 1; padding: 11px;
   border: none; border-radius: 8px;
   background: var(--pri); color: white;
-  font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
+  font-size: var(--fs-14); font-weight: 700; font-family: inherit; cursor: pointer;
 }
 .btn-delete-confirm:hover { background: var(--pri-dark); }
 
@@ -434,7 +444,7 @@ button, input, select, textarea { font-family: inherit; }
 .invite-loading,
 .invite-error {
   display: flex; align-items: center; justify-content: center;
-  height: 100%; font-size: 16px; color: var(--text-2);
+  height: 100%; font-size: var(--fs-16); color: var(--text-2);
 }
 
 .invite-landing {
@@ -452,21 +462,21 @@ button, input, select, textarea { font-family: inherit; }
   max-width: 400px; width: 90%;
 }
 
-.invite-icon { font-size: 56px; margin-bottom: 16px; }
-.invite-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
-.invite-desc { font-size: 15px; color: var(--text-2); line-height: 1.6; margin-bottom: 28px; }
+.invite-icon { font-size: var(--fs-56); margin-bottom: 16px; }
+.invite-title { font-size: var(--fs-24); font-weight: 800; color: var(--text); margin-bottom: 12px; }
+.invite-desc { font-size: var(--fs-15); color: var(--text-2); line-height: 1.6; margin-bottom: 28px; }
 
 .invite-view-btn {
   background: var(--pri);
   color: white; border: none; border-radius: var(--r-md);
-  padding: 14px 40px; font-size: 15px; font-weight: 700;
+  padding: 14px 40px; font-size: var(--fs-15); font-weight: 700;
   cursor: pointer; transition: background 0.15s;
 }
 .invite-view-btn:hover { background: var(--pri-dark); }
 
 .invite-person-name { color: var(--pri); font-weight: 700; }
 .invite-btn-group { display: flex; flex-direction: column; gap: 10px; }
-.invite-note { font-size: 11px; color: var(--text-4); margin-top: 12px; }
+.invite-note { font-size: var(--fs-11); color: var(--text-4); margin-top: 12px; }
 
 .invite-inapp-warn {
   background: var(--gold-bg);
@@ -476,19 +486,19 @@ button, input, select, textarea { font-family: inherit; }
   margin-bottom: 20px;
   text-align: center;
 }
-.invite-inapp-warn p { font-size: 13px; color: var(--gold-dark); margin: 0 0 10px; line-height: 1.6; }
+.invite-inapp-warn p { font-size: var(--fs-13); color: var(--gold-dark); margin: 0 0 10px; line-height: 1.6; }
 .invite-inapp-warn strong { color: var(--gold-dark); }
 .invite-inapp-btn {
   width: 100%;
   padding: 10px;
   background: var(--acc);
   color: white; border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 700;
+  font-size: var(--fs-14); font-weight: 700;
   cursor: pointer; font-family: inherit;
   margin-bottom: 8px;
 }
 .invite-inapp-btn:active { opacity: 0.85; }
-.invite-inapp-hint { font-size: 11px; color: var(--gold-dark); margin: 0 !important; line-height: 1.7; }
+.invite-inapp-hint { font-size: var(--fs-11); color: var(--gold-dark); margin: 0 !important; line-height: 1.7; }
 
 .invite-app-banner {
   background: var(--pri-bg);
@@ -503,12 +513,12 @@ button, input, select, textarea { font-family: inherit; }
   padding: 11px;
   background: var(--pri);
   color: white; border: none; border-radius: 10px;
-  font-size: 15px; font-weight: 700;
+  font-size: var(--fs-15); font-weight: 700;
   cursor: pointer; font-family: inherit;
   margin-bottom: 8px;
 }
 .invite-app-open-btn:active { opacity: 0.85; }
-.invite-app-hint { font-size: 11px; color: var(--pri-light); margin: 0 !important; line-height: 1.7; }
+.invite-app-hint { font-size: var(--fs-11); color: var(--pri-light); margin: 0 !important; line-height: 1.7; }
 
 /* ── 제목 글꼴 (명조) ─────────────────────────────────────────────────────── */
 .logo-text,
@@ -566,4 +576,16 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 700;
   color: var(--deceased-dark);
   margin-right: 2px;
+}
+
+/* ── 모바일 가독성·조작성 보정 (노안 사용자) ───────────────────────────── */
+@media (max-width: 640px) {
+  /* 입력창 16px 이상: 읽기 쉽고, iOS 사파리의 자동 확대도 막는다 */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select, textarea {
+    font-size: max(16px, var(--fs-15)) !important;
+  }
+  /* 손가락으로 누르기 쉬운 최소 높이 */
+  .header-logout { min-height: 36px; padding: 6px 12px; }
+  .mobile-nav-label { letter-spacing: -0.2px; }
 }

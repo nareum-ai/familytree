@@ -245,10 +245,10 @@
 }
 .btn-copy-emails:hover { border-color: var(--pri); color: var(--pri); background: var(--pri-bg-2); }
 
-/* 테이블 컬럼 — col-date(가입일) 제거, 5열 */
+/* 테이블 컬럼 — #, 아이디, 매핑, 최종접속, 알림, 관리 */
 .member-table-head, .admin-member-row {
   display: grid;
-  grid-template-columns: 28px 1fr 90px 80px 145px;
+  grid-template-columns: 28px 1fr 90px 80px 64px 145px;
   align-items: center; gap: 8px;
   padding: 10px 14px;
 }
@@ -273,6 +273,17 @@
 .col-actions { display: flex; gap: 6px; align-items: center; }
 
 .col-login { font-size: 11px; color: var(--text-4); }
+
+/* 알림 수신 상태 배지 */
+.col-push { font-size: 11px; white-space: nowrap; }
+.push-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-weight: 700; font-size: 11px; }
+.push-badge.ok      { background: var(--green-bg); color: var(--green); }
+.push-badge.failing { background: var(--red-bg); color: var(--red-dark); }
+.push-badge.none    { background: var(--surface-3); color: var(--text-4); }
+.member-push-filter {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--text-3); white-space: nowrap; cursor: pointer;
+}
 
 .btn-log {
   background: none; border: none; color: var(--pri);
@@ -825,8 +836,9 @@
   .col-id    { order: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 64px; flex-shrink: 0; }
   .col-login { order: 2; font-size: 11px; color: var(--text-4); white-space: nowrap; flex-shrink: 0; }
   .col-map   { order: 3; flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col-push  { order: 4; flex-shrink: 0; }
   .col-actions {
-    order: 4;
+    order: 5;
     display: flex;
     gap: 4px;
     flex-shrink: 0;

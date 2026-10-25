@@ -10,6 +10,7 @@ import { formatCompactDateTime } from '../../utils/date';
 import { AdminPager } from './AdminPager';
 import { paginate } from '../../utils/paginate';
 import { Icon } from '../Icon';
+import { pushDeviceCount } from '../../utils/pushStatus';
 
 type Msg = { ok: boolean; msg: string } | null;
 
@@ -156,7 +157,7 @@ export function BroadcastSection({ members }: { members: Member[] }) {
   const [loading, setLoading] = useState(false);
   const [msg,     setMsg]     = useState<Msg>(null);
 
-  const recipients = members.filter(m => m.fcm_token && m.status === 'active');
+  const recipients = members.filter(m => pushDeviceCount(m) > 0 && m.status === 'active');
 
   const handleSend = async () => {
     if (!title.trim()) return;

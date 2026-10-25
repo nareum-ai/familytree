@@ -52,14 +52,14 @@
 
 .login-title {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: var(--fs-26);
   font-weight: 700;
   color: var(--text);
   margin: 0 0 8px;
   letter-spacing: -0.02em;
 }
 
-.login-desc { font-size: 14px; color: var(--text-3); margin: 0 0 24px; }
+.login-desc { font-size: var(--fs-14); color: var(--text-3); margin: 0 0 24px; }
 
 /* 구글 버튼 */
 .google-login-btn {
@@ -68,7 +68,7 @@
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  font-size: 15px; font-weight: 600; color: var(--text);
+  font-size: var(--fs-15); font-weight: 600; color: var(--text);
   cursor: pointer;
   transition: all 0.15s;
   margin-bottom: 4px;
@@ -84,7 +84,7 @@
 /* 구분선 */
 .login-divider {
   display: flex; align-items: center; gap: 12px;
-  margin: 10px 0; color: var(--border-2); font-size: 12px; font-weight: 500;
+  margin: 10px 0; color: var(--border-2); font-size: var(--fs-12); font-weight: 500;
 }
 .login-divider::before, .login-divider::after {
   content: ''; flex: 1; height: 1px; background: var(--border);
@@ -97,7 +97,7 @@
   padding: 13px 16px;
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  font-size: 15px;
+  font-size: var(--fs-15);
   text-align: left;
   outline: none;
   transition: all 0.15s;
@@ -116,7 +116,7 @@
   padding: 14px;
   background: var(--pri);
   color: white; border: none; border-radius: 12px;
-  font-size: 15px; font-weight: 700;
+  font-size: var(--fs-15); font-weight: 700;
   cursor: pointer; transition: all 0.2s;
   font-family: inherit;
 }
@@ -125,7 +125,7 @@
 .login-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .login-error {
-  color: var(--red); font-size: 13px; margin: 0; text-align: center;
+  color: var(--red); font-size: var(--fs-13); margin: 0; text-align: center;
   background: var(--red-bg); border-radius: 8px; padding: 8px 12px;
 }
 
@@ -134,20 +134,20 @@
   border: 1.5px solid var(--green-bg);
   border-radius: 14px;
   padding: 16px;
-  font-size: 14px; font-weight: 600; color: var(--green);
+  font-size: var(--fs-14); font-weight: 600; color: var(--green);
   text-align: center;
   line-height: 1.5;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   margin-bottom: 4px;
 }
-.login-success-icon { font-size: 28px; line-height: 1; }
+.login-success-icon { font-size: var(--fs-28); line-height: 1; }
 
 .remember-me {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-13);
   font-weight: 500;
   color: var(--text-2);
   user-select: none;
@@ -163,7 +163,7 @@
 
 .login-register-btn {
   background: none; border: none;
-  color: var(--pri); font-size: 13px; font-weight: 600;
+  color: var(--pri); font-size: var(--fs-13); font-weight: 600;
   cursor: pointer; padding: 6px 0;
   font-family: inherit;
 }
@@ -171,20 +171,20 @@
 
 .login-forgot-btn {
   background: none; border: none;
-  color: var(--text-3); font-size: 12px;
+  color: var(--text-3); font-size: var(--fs-12);
   cursor: pointer; padding: 4px 0;
   font-family: inherit;
 }
 .login-forgot-btn:hover { color: var(--text-2); text-decoration: underline; }
 
 .login-desc {
-  font-size: 14px; color: var(--text-3);
+  font-size: var(--fs-14); color: var(--text-3);
   line-height: 1.6; margin-bottom: 16px;
   text-align: center;
 }
 
 .reg-optional-label {
-  font-size: 12px; color: var(--text-4);
+  font-size: var(--fs-12); color: var(--text-4);
   margin: 4px 0 2px; text-align: left;
 }
 
@@ -198,7 +198,7 @@
   text-align: center;
 }
 .inapp-banner-msg {
-  font-size: 13px; color: var(--gold-dark); margin: 0 0 10px;
+  font-size: var(--fs-13); color: var(--gold-dark); margin: 0 0 10px;
   line-height: 1.6;
 }
 .inapp-banner-msg strong { color: var(--gold-dark); }
@@ -207,12 +207,12 @@
   padding: 10px;
   background: var(--acc);
   color: white; border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 700;
+  font-size: var(--fs-14); font-weight: 700;
   cursor: pointer; font-family: inherit;
   margin-bottom: 8px;
 }
 .inapp-open-btn:active { opacity: 0.85; }
 .inapp-banner-hint {
-  font-size: 11px; color: var(--gold-dark); margin: 0;
+  font-size: var(--fs-11); color: var(--gold-dark); margin: 0;
   line-height: 1.7;
 }

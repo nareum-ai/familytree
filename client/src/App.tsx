@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useFamilyStore } from './store/familyStore';
 import { FamilyTreeView } from './components/FamilyTreeView';
 import { InvitePage } from './components/InvitePage';
+import { extractInviteToken } from './lib/inviteMessage';
 import { InviteVerifyScreen } from './components/InviteVerifyScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { RegisterScreen } from './components/RegisterScreen';
@@ -21,7 +22,7 @@ import { InviteFamilyView } from './components/InviteFamilyView';
 import { AppHeader, MobileBottomNav, type AppView } from './components/AppHeader';
 import { IOSInstallGuide } from './components/IOSInstallGuide';
 import { LS, SS } from './lib/storageKeys';
-import { isIOSSafari } from './lib/device';
+import { canAddToHomeScreenIOS } from './lib/device';
 import {
   clearInviteContext, clearSession, clearUserIdentity, getInviteContext, getMemberId, getUserName,
   hasInviteContext, isAdminReturn as checkAdminReturn, isAdminSession, returnToAdmin,
@@ -31,7 +32,10 @@ import {
   consumeInviteToken, ensureAdminAccount, isFamilyDisabled, linkGoogleToMember, loginMember,
   loginWithGoogle, mapMemberToPerson, recordLogin, registerWithGoogle,
 } from './services/authService';
-import { useFCMToken } from './hooks/useFCMToken';
+import { useFCMToken, useForegroundPush } from './hooks/useFCMToken';
+import { ForegroundPushToast, PushPermissionPrompt } from './components/PushPermissionPrompt';
+import { NotifBlockedModal } from './components/NotifBlockedModal';
+import './components/NotifBlockedModal.css';
 import { useAdminEmail } from './hooks/useAdminEmail';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useBackButton } from './hooks/useBackButton';
@@ -74,7 +78,8 @@ function FamilyDisabledScreen({ adminEmail }: { adminEmail: string | null }) {
 }
 
 function App() {
-  useFCMToken();
+  useFCMToken(getMemberId());
+  const [foregroundPush, dismissForegroundPush] = useForegroundPush();
 
   const { init, loading, persons, viewpointPersonId, currentFamilyId,
           selectedPersonId, infoRequestPersonId } = useFamilyStore(
@@ -102,6 +107,7 @@ function App() {
 
   const [slowLoad,       setSlowLoad]       = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
+  const [showNotifBlocked, setShowNotifBlocked] = useState(false);
   const [activeView,     setActiveView]     = useState<AppView | null>(null);
   const [pendingRequestCount, setPendingCount] = useState(0);
   const [loginError,    setLoginError]    = useState('');
@@ -118,6 +124,7 @@ function App() {
   const [pendingInviteMemberId, setPendingInviteMemberId] = useState<string | null>(null);
   const [familyGroupRequested, setFamilyGroupRequested] = useState(false);
   const [familyDisabled, setFamilyDisabled] = useState(false);
+  const [googleSigningIn, setGoogleSigningIn] = useState(false);
   const [googleLinkData, setGoogleLinkData] = useState<{
     uid: string; email: string; displayName: string;
   } | null>(null);
@@ -206,13 +213,17 @@ function App() {
   const applyMemberLogin = async (member: Member, displayName?: string) => {
     const userDisplayName = member.person_name ?? displayName ?? member.username;
 
-    if (member.family_id && await isFamilyDisabled(member.family_id)) {
+    // 정지 확인과 로그인 기록은 서로 무관 → 동시에 보내 서버 왕복을 한 번으로 줄임
+    const [disabled] = await Promise.all([
+      member.family_id ? isFamilyDisabled(member.family_id) : Promise.resolve(false),
+      recordLogin(member.id).catch(() => {}),
+    ]);
+    if (disabled) {
       setFamilyDisabled(true);
       return;
     }
 
     if (!member.family_id || !member.person_id) {
-      await recordLogin(member.id).catch(() => {});
       localStorage.setItem(LS.USER_NAME, userDisplayName);
       localStorage.setItem(LS.MEMBER_ID, member.id);
       const invite = getInviteContext();
@@ -232,19 +243,26 @@ function App() {
       memberId: member.id,
       accountName: member.username,
     });
-    await recordLogin(member.id).catch(() => {}); // reload 전에 완료 보장
-    window.location.reload();
+    // 페이지 reload 없이 바로 가계도로 전환 — 앱 재시작·서버 재연결 시간을 아낀다
+    // (App은 세션 값을 렌더마다 localStorage에서 읽으므로 store만 새 가족으로 맞추면 됨)
+    setShowRegister(false);
+    setShowForgotPassword(false);
+    useFamilyStore.setState({
+      currentFamilyId: member.family_id,
+      viewpointPersonId: member.person_id,
+      persons: [], relationships: [], loading: true,
+    });
   };
 
   /** 정지·관리자 계정 처리 후 일반 로그인 진행 */
-  const loginAs = (member: Member, adminUsername: string, displayName?: string) => {
+  const loginAs = async (member: Member, adminUsername: string, displayName?: string) => {
     if (member.status === 'suspended') { setLoginError(SUSPENDED_MSG); return; }
     if (member.is_admin) {
       startAdminSession(adminUsername, member.id);
       window.location.reload();
       return;
     }
-    applyMemberLogin(member, displayName);
+    await applyMemberLogin(member, displayName);
   };
 
   // ── 아이디/비밀번호 로그인 ──────────────────────────────────────────────────
@@ -254,7 +272,7 @@ function App() {
     try {
       const member = await loginMember(username, password);
       if (!member) { setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
-      loginAs(member, username);
+      await loginAs(member, username);
     } finally {
       setLoginLoading(false);
     }
@@ -265,7 +283,8 @@ function App() {
     setLoginError('');
     setLoginLoading(true);
     try {
-      const result = await loginWithGoogle();
+      // 계정 선택이 끝나면 로그인 화면 대신 로딩 화면 표시
+      const result = await loginWithGoogle(() => setGoogleSigningIn(true));
       if (!result) return; // 팝업 취소
       const { member, googleUid, googleEmail, displayName } = result;
 
@@ -274,7 +293,7 @@ function App() {
         if (hasInviteContext()) {
           const newMember = await registerWithGoogle(googleUid, googleEmail, displayName);
           localStorage.setItem(LS.GOOGLE_EMAIL, googleEmail);
-          applyMemberLogin(newMember, displayName);
+          await applyMemberLogin(newMember, displayName);
           return;
         }
         // 일반 신규 구글 사용자 → 기존 계정 연결 or 새로 시작 화면
@@ -282,11 +301,12 @@ function App() {
         return;
       }
       if (member.status !== 'suspended') localStorage.setItem(LS.GOOGLE_EMAIL, googleEmail);
-      loginAs(member, member.username, displayName);
+      await loginAs(member, member.username, displayName);
     } catch {
       setLoginError('구글 로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setLoginLoading(false);
+      setGoogleSigningIn(false);
     }
   };
 
@@ -340,14 +360,27 @@ function App() {
 
   // ── 라우팅 ────────────────────────────────────────────────────────────────────
   if (resetMatch)  return <ResetPasswordScreen token={resetMatch[1]} />;
-  if (inviteMatch) return <InvitePage token={inviteMatch[1]} />;
+  if (inviteMatch) return <InvitePage token={extractInviteToken(inviteMatch[1])} />;
   if (needsLogin && showLanding) return (
     <LandingPage
       onRegister={() => { setShowLanding(false); setShowRegister(true); }}
       onLogin={() => setShowLanding(false)}
     />
   );
-  if (isAdmin) return <AdminView onLogout={handleLogout} />;
+  const foregroundToast = foregroundPush && (
+    <ForegroundPushToast key={foregroundPush.id} title={foregroundPush.title} body={foregroundPush.body} onClose={dismissForegroundPush} />
+  );
+
+  if (isAdmin) return <><AdminView onLogout={handleLogout} />{foregroundToast}</>;
+
+  if (googleSigningIn) {
+    return (
+      <div className="app-loading">
+        <div className="spinner" />
+        <p>로그인 중...</p>
+      </div>
+    );
+  }
 
   if (googleLinkData) {
     return (
@@ -430,6 +463,11 @@ function App() {
 
   const ActiveView = activeView ? VIEWS[activeView] : null;
 
+  // 알림 켜기 안내: 본인 인물이 매핑된 일반 회원만 (관리자 대리 접속 제외)
+  const memberIdForPush = getMemberId();
+  const pushMemberId = memberIdForPush && !isAdminReturn && localStorage.getItem(LS.MY_PERSON_ID)
+    ? memberIdForPush : null;
+
   // ── 메인 앱 ──────────────────────────────────────────────────────────────────
   return (
     <div className="app">
@@ -439,7 +477,7 @@ function App() {
         onOpen={setActiveView}
         onLogout={handleLogout}
         onReturnToAdmin={isAdminReturn ? () => { returnToAdmin(); window.location.reload(); } : undefined}
-        onShowIOSInstall={isIOSSafari() ? () => setShowIOSInstall(true) : undefined}
+        onShowIOSInstall={canAddToHomeScreenIOS() ? () => setShowIOSInstall(true) : undefined}
       />
       <main className="app-main">
         <FamilyTreeView />
@@ -450,6 +488,15 @@ function App() {
         <div className="back-exit-toast">한 번 더 누르면 앱을 종료합니다</div>
       )}
       {showIOSInstall && <IOSInstallGuide onClose={() => setShowIOSInstall(false)} />}
+      {pushMemberId && (
+        <PushPermissionPrompt
+          memberId={pushMemberId}
+          onBlocked={() => setShowNotifBlocked(true)}
+          onIOSInstall={() => setShowIOSInstall(true)}
+        />
+      )}
+      {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} />}
+      {foregroundToast}
     </div>
   );
 }

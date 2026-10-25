@@ -1,5 +1,5 @@
 // 초기 로드 시 1회 실행하는 데이터 보정 (모두 best-effort: 실패해도 무시)
-import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, limit, updateDoc, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { findDocs } from '../lib/firestore';
 import { parseKoreanName } from '../utils/nameParser';
@@ -119,7 +119,8 @@ export async function runDataRepairs(getSnapshot: () => Snapshot) {
 
 /** family_id 없는 옛 문서를 현재 가족으로 이관 — 해당 가족 문서가 하나도 없을 때만 실행 */
 export async function migrateLegacyFamilyId(familyId: string) {
-  const checkSnap = await findDocs('persons', where('family_id', '==', familyId));
+  // 존재 여부만 확인 — 전체 목록을 받지 않도록 1건만 조회
+  const checkSnap = await findDocs('persons', where('family_id', '==', familyId), limit(1));
   if (checkSnap.size > 0) return;
   const [allPersons, allRels] = await Promise.all([
     getDocs(collection(db, 'persons')),

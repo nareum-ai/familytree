@@ -35,18 +35,29 @@ onBackgroundMessage(messaging, (payload) => {
     body,
     icon: 'https://familytree-3221b.web.app/icons/icon-192.png',
     data: { url: link },
+    ...(d['tag'] ? { tag: d['tag'] } : {}),
   });
 });
 
+// 알림 클릭 → 열린 창이 있으면 그 창을 알림 링크로 이동, 없으면 새 창
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data as { url?: string })?.url ?? '/';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ('focus' in client) return client.focus();
+  const raw = (event.notification.data as { url?: string })?.url ?? '/';
+  const target = new URL(raw, self.location.origin);
+  event.waitUntil((async () => {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const client = clients.find(c => new URL(c.url).origin === target.origin) ?? clients[0];
+    if (client) {
+      const focused = await client.focus().catch(() => client);
+      const cur = new URL(focused.url);
+      const needsNav = target.origin === cur.origin
+        && (target.pathname !== cur.pathname || target.search !== cur.search)
+        && target.pathname !== '/';
+      if (needsNav && 'navigate' in focused) {
+        await (focused as WindowClient).navigate(target.href).catch(() => {});
       }
-      return self.clients.openWindow(url);
-    })
-  );
+      return;
+    }
+    await self.clients.openWindow(target.href);
+  })());
 });

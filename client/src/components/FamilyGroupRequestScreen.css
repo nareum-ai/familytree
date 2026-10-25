@@ -1,7 +1,7 @@
 .fgr-card { max-width: 400px; }
 
 .fgr-desc {
-  font-size: 14px;
+  font-size: var(--fs-14);
   color: var(--text-2);
   line-height: 1.7;
   margin: 0 0 20px;
@@ -22,7 +22,7 @@
 }
 
 .fgr-label {
-  font-size: 13px;
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text-2);
 }
@@ -33,7 +33,7 @@
   padding: 10px 12px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-14);
   outline: none;
   resize: vertical;
   font-family: inherit;
@@ -52,7 +52,7 @@
   border: 2px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   cursor: pointer;
   color: var(--text-2);
@@ -66,7 +66,7 @@
   display: flex !important;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-12);
   color: var(--text-3);
   margin-top: 6px;
   cursor: pointer;
@@ -80,9 +80,9 @@
   text-align: center;
   margin: 4px 0 12px;
 }
-.fgr-pending-name { font-size: 18px; font-weight: 700; color: var(--text); margin: 0 0 4px; }
-.fgr-pending-date { font-size: 12px; color: var(--text-4); margin: 0 0 8px; }
-.fgr-pending-msg  { font-size: 13px; color: var(--pri); font-weight: 600; margin: 0; }
+.fgr-pending-name { font-size: var(--fs-18); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.fgr-pending-date { font-size: var(--fs-12); color: var(--text-4); margin: 0 0 8px; }
+.fgr-pending-msg  { font-size: var(--fs-13); color: var(--pri); font-weight: 600; margin: 0; }
 
 .fgr-cancel-btn {
   width: 100%;
@@ -91,7 +91,7 @@
   color: var(--red);
   border: 1.5px solid var(--red-border);
   border-radius: 10px;
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
@@ -99,7 +99,7 @@
 .fgr-cancel-btn:hover:not(:disabled) { background: var(--red-bg); }
 .fgr-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.fgr-done-icon { font-size: 48px; margin-bottom: 12px; }
+.fgr-done-icon { font-size: var(--fs-48); margin-bottom: 12px; }
 
 .fgr-notice {
   display: flex;
@@ -112,13 +112,13 @@
   margin: 0 0 18px;
   text-align: left;
 }
-.fgr-notice-icon { font-size: 18px; flex-shrink: 0; line-height: 1.5; }
-.fgr-notice p { font-size: 13px; color: var(--gold-dark); line-height: 1.65; margin: 0; }
+.fgr-notice-icon { font-size: var(--fs-18); flex-shrink: 0; line-height: 1.5; }
+.fgr-notice p { font-size: var(--fs-13); color: var(--gold-dark); line-height: 1.65; margin: 0; }
 .fgr-notice strong { color: var(--gold-dark); }
 
 .fgr-contact {
   margin: 14px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-12);
   color: var(--text-4);
   text-align: center;
   line-height: 1.6;

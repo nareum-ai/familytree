@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { getToken, isSupported } from 'firebase/messaging';
 import { getMessagingInstance } from '../lib/firebase';
-import { saveFcmToken } from '../services/authService';
-import { VAPID_KEY } from '../lib/pushNotifications';
+import { saveFcmToken, type PushScope } from '../services/authService';
+import { VAPID_KEY, getSavedToken, rememberSavedToken } from '../lib/pushNotifications';
 import { isStandalone } from '../lib/device';
 import { LS } from '../lib/storageKeys';
 
 interface FcmDebugProps {
-  field?: 'fcm_token' | 'fcm_token_admin';
+  scope?: PushScope;
 }
 
-export function FcmDebugPanel({ field = 'fcm_token' }: FcmDebugProps) {
+export function FcmDebugPanel({ scope = 'user' }: FcmDebugProps) {
   const [log, setLog] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [open, setOpen] = useState(false);
@@ -64,8 +64,8 @@ export function FcmDebugPanel({ field = 'fcm_token' }: FcmDebugProps) {
       const memberId = localStorage.getItem(LS.MEMBER_ID);
       if (!memberId) { add('❌ memberId 없음'); return; }
 
-      await saveFcmToken(memberId, token, field);
-      localStorage.setItem(LS.FCM_TOKEN_SAVED, token);
+      await saveFcmToken(memberId, token, scope, getSavedToken());
+      rememberSavedToken(memberId, scope, token);
       add('✅ Firestore 저장 완료!');
     } catch (e: unknown) {
       add(`❌ 오류: ${e instanceof Error ? e.message : String(e)}`);
@@ -83,7 +83,7 @@ export function FcmDebugPanel({ field = 'fcm_token' }: FcmDebugProps) {
       {open && (
         <div className="my-fcm-debug-body">
           <p className="my-fcm-debug-token">
-            FCM 토큰: <b>{localStorage.getItem(LS.FCM_TOKEN_SAVED) ? '✅ 저장됨' : '❌ 없음'}</b>
+            FCM 토큰: <b>{getSavedToken() ? '✅ 저장됨' : '❌ 없음'}</b>
           </p>
           <button
             onClick={runTest}

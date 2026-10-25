@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { PLAY_STORE_RELEASED, ANDROID_PACKAGE, PLAY_STORE_URL } from './src/lib/appConfig';
 
 export default defineConfig({
   plugins: [
@@ -21,6 +22,11 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'any',
         start_url: '/',
+        // Play 스토어 출시 후(PLAY_STORE_RELEASED=true): 브라우저 PWA 설치 대신 Play 앱으로 유도 + getInstalledRelatedApps 감지
+        ...(PLAY_STORE_RELEASED ? {
+          related_applications: [{ platform: 'play', id: ANDROID_PACKAGE, url: PLAY_STORE_URL }],
+          prefer_related_applications: true,
+        } : {}),
         icons: [
           { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml' },
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },

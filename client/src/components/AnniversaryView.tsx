@@ -6,9 +6,8 @@ import { buildAnniversaries, formatDate, type AnniversaryItem } from '../utils/a
 import { LS } from '../lib/storageKeys';
 import { getMemberId, getMyPersonId, isAdminContext as checkAdminContext } from '../lib/session';
 import { getMemberData, updateMember } from '../lib/firestore';
-import { enablePushOnDevice, setPushEnabled } from '../lib/pushNotifications';
+import { enablePushOnDevice, isDeviceRegistered, notificationPermission, setPushEnabled } from '../lib/pushNotifications';
 import { NotifBlockedModal } from './NotifBlockedModal';
-import { getInstallPrompt, triggerInstall } from '../lib/installPrompt';
 import './AnniversaryView.css';
 import './NotifBlockedModal.css';
 import { Icon } from './Icon';
@@ -103,15 +102,14 @@ export function AnniversaryView({ onClose }: Props) {
   const [showNotifBlocked, setShowNotifBlocked] = useState(false);
   const [notifTestPrompt, setNotifTestPrompt] = useState(false);
   const [pushToggleLoading, setPushToggleLoading] = useState(false);
+  // 설정값(enabled)이 켜져 있어도 이 기기에 권한·토큰이 없으면 실제로는 못 받는다 → 화면에는 OFF로 보여준다
+  const [deviceReady, setDeviceReady] = useState(isDeviceRegistered);
+  const pushOn = pushPrefs.enabled && deviceReady;
   const [confirmedBlocked, setConfirmedBlocked] = useState(
     localStorage.getItem(LS.NOTIF_CONFIRMED_BLOCKED) === 'true'
   );
   const notifDenied = confirmedBlocked
     || (typeof Notification !== 'undefined' && Notification.permission === 'denied');
-
-  const handleInstall = async () => {
-    await triggerInstall();
-  };
 
   // 촌수 계산 기준: 뷰포인트 인물 (없으면 root)
   const chusuBaseId = getChusuBase(persons, viewpointPersonId)?.id;
@@ -159,20 +157,26 @@ export function AnniversaryView({ onClose }: Props) {
 
   const handlePushToggle = async () => {
     if (pushToggleLoading) return;
-    if (pushPrefs.enabled) {
+    if (pushOn) {
       setPushPrefs(p => ({ ...p, enabled: false }));
       return;
     }
-    if (Notification.permission === 'denied') {
+    // iOS 브라우저(홈 화면 미추가)는 Notification API 자체가 없다 → 설치 안내
+    if (typeof Notification === 'undefined' || Notification.permission === 'denied') {
       setShowNotifBlocked(true);
       return;
     }
     setPushToggleLoading(true);
     try {
       const { granted, testShown } = await enablePushOnDevice(memberId);
-      if (!granted) return;
+      if (!granted) {
+        if (notificationPermission() === 'denied') setShowNotifBlocked(true);
+        return;
+      }
+      setDeviceReady(isDeviceRegistered());
       if (testShown) setNotifTestPrompt(true);
       setPushPrefs(p => ({ ...p, enabled: true }));
+      if (memberId) await setPushEnabled(memberId, true).catch(() => {});
     } finally {
       setPushToggleLoading(false);
     }
@@ -210,12 +214,15 @@ export function AnniversaryView({ onClose }: Props) {
           <h2>{mode === 'settings' ? '알림 설정' : '다가오는 기념일'}</h2>
           <div className="ann-header-actions">
             {!isAdminContext && hasPersonId && mode === 'list' && (
+              // 아이콘만 있으면 무엇인지 알아보기 어려워 상태를 글자로 함께 보여준다
+              // (꺼짐: 강조색 "알림 받기" / 켜짐: 차분한 "알림 켜짐" / 차단: 빨간 "알림 차단됨")
               <button
-                className={`ann-settings-btn ${notifDenied ? 'blocked' : ''}`}
+                className={`ann-settings-btn ${notifDenied ? 'blocked' : pushOn ? 'on' : 'off'}`}
                 onClick={() => notifDenied ? setShowNotifBlocked(true) : setMode('settings')}
                 title={notifDenied ? '알림이 차단되어 있어요' : '알림 설정'}
               >
                 {notifDenied ? <Icon name="bell-off" /> : <Icon name="bell" />}
+                <span>{notifDenied ? '알림 차단됨' : pushLoading ? '알림' : pushOn ? '알림 켜짐' : '알림 받기'}</span>
               </button>
             )}
             <button className="ann-close" onClick={mode === 'settings' ? () => setMode('list') : onClose}>
@@ -230,10 +237,10 @@ export function AnniversaryView({ onClose }: Props) {
               <div className="ann-push-row ann-push-toggle-row">
                 <span className="ann-push-label">알림 사용</span>
                 <button
-                  className={`ann-push-toggle ${pushPrefs.enabled ? 'on' : ''}`}
+                  className={`ann-push-toggle ${pushOn ? 'on' : ''}`}
                   onClick={handlePushToggle}
                   disabled={pushToggleLoading}>
-                  {pushToggleLoading ? '...' : pushPrefs.enabled ? 'ON' : 'OFF'}
+                  {pushToggleLoading ? '...' : pushOn ? 'ON' : 'OFF'}
                 </button>
               </div>
               {notifTestPrompt && (
@@ -347,7 +354,7 @@ export function AnniversaryView({ onClose }: Props) {
         )}
       </div>
     </div>
-    {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} onInstall={getInstallPrompt() ? handleInstall : undefined} />}
+    {showNotifBlocked && <NotifBlockedModal onClose={() => setShowNotifBlocked(false)} />}
     </>
   );
 }

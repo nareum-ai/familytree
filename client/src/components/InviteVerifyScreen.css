@@ -1,7 +1,7 @@
 .verify-card { max-width: 380px; }
 
 .verify-desc {
-  font-size: 14px;
+  font-size: var(--fs-14);
   color: var(--text-2);
   line-height: 1.7;
   margin: 0 0 20px;
@@ -9,14 +9,14 @@
 }
 
 .verify-hint {
-  font-size: 11px;
+  font-size: var(--fs-11);
   color: var(--text-4);
   margin-top: 12px;
   text-align: center;
 }
 
 .verify-name {
-  font-size: 22px;
+  font-size: var(--fs-22);
   font-weight: 800;
   color: var(--text);
   text-align: center;
