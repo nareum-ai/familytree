@@ -1,5 +1,5 @@
 import type { Person, Relationship } from '../types';
-import { getChusu } from './familyGraph';
+import { getChusu, getLinealFamilyIds } from './familyGraph';
 import { getRelationLabel } from './relationLabel';
 
 // solarlunar ESM 동적 임포트 — 여러 export 구조 대응
@@ -153,11 +153,13 @@ export async function buildAnniversaries(
     }
   }
 
-  // ── 결혼기념일 ────────────────────────────────────────────────────────────
+  // ── 결혼기념일 (기준 인물의 직계 가족 부부만) ─────────────────────────────
+  const lineal = chusuRoot ? getLinealFamilyIds(chusuRoot.id, relationships) : null;
   const seenRels = new Set<string>();
   for (const rel of relationships) {
     if (rel.type !== 'spouse' || !rel.marriage_date) continue;
     if (seenRels.has(rel.id)) continue;
+    if (lineal && !lineal.has(rel.person1_id) && !lineal.has(rel.person2_id)) continue;
     seenRels.add(rel.id);
 
     const parts = rel.marriage_date.split('-').map(Number);

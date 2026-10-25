@@ -293,6 +293,30 @@ const chusuMap = memoByBase<number>((baseId, relationships) => {
   return visited;
 });
 
+/** 직계 가족: 본인 + 배우자 + 직계존속(부모·조부모…) + 직계비속(자녀·손주…) */
+export function getLinealFamilyIds(baseId: string, relationships: Relationship[]): Set<string> {
+  const result = new Set<string>([baseId, ...getSpouseIds(baseId, relationships)]);
+  const walk = (start: string, dir: 'up' | 'down') => {
+    const queue = [start];
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      for (const r of relationships) {
+        if (r.type !== 'parent_child') continue;
+        const next = dir === 'up'
+          ? (r.person2_id === curr ? r.person1_id : null)
+          : (r.person1_id === curr ? r.person2_id : null);
+        if (next && !result.has(next)) {
+          result.add(next);
+          queue.push(next);
+        }
+      }
+    }
+  };
+  walk(baseId, 'up');
+  walk(baseId, 'down');
+  return result;
+}
+
 export function getChusu(
   personId: string,
   base: Pick<Person, 'id'>,
