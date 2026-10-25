@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanupLoginLogs = exports.onBroadcastPushCreated = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
+exports.cleanupLoginLogs = exports.onPushTestCreated = exports.onBroadcastPushCreated = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const messaging_1 = require("firebase-admin/messaging");
@@ -17,23 +17,100 @@ const db = (0, firestore_1.getFirestore)();
 const fcm = (0, messaging_1.getMessaging)();
 const APP_URL = 'https://familytree-3221b.web.app';
 const APP_NAME = '우리 가족 가계도';
-// ── FCM 전송 헬퍼 ─────────────────────────────────────────────────────────
-async function sendPush(token, title, body, link = '/') {
+const DEAD_TOKEN_CODES = new Set([
+    'messaging/registration-token-not-registered',
+    'messaging/invalid-registration-token',
+]);
+function tokenFields(scope) {
+    return scope === 'admin'
+        ? { arr: 'fcm_tokens_admin', legacy: 'fcm_token_admin' }
+        : { arr: 'fcm_tokens', legacy: 'fcm_token' };
+}
+function memberTokens(data, scope) {
+    if (!data)
+        return [];
+    const { arr, legacy } = tokenFields(scope);
+    const list = Array.isArray(data[arr]) ? data[arr] : [];
+    if (data[legacy])
+        list.push(data[legacy]);
+    return [...new Set(list.filter((t) => typeof t === 'string' && t.length > 0))];
+}
+function buildMessage(token, m) {
     var _a;
+    const link = (_a = m.link) !== null && _a !== void 0 ? _a : '/';
     const absoluteLink = link.startsWith('http') ? link : `${APP_URL}${link}`;
+    const data = { title: m.title, body: m.body, link: absoluteLink };
+    if (m.tag)
+        data.tag = m.tag;
+    const headers = { Urgency: 'high' };
+    if (m.ttlSec)
+        headers.TTL = String(m.ttlSec);
+    // data-only: 서비스 워커(백그라운드)·onMessage(포그라운드)가 직접 표시
+    return { token, webpush: { headers, data } };
+}
+/** 회원의 모든 기기로 메시지(1건 이상) 발송 + 무효 토큰 정리 + 결과 기록 */
+async function pushToMember(ref, data, scope, msgs) {
+    var _a;
+    const list = Array.isArray(msgs) ? msgs : [msgs];
+    const tokens = memberTokens(data, scope);
+    if (tokens.length === 0 || list.length === 0)
+        return { ok: 0, fail: 0, tokens: 0 };
+    const messages = [];
+    for (const m of list)
+        for (const t of tokens)
+            messages.push(buildMessage(t, m));
+    let ok = 0, fail = 0;
+    const dead = new Set();
+    let lastError = '';
+    for (let i = 0; i < messages.length; i += 500) {
+        const chunk = messages.slice(i, i + 500);
+        try {
+            const res = await fcm.sendEach(chunk);
+            res.responses.forEach((r, j) => {
+                var _a, _b, _c, _d;
+                if (r.success) {
+                    ok++;
+                    return;
+                }
+                fail++;
+                const code = (_b = (_a = r.error) === null || _a === void 0 ? void 0 : _a.code) !== null && _b !== void 0 ? _b : '';
+                lastError = code || ((_d = (_c = r.error) === null || _c === void 0 ? void 0 : _c.message) !== null && _d !== void 0 ? _d : 'unknown');
+                if (DEAD_TOKEN_CODES.has(code))
+                    dead.add(chunk[j].token);
+            });
+        }
+        catch (err) {
+            fail += chunk.length;
+            lastError = (_a = err.message) !== null && _a !== void 0 ? _a : String(err);
+        }
+    }
+    const { arr, legacy } = tokenFields(scope);
+    const now = new Date().toISOString();
+    const patch = {};
+    if (ok > 0)
+        patch.push_last_ok_at = now;
+    if (fail > 0) {
+        patch.push_last_fail_at = now;
+        patch.push_last_error = lastError;
+    }
+    if (dead.size > 0) {
+        patch[arr] = firestore_1.FieldValue.arrayRemove(...dead);
+        if ((data === null || data === void 0 ? void 0 : data[legacy]) && dead.has(data[legacy]))
+            patch[legacy] = null;
+    }
     try {
-        const messageId = await fcm.send({
-            token,
-            webpush: {
-                headers: { Urgency: 'high' },
-                data: { title, body, link: absoluteLink },
-            },
-        });
-        console.log(`FCM 전송 성공: ${messageId}`);
+        await ref.update(patch);
     }
-    catch (err) {
-        console.error('FCM 전송 실패:', (_a = err.message) !== null && _a !== void 0 ? _a : err);
+    catch (e) {
+        console.error('푸시 결과 기록 실패:', e.message);
     }
+    console.log(`FCM ${ref.id}: 기기 ${tokens.length}, 성공 ${ok}, 실패 ${fail}, 무효토큰 삭제 ${dead.size}`);
+    return { ok, fail, tokens: tokens.length };
+}
+/** 관리자 전원(관리자 PWA 토큰)에게 발송 */
+async function pushToAdmins(msg) {
+    const adminsSnap = await db.collection('members').where('is_admin', '==', true).get();
+    await Promise.all(adminsSnap.docs.map(d => pushToMember(d.ref, d.data(), 'admin', msg)));
 }
 // ── 비밀번호 초기화 토큰 생성 → 이메일 자동 발송 ─────────────────────────────
 // contact_email 필드가 있으면 해당 주소로, 없으면 member.email로 발송
@@ -79,15 +156,11 @@ exports.onPasswordResetRequestCreated = (0, firestore_2.onDocumentCreated)('pass
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data || data.status !== 'pending')
         return;
-    const adminsSnap = await db.collection('members')
-        .where('is_admin', '==', true)
-        .get();
     const username = (_b = data.username) !== null && _b !== void 0 ? _b : '누군가';
-    const sends = adminsSnap.docs
-        .map(d => d.data().fcm_token_admin)
-        .filter((t) => !!t)
-        .map(token => sendPush(token, '🔑 비밀번호 초기화 요청', `${username}님이 비밀번호 초기화를 요청했습니다.`, '/'));
-    await Promise.all(sends);
+    await pushToAdmins({
+        title: '🔑 비밀번호 초기화 요청',
+        body: `${username}님이 비밀번호 초기화를 요청했습니다.`,
+    });
 });
 // ── 가족그룹 신청 즉시 알림 (관리자) ─────────────────────────────────────────
 exports.onApprovalRequestCreated = (0, firestore_2.onDocumentCreated)('approval_requests/{requestId}', async (event) => {
@@ -95,21 +168,17 @@ exports.onApprovalRequestCreated = (0, firestore_2.onDocumentCreated)('approval_
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data || data.status !== 'pending')
         return;
-    const adminsSnap = await db.collection('members')
-        .where('is_admin', '==', true)
-        .get();
     const requesterName = (_b = data.requested_name) !== null && _b !== void 0 ? _b : '누군가';
-    const sends = adminsSnap.docs
-        .map(d => d.data().fcm_token_admin)
-        .filter((t) => !!t)
-        .map(token => sendPush(token, '📋 가족그룹 생성 신청', `${requesterName}님이 가족그룹 생성을 신청했습니다.`, '/'));
-    await Promise.all(sends);
+    await pushToAdmins({
+        title: '📋 가족그룹 생성 신청',
+        body: `${requesterName}님이 가족그룹 생성을 신청했습니다.`,
+    });
 });
 // ── 정보공개 요청 즉시 알림 ─────────────────────────────────────────────────
 // Firestore 트리거: info_requests 문서 생성 시 1회 실행
 // 폴링 없음 — Firestore가 이벤트를 직접 전달
 exports.onInfoRequestCreated = (0, firestore_2.onDocumentCreated)('info_requests/{requestId}', async (event) => {
-    var _a, _b, _c;
+    var _a, _b;
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data)
         return;
@@ -117,11 +186,11 @@ exports.onInfoRequestCreated = (0, firestore_2.onDocumentCreated)('info_requests
     if (!holderMemberId)
         return; // 권한자 없으면 자동 승인됨, 알림 불필요
     const memberSnap = await db.doc(`members/${holderMemberId}`).get();
-    const fcmToken = (_b = memberSnap.data()) === null || _b === void 0 ? void 0 : _b.fcm_token;
-    if (!fcmToken)
-        return;
-    const requesterName = (_c = data.requester_name) !== null && _c !== void 0 ? _c : '누군가';
-    await sendPush(fcmToken, '📬 정보공개 요청', `${requesterName}님이 정보공개를 요청했습니다.`);
+    const requesterName = (_b = data.requester_name) !== null && _b !== void 0 ? _b : '누군가';
+    await pushToMember(memberSnap.ref, memberSnap.data(), 'user', {
+        title: '📬 정보공개 요청',
+        body: `${requesterName}님이 정보공개를 요청했습니다.`,
+    });
 });
 function getChusu(personId, baseId, rels) {
     if (personId === baseId)
@@ -192,7 +261,9 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
     const familyMap = new Map();
     for (const doc of membersSnap.docs) {
         const d = doc.data();
-        if (!d.family_id || !d.fcm_token || !d.person_id || d.is_admin)
+        if (!d.family_id || !d.person_id || d.is_admin)
+            continue;
+        if (memberTokens(d, 'user').length === 0)
             continue;
         // 개인 설정 읽기 (없으면 기본값)
         const pp = (_b = d.push_prefs) !== null && _b !== void 0 ? _b : {};
@@ -206,12 +277,11 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
         if (!prefs.enabled)
             continue;
         const list = (_c = familyMap.get(d.family_id)) !== null && _c !== void 0 ? _c : [];
-        list.push({ memberId: doc.id, personId: d.person_id, token: d.fcm_token, prefs });
+        list.push({ ref: doc.ref, data: d, personId: d.person_id, prefs, msgs: [] });
         familyMap.set(d.family_id, list);
     }
     if (familyMap.size === 0)
         return;
-    const sends = [];
     for (const [familyId, memberList] of familyMap) {
         const [personsSnap, relsSnap] = await Promise.all([
             db.collection('persons').where('family_id', '==', familyId).get(),
@@ -252,7 +322,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
                             title = `⏰ ${chk.offset}일 후 ${p.name}님의 생일`;
                             body = `${chk.offset}일 뒤 만 ${age}세 생일입니다.`;
                         }
-                        sends.push(sendPush(member.token, title, body));
+                        member.msgs.push({ title, body, ttlSec: 86400 });
                     }
                 }
                 // ── 기일 체크 ────────────────────────────────────────────────────
@@ -277,19 +347,26 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
                             title = `🕯️ ${chk.offset}일 후 ${p.name}님의 기일`;
                             body = `${chk.offset}일 뒤 기일입니다.`;
                         }
-                        sends.push(sendPush(member.token, title, body));
+                        member.msgs.push({ title, body, ttlSec: 86400 });
                     }
                 }
             }
         }
     }
-    await Promise.all(sends);
-    console.log(`기념일 알림 완료: ${sends.length}건`);
+    let total = 0, okMembers = 0;
+    const targets = [...familyMap.values()].flat().filter(m => m.msgs.length > 0);
+    await Promise.all(targets.map(async (m) => {
+        total += m.msgs.length;
+        const r = await pushToMember(m.ref, m.data, 'user', m.msgs);
+        if (r.ok > 0)
+            okMembers++;
+    }));
+    console.log(`기념일 알림 완료: ${total}건 / 대상 ${targets.length}명 / 수신 성공 ${okMembers}명`);
 });
 // ── 관리자 수동 공지 푸시 ────────────────────────────────────────────────────
 // push_broadcasts 문서 생성 시 트리거 — 전체 또는 특정 회원에게 발송
 exports.onBroadcastPushCreated = (0, firestore_2.onDocumentCreated)('push_broadcasts/{docId}', async (event) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d;
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data || data.sent)
         return;
@@ -305,25 +382,40 @@ exports.onBroadcastPushCreated = (0, firestore_2.onDocumentCreated)('push_broadc
         return;
     const targetMemberId = data.target_member_id;
     let count = 0;
+    const msg = { title, body };
     if (targetMemberId) {
         const targetSnap = await db.doc(`members/${targetMemberId}`).get();
-        const token = (_e = targetSnap.data()) === null || _e === void 0 ? void 0 : _e.fcm_token;
-        if (token) {
-            await sendPush(token, title, body);
+        const r = await pushToMember(targetSnap.ref, targetSnap.data(), 'user', msg);
+        if (r.ok > 0)
             count = 1;
-        }
     }
     else {
         const snap = await db.collection('members').where('status', '==', 'active').get();
-        const sends = snap.docs
-            .map(d => d.data().fcm_token)
-            .filter((t) => !!t)
-            .map(token => sendPush(token, title, body));
-        await Promise.all(sends);
-        count = sends.length;
+        const results = await Promise.all(snap.docs.map(d => pushToMember(d.ref, d.data(), 'user', msg)));
+        count = results.filter(r => r.ok > 0).length;
     }
     await event.data.ref.update({ sent: true, sent_at: new Date().toISOString(), sent_count: count });
     console.log(`공지 푸시 발송 완료: ${count}명`);
+});
+// ── 서버 테스트 알림 ────────────────────────────────────────────────────────
+// push_tests 문서 생성 시 해당 회원의 모든 기기로 테스트 푸시 → 결과를 같은 문서에 기록
+exports.onPushTestCreated = (0, firestore_2.onDocumentCreated)('push_tests/{docId}', async (event) => {
+    var _a;
+    const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
+    if (!data || data.done)
+        return;
+    const memberId = data.member_id;
+    if (!memberId)
+        return;
+    const scope = data.scope === 'admin' ? 'admin' : 'user';
+    const memberSnap = await db.doc(`members/${memberId}`).get();
+    const r = await pushToMember(memberSnap.ref, memberSnap.data(), scope, {
+        title: '🔔 서버 테스트 알림',
+        body: '이 알림이 보이면 기념일·요청 알림도 정상적으로 받을 수 있어요.',
+        tag: 'server-test',
+        ttlSec: 600,
+    });
+    await event.data.ref.update(Object.assign({ done: true, done_at: new Date().toISOString() }, r));
 });
 // ── 로그 정리 (접속 로그 + 활동 로그) ─────────────────────────────────────
 // 매월 1일 UTC 00:00 (KST 09:00) 실행 — 1년 이전 문서 일괄 삭제
