@@ -230,7 +230,7 @@ function getChusu(personId, baseId, rels) {
 // 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
 // 개인 설정은 각 members 문서의 push_prefs 필드에서 읽음
 exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * * * *', timeZone: 'UTC' }, async () => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     // 발송 시간만 전역 설정에서 읽음
     const settingsSnap = await db.doc('settings/push').get();
     const sendHourKST = typeof ((_a = settingsSnap.data()) === null || _a === void 0 ? void 0 : _a.sendHourKST) === 'number'
@@ -243,7 +243,9 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
     const todayM = kst.getUTCMonth() + 1;
     const todayD = kst.getUTCDate();
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const sl = require('solarlunar');
+    const slMod = require('solarlunar');
+    // solarlunar 는 ESM default export 로 배포됨 — require 시 .default 안에 함수가 있음
+    const sl = ((_b = slMod.default) !== null && _b !== void 0 ? _b : slMod);
     // 가능한 4개 offset 전체 미리 계산
     const allCheckDates = [0, 1, 3, 7].map(offset => {
         const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
@@ -266,7 +268,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
         if (memberTokens(d, 'user').length === 0)
             continue;
         // 개인 설정 읽기 (없으면 기본값)
-        const pp = (_b = d.push_prefs) !== null && _b !== void 0 ? _b : {};
+        const pp = (_c = d.push_prefs) !== null && _c !== void 0 ? _c : {};
         const prefs = {
             enabled: pp.enabled !== false,
             offsets: Array.isArray(pp.offsets) ? pp.offsets : DEFAULT_PREFS.offsets,
@@ -276,7 +278,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
         };
         if (!prefs.enabled)
             continue;
-        const list = (_c = familyMap.get(d.family_id)) !== null && _c !== void 0 ? _c : [];
+        const list = (_d = familyMap.get(d.family_id)) !== null && _d !== void 0 ? _d : [];
         list.push({ ref: doc.ref, data: d, personId: d.person_id, prefs, msgs: [] });
         familyMap.set(d.family_id, list);
     }

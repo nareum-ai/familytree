@@ -262,7 +262,9 @@ export const sendAnniversaryReminders = onSchedule(
     const todayD = kst.getUTCDate();
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const sl = require('solarlunar') as {
+    const slMod = require('solarlunar');
+    // solarlunar 는 ESM default export 로 배포됨 — require 시 .default 안에 함수가 있음
+    const sl = (slMod.default ?? slMod) as {
       solar2lunar: (y: number, m: number, d: number) => { lMonth: number; lDay: number };
     };
 

@@ -822,28 +822,30 @@
   .member-search { max-width: 100%; }
   .btn-copy-emails { width: 100%; }
 
-  /* 회원 테이블 → 두 줄 레이아웃 (1줄: 아이디·이름 / 2줄: 접속·알림·관리) */
+  /* 회원 테이블 → 카드 레이아웃 (1줄: 이름 / 2줄: 아이디 / 3줄: 접속·관리), 이름은 줄바꿈 허용 */
   .member-table-head { display: none; }
   .admin-member-row {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "id    map  map"
-      "login push actions";
+      "map   map"
+      "id    id"
+      "login actions";
     align-items: center;
     column-gap: 8px;
-    row-gap: 4px;
-    padding: 7px 10px;
+    row-gap: 3px;
+    padding: 8px 10px;
     margin-bottom: 4px;
   }
 
   .col-idx   { display: none; }
-  .col-id    { grid-area: id; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
-  .col-map   { grid-area: map; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col-map   { grid-area: map; min-width: 0; font-size: 14px; white-space: normal; overflow-wrap: anywhere; }
+  .col-id    { grid-area: id; min-width: 0; font-size: 11px; font-weight: 500; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .col-login { grid-area: login; font-size: 11px; color: var(--text-4); white-space: nowrap; }
-  .col-push  { grid-area: push; justify-self: start; }
+  .col-push  { display: none; }
   .col-actions {
     grid-area: actions;
+    justify-self: end;
     display: flex;
     gap: 4px;
     align-items: center;
