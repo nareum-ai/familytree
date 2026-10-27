@@ -226,6 +226,34 @@ function getChusu(personId, baseId, rels) {
     }
     return null;
 }
+function annivWhen(offset) {
+    return offset === 0 ? '오늘' : offset === 1 ? '내일' : `${offset}일 후`;
+}
+function buildAnnivMessage(items) {
+    const sorted = [...items].sort((a, b) => a.offset - b.offset);
+    const common = { link: '/?view=anniversary', tag: 'anniversary', ttlSec: 86400 };
+    if (sorted.length === 1) {
+        const it = sorted[0];
+        if (it.kind === 'birth') {
+            const title = it.offset === 0 ? `🎂 ${it.name}님의 생일`
+                : it.offset === 1 ? `📅 내일은 ${it.name}님의 생일`
+                    : `⏰ ${it.offset}일 후 ${it.name}님의 생일`;
+            const body = it.offset === 0 ? `오늘로 만 ${it.age}세! 가족들과 함께 축하해주세요.`
+                : it.offset === 1 ? `내일 만 ${it.age}세 생일입니다. 미리 축하 준비 어떠세요?`
+                    : `${it.offset}일 뒤 만 ${it.age}세 생일입니다.`;
+            return Object.assign({ title, body }, common);
+        }
+        const title = it.offset === 0 ? `🕯️ 오늘은 ${it.name}님의 기일` : `🕯️ ${annivWhen(it.offset)} ${it.name}님의 기일`;
+        const body = it.offset === 0 ? '고인의 명복을 빕니다.'
+            : it.offset === 1 ? '내일 기일입니다. 잊지 마세요.'
+                : `${it.offset}일 뒤 기일입니다.`;
+        return Object.assign({ title, body }, common);
+    }
+    const body = sorted
+        .map(it => `${annivWhen(it.offset)} ${it.name}님 ${it.kind === 'birth' ? '생일' : '기일'}`)
+        .join('\n');
+    return Object.assign({ title: `📅 가족 기념일 ${sorted.length}건`, body }, common);
+}
 // ── 기념일 알림 스케줄러 ──────────────────────────────────────────────────
 // 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
 // 개인 설정은 각 members 문서의 push_prefs 필드에서 읽음
@@ -279,7 +307,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
         if (!prefs.enabled)
             continue;
         const list = (_d = familyMap.get(d.family_id)) !== null && _d !== void 0 ? _d : [];
-        list.push({ ref: doc.ref, data: d, personId: d.person_id, prefs, msgs: [] });
+        list.push({ ref: doc.ref, data: d, personId: d.person_id, prefs, items: [] });
         familyMap.set(d.family_id, list);
     }
     if (familyMap.size === 0)
@@ -310,21 +338,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
                             : (bm === chk.solarM && bd === chk.solarD);
                         if (!match)
                             continue;
-                        const age = todayY - by;
-                        let title = '', body = '';
-                        if (chk.offset === 0) {
-                            title = `🎂 ${p.name}님의 생일`;
-                            body = `오늘로 만 ${age}세! 가족들과 함께 축하해주세요.`;
-                        }
-                        else if (chk.offset === 1) {
-                            title = `📅 내일은 ${p.name}님의 생일`;
-                            body = `내일 만 ${age}세 생일입니다. 미리 축하 준비 어떠세요?`;
-                        }
-                        else {
-                            title = `⏰ ${chk.offset}일 후 ${p.name}님의 생일`;
-                            body = `${chk.offset}일 뒤 만 ${age}세 생일입니다.`;
-                        }
-                        member.msgs.push({ title, body, ttlSec: 86400 });
+                        member.items.push({ kind: 'birth', offset: chk.offset, name: p.name, age: todayY - by });
                     }
                 }
                 // ── 기일 체크 ────────────────────────────────────────────────────
@@ -336,30 +350,17 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
                             : (dm === chk.solarM && dd === chk.solarD);
                         if (!match)
                             continue;
-                        let title = '', body = '';
-                        if (chk.offset === 0) {
-                            title = `🕯️ 오늘은 ${p.name}님의 기일`;
-                            body = '고인의 명복을 빕니다.';
-                        }
-                        else if (chk.offset === 1) {
-                            title = `🕯️ 내일은 ${p.name}님의 기일`;
-                            body = '내일 기일입니다. 잊지 마세요.';
-                        }
-                        else {
-                            title = `🕯️ ${chk.offset}일 후 ${p.name}님의 기일`;
-                            body = `${chk.offset}일 뒤 기일입니다.`;
-                        }
-                        member.msgs.push({ title, body, ttlSec: 86400 });
+                        member.items.push({ kind: 'death', offset: chk.offset, name: p.name });
                     }
                 }
             }
         }
     }
     let total = 0, okMembers = 0;
-    const targets = [...familyMap.values()].flat().filter(m => m.msgs.length > 0);
+    const targets = [...familyMap.values()].flat().filter(m => m.items.length > 0);
     await Promise.all(targets.map(async (m) => {
-        total += m.msgs.length;
-        const r = await pushToMember(m.ref, m.data, 'user', m.msgs);
+        total += m.items.length;
+        const r = await pushToMember(m.ref, m.data, 'user', buildAnnivMessage(m.items));
         if (r.ok > 0)
             okMembers++;
     }));
@@ -411,12 +412,7 @@ exports.onPushTestCreated = (0, firestore_2.onDocumentCreated)('push_tests/{docI
         return;
     const scope = data.scope === 'admin' ? 'admin' : 'user';
     const memberSnap = await db.doc(`members/${memberId}`).get();
-    const r = await pushToMember(memberSnap.ref, memberSnap.data(), scope, {
-        title: '🔔 서버 테스트 알림',
-        body: '이 알림이 보이면 기념일·요청 알림도 정상적으로 받을 수 있어요.',
-        tag: 'server-test',
-        ttlSec: 600,
-    });
+    const r = await pushToMember(memberSnap.ref, memberSnap.data(), scope, Object.assign({ title: '🔔 서버 테스트 알림', body: '이 알림이 보이면 기념일·요청 알림도 정상적으로 받을 수 있어요.', tag: 'server-test', ttlSec: 600 }, (scope === 'user' ? { link: '/?view=anniversary' } : {})));
     await event.data.ref.update(Object.assign({ done: true, done_at: new Date().toISOString() }, r));
 });
 // ── 로그 정리 (접속 로그 + 활동 로그) ─────────────────────────────────────

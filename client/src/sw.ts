@@ -52,7 +52,7 @@ self.addEventListener('notificationclick', (event) => {
       const cur = new URL(focused.url);
       const needsNav = target.origin === cur.origin
         && (target.pathname !== cur.pathname || target.search !== cur.search)
-        && target.pathname !== '/';
+        && (target.pathname !== '/' || target.search !== '');
       if (needsNav && 'navigate' in focused) {
         await (focused as WindowClient).navigate(target.href).catch(() => {});
       }

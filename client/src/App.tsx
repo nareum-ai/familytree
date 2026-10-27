@@ -56,6 +56,10 @@ const VIEWS: Record<AppView, ComponentType<{ onClose: () => void }>> = {
   help:        HelpView,
 };
 
+const initialViewParam = (): AppView | null => {
+  const v = new URLSearchParams(window.location.search).get('view');
+  return v && v in VIEWS ? (v as AppView) : null;
+};
 const hasRegisterParam = () => new URLSearchParams(window.location.search).has('register');
 
 function logout() {
@@ -108,7 +112,8 @@ function App() {
   const [slowLoad,       setSlowLoad]       = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
   const [showNotifBlocked, setShowNotifBlocked] = useState(false);
-  const [activeView,     setActiveView]     = useState<AppView | null>(null);
+  // 푸시 알림 링크(/?view=anniversary 등)로 열렸으면 해당 화면부터 표시
+  const [activeView,     setActiveView]     = useState<AppView | null>(initialViewParam);
   const [pendingRequestCount, setPendingCount] = useState(0);
   const [loginError,    setLoginError]    = useState('');
   const [loginLoading,  setLoginLoading]  = useState(false);
@@ -136,11 +141,12 @@ function App() {
     (!hasFamilyId || (!loading && persons.length === 0))
   );
 
-  // URL 파라미터 정리 (register)
+  // URL 파라미터 정리 (register, view)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.has('register')) {
+    if (params.has('register') || params.has('view')) {
       params.delete('register');
+      params.delete('view');
       const clean = window.location.pathname + (params.size ? '?' + params.toString() : '');
       window.history.replaceState({}, '', clean);
     }
