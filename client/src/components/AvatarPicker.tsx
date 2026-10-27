@@ -25,6 +25,8 @@ const AVATARS = [
       { key: 'f_jobseeker',    label: '여 취준생'  },
       { key: 'm_newcomer',     label: '남 신입사원' },
       { key: 'f_newcomer',     label: '여 신입사원' },
+      { key: 'm_soldier',      label: '남 군인'    },
+      { key: 'f_housewife',    label: '여 주부'    },
       { key: 'm_rapper',       label: '남 래퍼'    },
       { key: 'f_rapper',       label: '여 래퍼'    },
       { key: 'm_chef',         label: '남 셰프'    },
@@ -64,6 +66,8 @@ const AVATARS = [
       { key: 'pig',        label: '돼지'   },
       { key: 'cow',        label: '소'     },
       { key: 'mouse',      label: '쥐'     },
+      { key: 'tiger',      label: '호랑이' },
+      { key: 'dragon',     label: '용'     },
     ],
   },
   {
