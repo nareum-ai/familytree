@@ -19,6 +19,9 @@
   flex-direction: column;
   animation: slideIn 0.2s ease;
   box-shadow: -4px 0 24px rgba(42,38,32,0.15);
+  /* 기념일 창은 전역 토큰보다 1px 작게 */
+  --fs-11: 14px; --fs-12: 15px; --fs-13: 16px; --fs-14: 17px;
+  --fs-17: 19px; --fs-18: 20px;
 }
 
 @keyframes slideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }

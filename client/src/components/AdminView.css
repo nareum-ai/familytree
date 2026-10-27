@@ -272,6 +272,10 @@
 
 .col-actions { display: flex; gap: 6px; align-items: center; }
 
+/* 모바일 전용 아이디(이름) 버튼, 매핑·삭제 팝업 */
+.col-who { display: none; }
+.member-action-popup button { flex: 1; justify-content: center; padding: 11px; font-size: var(--fs-14); }
+
 .col-login { font-size: 11px; color: var(--text-4); }
 
 /* 알림 수신 상태 배지 */
@@ -822,38 +826,30 @@
   .member-search { max-width: 100%; }
   .btn-copy-emails { width: 100%; }
 
-  /* 회원 테이블 → 카드 레이아웃 (1줄: 이름 / 2줄: 아이디 / 3줄: 접속·관리), 이름은 줄바꿈 허용 */
+  /* 회원 테이블 → 1줄: 아이디(이름) · 최종접속 · 접속. 매핑·삭제는 아이디를 눌러 팝업에서 */
   .member-table-head { display: none; }
   .admin-member-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "map   map"
-      "id    id"
-      "login actions";
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     column-gap: 8px;
-    row-gap: 3px;
     padding: 8px 10px;
     margin-bottom: 4px;
   }
 
-  .col-idx   { display: none; }
-  .col-map   { grid-area: map; min-width: 0; font-size: 14px; white-space: normal; overflow-wrap: anywhere; }
-  .col-id    { grid-area: id; min-width: 0; font-size: 11px; font-weight: 500; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .col-login { grid-area: login; font-size: 11px; color: var(--text-4); white-space: nowrap; }
-  .col-push  { display: none; }
-  .col-actions {
-    grid-area: actions;
-    justify-self: end;
-    display: flex;
-    gap: 4px;
-    align-items: center;
+  .col-idx, .col-id, .col-map, .col-push { display: none; }
+  .col-who {
+    display: block; min-width: 0; text-align: left;
+    background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .col-who-name { color: var(--pri); }
+  .col-login { font-size: 11px; color: var(--text-4); white-space: nowrap; }
+  .col-actions { display: flex; align-items: center; }
+  .col-actions .btn-map-sm, .col-actions .btn-del-member { display: none; }
   .btn-login-as   { padding: 5px 7px; font-size: 11px; }
   .btn-log-icon   { padding: 5px 6px; font-size: 12px; }
-  .btn-map-sm     { padding: 5px 7px; font-size: 11px; }
-  .btn-del-member { padding: 5px 7px; font-size: 11px; }
 
   /* 승인 대기 행: 세로 배치 */
   .admin-req-row { flex-direction: column; align-items: flex-start; gap: 8px; }

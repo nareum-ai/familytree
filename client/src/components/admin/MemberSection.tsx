@@ -39,6 +39,7 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
   const [mappingMember, setMappingMember] = useState<Member | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Member | null>(null);
   const [logMember, setLogMember] = useState<Member | null>(null);
+  const [actionMember, setActionMember] = useState<Member | null>(null);
 
   const googleEmails = members.filter(m => m.google_email).map(m => m.google_email!);
 
@@ -117,6 +118,10 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
             {pageItems.map((m, idx) => (
               <div key={m.id} className="admin-member-row">
                 <span className="col-idx">{current * PAGE_SIZE + idx + 1}</span>
+                {/* 모바일 전용: 아이디(이름) — 누르면 매핑·삭제 팝업 */}
+                <button className="col-who" onClick={() => setActionMember(m)}>
+                  {m.username}{m.person_name && <span className="col-who-name">({m.person_name})</span>}
+                </button>
                 <span className="col-id member-id">{m.username}</span>
                 <span className="col-map">
                   {m.person_name
@@ -146,6 +151,18 @@ export function MemberSection({ members, families, loading, flash, reload }: Pro
 
           <AdminPager current={current} total={totalPages} onChange={setPage} />
         </>
+      )}
+
+      {actionMember && (
+        <AdminModal onClose={() => setActionMember(null)}>
+          <h3>{actionMember.username}{actionMember.person_name && ` (${actionMember.person_name})`}</h3>
+          <div className="confirm-actions member-action-popup">
+            <button className="btn-map-sm" onClick={() => { setMappingMember(actionMember); setActionMember(null); }}>
+              {actionMember.person_name ? '재매핑' : '매핑'}
+            </button>
+            <button className="btn-del-member" onClick={() => { setConfirmDelete(actionMember); setActionMember(null); }}>삭제</button>
+          </div>
+        </AdminModal>
       )}
 
       {confirmDelete && (
