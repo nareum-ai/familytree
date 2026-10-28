@@ -1,6 +1,7 @@
 "use strict";
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanupLoginLogs = exports.onPushTestCreated = exports.onBroadcastPushCreated = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
+exports.cleanupLoginLogs = exports.onPushTestCreated = exports.onBroadcastPushCreated = exports.onAnniversaryRunRequested = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const messaging_1 = require("firebase-admin/messaging");
@@ -9,6 +10,10 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
 const params_1 = require("firebase-functions/params");
 const nodemailer = require("nodemailer");
+// CJS 빌드는 클래스 자체를 export (esModuleInterop 꺼져 있어 default import 사용 불가)
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const klcMod = require('korean-lunar-calendar');
+const KoreanLunarCalendar = (_a = klcMod.default) !== null && _a !== void 0 ? _a : klcMod;
 const MAIL_USER = (0, params_1.defineSecret)('MAIL_USER');
 const MAIL_PASS = (0, params_1.defineSecret)('MAIL_PASS');
 (0, app_1.initializeApp)();
@@ -258,30 +263,48 @@ function buildAnnivMessage(items) {
 // 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
 // 개인 설정은 각 members 문서의 push_prefs 필드에서 읽음
 exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * * * *', timeZone: 'UTC' }, async () => {
-    var _a, _b, _c, _d;
+    var _a;
     // 발송 시간만 전역 설정에서 읽음
     const settingsSnap = await db.doc('settings/push').get();
     const sendHourKST = typeof ((_a = settingsSnap.data()) === null || _a === void 0 ? void 0 : _a.sendHourKST) === 'number'
         ? settingsSnap.data().sendHourKST : 8;
-    const now = new Date();
-    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     if (kst.getUTCHours() !== sendHourKST)
         return;
+    await runAnniversaryReminders();
+});
+// 관리자 수동 실행 — anniversary_runs 문서 생성 시 발송 시각과 무관하게 오늘 기념일 알림 발송
+exports.onAnniversaryRunRequested = (0, firestore_2.onDocumentCreated)('anniversary_runs/{docId}', async (event) => {
+    var _a, _b;
+    const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
+    if (!data || data.done)
+        return;
+    const memberId = data.member_id;
+    if (!memberId)
+        return;
+    const memberSnap = await db.doc(`members/${memberId}`).get();
+    if (!((_b = memberSnap.data()) === null || _b === void 0 ? void 0 : _b.is_admin))
+        return;
+    const r = await runAnniversaryReminders();
+    await event.data.ref.update(Object.assign({ done: true, done_at: new Date().toISOString() }, r));
+});
+async function runAnniversaryReminders() {
+    var _a, _b;
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const todayY = kst.getUTCFullYear();
     const todayM = kst.getUTCMonth() + 1;
     const todayD = kst.getUTCDate();
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const slMod = require('solarlunar');
-    // solarlunar 는 ESM default export 로 배포됨 — require 시 .default 안에 함수가 있음
-    const sl = ((_b = slMod.default) !== null && _b !== void 0 ? _b : slMod);
+    // 한국천문연구원(KASI) 기준 음력 — solarlunar(중국 음력)는 합삭 시각 차이로 하루씩 어긋나는 달이 있음
+    const lunarCal = new KoreanLunarCalendar();
     // 가능한 4개 offset 전체 미리 계산
     const allCheckDates = [0, 1, 3, 7].map(offset => {
         const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
         const m = d.getUTCMonth() + 1;
         const day = d.getUTCDate();
         const y = d.getUTCFullYear();
-        const lunar = sl.solar2lunar(y, m, day);
-        return { offset, solarM: m, solarD: day, lunarM: lunar.lMonth, lunarD: lunar.lDay };
+        lunarCal.setSolarDate(y, m, day);
+        const lunar = lunarCal.getLunarCalendar();
+        return { offset, solarM: m, solarD: day, lunarM: lunar.month, lunarD: lunar.day };
     });
     const DEFAULT_PREFS = {
         enabled: true, offsets: [0, 1, 3, 7], maxChusu: 6,
@@ -296,7 +319,7 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
         if (memberTokens(d, 'user').length === 0)
             continue;
         // 개인 설정 읽기 (없으면 기본값)
-        const pp = (_c = d.push_prefs) !== null && _c !== void 0 ? _c : {};
+        const pp = (_a = d.push_prefs) !== null && _a !== void 0 ? _a : {};
         const prefs = {
             enabled: pp.enabled !== false,
             offsets: Array.isArray(pp.offsets) ? pp.offsets : DEFAULT_PREFS.offsets,
@@ -306,12 +329,12 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
         };
         if (!prefs.enabled)
             continue;
-        const list = (_d = familyMap.get(d.family_id)) !== null && _d !== void 0 ? _d : [];
+        const list = (_b = familyMap.get(d.family_id)) !== null && _b !== void 0 ? _b : [];
         list.push({ ref: doc.ref, data: d, personId: d.person_id, prefs, items: [] });
         familyMap.set(d.family_id, list);
     }
     if (familyMap.size === 0)
-        return;
+        return { total: 0, targets: 0, okMembers: 0 };
     for (const [familyId, memberList] of familyMap) {
         const [personsSnap, relsSnap] = await Promise.all([
             db.collection('persons').where('family_id', '==', familyId).get(),
@@ -365,7 +388,8 @@ exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * 
             okMembers++;
     }));
     console.log(`기념일 알림 완료: ${total}건 / 대상 ${targets.length}명 / 수신 성공 ${okMembers}명`);
-});
+    return { total, targets: targets.length, okMembers };
+}
 // ── 관리자 수동 공지 푸시 ────────────────────────────────────────────────────
 // push_broadcasts 문서 생성 시 트리거 — 전체 또는 특정 회원에게 발송
 exports.onBroadcastPushCreated = (0, firestore_2.onDocumentCreated)('push_broadcasts/{docId}', async (event) => {

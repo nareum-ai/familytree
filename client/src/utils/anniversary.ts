@@ -2,27 +2,18 @@ import type { Person, Relationship } from '../types';
 import { getChusu, getLinealFamilyIds } from './familyGraph';
 import { getRelationLabel } from './relationLabel';
 
-// solarlunar ESM 동적 임포트 — 여러 export 구조 대응
-type SolarLunarLib = {
-  lunar2solar: (y: number, m: number, d: number, leap: boolean) => { cYear: number; cMonth: number; cDay: number };
-};
-let _lib: SolarLunarLib | null = null;
+// 한국천문연구원(KASI) 기준 음력 — solarlunar(중국 음력, UTC+8)는 합삭 시각 차이로 하루씩 어긋나는 달이 있음
+type KoreanLunarCtor = typeof import('korean-lunar-calendar').default;
+let _Lib: KoreanLunarCtor | null = null;
 let _tried = false;
 
-async function getLib(): Promise<SolarLunarLib | null> {
-  if (_tried) return _lib;
+async function getLib(): Promise<KoreanLunarCtor | null> {
+  if (_tried) return _Lib;
   _tried = true;
   try {
-    const mod = await import('solarlunar') as unknown as Record<string, Partial<SolarLunarLib> | undefined>;
-    // ESM 번들 구조가 다양하므로 여러 경로 시도
-    for (const candidate of [mod?.default, mod, mod?.solarlunar]) {
-      if (candidate && typeof candidate.lunar2solar === 'function') {
-        _lib = candidate as SolarLunarLib;
-        break;
-      }
-    }
+    _Lib = (await import('korean-lunar-calendar')).default;
   } catch { /* ignore */ }
-  return _lib;
+  return _Lib;
 }
 
 export interface AnniversaryItem {
@@ -60,14 +51,16 @@ function nextOccurrence(month: number, day: number): Date {
 
 /** 음력 월/일 → 가장 가까운 양력 날짜 (변환 실패 시 null) */
 async function lunarToNextSolar(month: number, day: number): Promise<Date | null> {
-  const lib = await getLib();
-  if (!lib) return null;
+  const Lib = await getLib();
+  if (!Lib) return null;
+  const cal = new Lib();
   const cy = new Date().getFullYear();
   for (const yr of [cy - 1, cy, cy + 1]) {
     try {
-      const r = lib.lunar2solar(yr, month, day, false);
-      if (!r || !r.cYear || r.cYear === -1) continue;
-      const d = new Date(r.cYear, r.cMonth - 1, r.cDay);
+      // 작은달(29일)에 30일이 저장된 경우 등 없는 날짜면 false
+      if (!cal.setLunarDate(yr, month, day, false)) continue;
+      const r = cal.getSolarCalendar();
+      const d = new Date(r.year, r.month - 1, r.day);
       d.setHours(0, 0, 0, 0);
       if (d >= midnight()) return d;
     } catch { continue; }

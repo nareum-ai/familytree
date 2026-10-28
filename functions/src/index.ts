@@ -6,6 +6,10 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { defineSecret } from 'firebase-functions/params';
 import * as nodemailer from 'nodemailer';
+// CJS 빌드는 클래스 자체를 export (esModuleInterop 꺼져 있어 default import 사용 불가)
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const klcMod = require('korean-lunar-calendar');
+const KoreanLunarCalendar: typeof import('korean-lunar-calendar').default = klcMod.default ?? klcMod;
 
 const MAIL_USER = defineSecret('MAIL_USER');
 const MAIL_PASS = defineSecret('MAIL_PASS');
@@ -289,20 +293,37 @@ export const sendAnniversaryReminders = onSchedule(
     const sendHourKST: number = typeof settingsSnap.data()?.sendHourKST === 'number'
       ? (settingsSnap.data()!.sendHourKST as number) : 8;
 
-    const now = new Date();
-    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     if (kst.getUTCHours() !== sendHourKST) return;
 
+    await runAnniversaryReminders();
+  }
+);
+
+// 관리자 수동 실행 — anniversary_runs 문서 생성 시 발송 시각과 무관하게 오늘 기념일 알림 발송
+export const onAnniversaryRunRequested = onDocumentCreated(
+  'anniversary_runs/{docId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.done) return;
+    const memberId = data.member_id as string | undefined;
+    if (!memberId) return;
+    const memberSnap = await db.doc(`members/${memberId}`).get();
+    if (!memberSnap.data()?.is_admin) return;
+
+    const r = await runAnniversaryReminders();
+    await event.data!.ref.update({ done: true, done_at: new Date().toISOString(), ...r });
+  }
+);
+
+async function runAnniversaryReminders() {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const todayY = kst.getUTCFullYear();
     const todayM = kst.getUTCMonth() + 1;
     const todayD = kst.getUTCDate();
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const slMod = require('solarlunar');
-    // solarlunar 는 ESM default export 로 배포됨 — require 시 .default 안에 함수가 있음
-    const sl = (slMod.default ?? slMod) as {
-      solar2lunar: (y: number, m: number, d: number) => { lMonth: number; lDay: number };
-    };
+    // 한국천문연구원(KASI) 기준 음력 — solarlunar(중국 음력)는 합삭 시각 차이로 하루씩 어긋나는 달이 있음
+    const lunarCal = new KoreanLunarCalendar();
 
     // 가능한 4개 offset 전체 미리 계산
     const allCheckDates = [0, 1, 3, 7].map(offset => {
@@ -310,8 +331,9 @@ export const sendAnniversaryReminders = onSchedule(
       const m = d.getUTCMonth() + 1;
       const day = d.getUTCDate();
       const y = d.getUTCFullYear();
-      const lunar = sl.solar2lunar(y, m, day);
-      return { offset, solarM: m, solarD: day, lunarM: lunar.lMonth, lunarD: lunar.lDay };
+      lunarCal.setSolarDate(y, m, day);
+      const lunar = lunarCal.getLunarCalendar();
+      return { offset, solarM: m, solarD: day, lunarM: lunar.month, lunarD: lunar.day };
     });
 
     const DEFAULT_PREFS = {
@@ -351,7 +373,7 @@ export const sendAnniversaryReminders = onSchedule(
       familyMap.set(d.family_id as string, list);
     }
 
-    if (familyMap.size === 0) return;
+    if (familyMap.size === 0) return { total: 0, targets: 0, okMembers: 0 };
 
     for (const [familyId, memberList] of familyMap) {
       const [personsSnap, relsSnap] = await Promise.all([
@@ -412,8 +434,8 @@ export const sendAnniversaryReminders = onSchedule(
       if (r.ok > 0) okMembers++;
     }));
     console.log(`기념일 알림 완료: ${total}건 / 대상 ${targets.length}명 / 수신 성공 ${okMembers}명`);
-  }
-);
+    return { total, targets: targets.length, okMembers };
+}
 
 // ── 관리자 수동 공지 푸시 ────────────────────────────────────────────────────
 // push_broadcasts 문서 생성 시 트리거 — 전체 또는 특정 회원에게 발송
