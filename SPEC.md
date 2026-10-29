@@ -74,7 +74,7 @@
 | 언어 | TypeScript | ~6.0.2 | 타입 안전성 |
 | 상태 관리 | Zustand | 5.0.14 | 전역 상태 |
 | 트리 렌더링 | @xyflow/react | 12.10.2 | 노드·엣지 그래프 |
-| 음력 변환 | solarlunar | 3.1.0 | 음력↔양력 날짜 변환 |
+| 음력 변환 | korean-lunar-calendar | 0.4.x | 음력↔양력 날짜 변환 (한국천문연구원 기준) |
 | PWA | vite-plugin-pwa | 1.3.0 | 서비스 워커, 설치, 푸시 |
 
 ### Backend / 인프라
@@ -135,7 +135,7 @@ FamilyTree/
 ├── functions/
 │   ├── scripts/syncShared.js       # 빌드 전 client relationLabel.ts → src/shared/ 복사
 │   └── src/
-│       ├── index.ts                # Cloud Functions (8개)
+│       ├── index.ts                # Cloud Functions (9개)
 │       └── shared/                 # relationLabel.ts(자동 생성)·generation.ts·types.ts
 ├── firebase.json
 ├── firestore.rules                 # 현재: allow read, write: if true
@@ -574,7 +574,8 @@ is_deceased, death_date, death_lunar, father_ref, mother_ref, spouse_ref
 - **묶음 발송**: 회원 1명당 하루 1건. 여러 건이면 "가족 기념일 N건"으로 합침. 클릭 시 기념일 화면(`/?view=anniversary`)
 - **관계 표시**: 받는 회원 기준 관계명을 이름 앞에 붙임 ("내일은 사촌형 홍길동님의 생일"). `getRelationLabel` 재사용 + 사촌류 혈족은 생년월일·성별로 형/누나/오빠/언니/동생 접미. 관계를 못 구하면 이름만
 - **로그**: 발송 시각에 `기념일 알림 시작` / `완료(건수·대상·성공)` 기록
-- **음력 지원**: `solarlunar` 라이브러리로 양력 변환 후 비교
+- **음력 지원**: `korean-lunar-calendar`(KASI 기준)로 양력→음력 변환 후 비교. 중국 음력(solarlunar)은 하루씩 어긋나는 달이 있어 교체
+- **수동 실행**: 관리자가 `anniversary_runs` 문서 생성 → `onAnniversaryRunRequested`가 즉시 발송 후 `{done, total, targets, okMembers}` 기록
 
 ### FCM 토큰 관리 (다중 기기)
 
@@ -619,6 +620,7 @@ AdminView → 푸시 알림 설정 섹션에서 실시간 변경 가능.
 | `onApprovalRequestCreated` | Firestore 트리거 (`approval_requests/{id}` 생성) | 가족그룹 신청 즉시 관리자에게 FCM 알림 |
 | `onInfoRequestCreated` | Firestore 트리거 (`info_requests/{id}` 생성) | 권한자에게 즉시 FCM 푸시 |
 | `sendAnniversaryReminders` | 매분 스케줄 (`* * * * *` UTC) | `settings/push` 읽어 KST 시·분 일치 시 기념일 알림 발송 |
+| `onAnniversaryRunRequested` | Firestore 트리거 (`anniversary_runs/{id}` 생성) | 관리자 수동 기념일 알림 즉시 발송 |
 | `onBroadcastPushCreated` | Firestore 트리거 (`push_broadcasts/{id}` 생성) | 관리자가 작성한 수동 공지를 전체 또는 특정 회원에게 FCM 발송 (`sent_count` = 1대 이상 성공한 회원 수) |
 | `onPushTestCreated` | Firestore 트리거 (`push_tests/{id}` 생성) | 요청 회원의 전 기기로 테스트 발송 → `{done, ok, fail, tokens}` 기록 |
 | `cleanupLoginLogs` | 매월 1일 자정 UTC (`0 0 1 * *`) | `login_logs`·`activity_logs`에서 1년 초과 문서 일괄 삭제 (500건 배치) |
@@ -746,4 +748,4 @@ manifest: {
 *v1.7.0 — 2026-06-03 알림 설정을 MyMenu에서 기념일 창으로 이동 (헤더 🔔 버튼 토글)*  
 *v1.8.0 — 2026-06-06 인물 상세 UX 개선 (연락처 SMS/이메일 직접 초대, 버튼 텍스트 개인화, 삭제 버튼 편집 옆으로 이동), 편집 권한 강화 (주인 있는 노드는 본인/관리자만), 알림 차단 시 PWA 설치 유도 모달(NotifBlockedModal) 추가, 알림 차단 종 아이콘 🔕 시각화*  
 *v1.9.0 — 2026-10-23 푸시 수신율 개선: 다중 기기 토큰(fcm_tokens[]), 무효 토큰 자동 정리·발송 결과 기록, 포그라운드 수신 처리(onMessage), 알림 클릭 시 링크 이동, 자동 권한 요청 제거→알림 켜기 배너(PushPermissionPrompt), Android 브라우저 Play 스토어 앱 유도(PLAY_STORE_RELEASED 플래그, 출시 전 비활성), iOS 크롬·엣지 홈 화면 추가 안내, 내메뉴 수신 상태·서버 테스트(PushStatusPanel), 관리자 회원 목록 알림 상태·미수신 필터, iOS 브라우저 알림 토글 오류 수정*  
-*v1.10.0 — 2026-10-29 기념일 알림 발송 시각 분 단위 설정(sendMinuteKST, 매분 스케줄), 알림에 받는 사람 기준 관계명 표시(Functions에서 relationLabel 공유), 발송 로그 추가, 랜딩 페이지 개인정보 안내 문구 제거(미적용 기능), 도움말 알림 안내 갱신(브라우저 수신·발송 시각·관계 표시), 미사용 코드 정리(NewFamilyRequestView, 미사용 export·devDependencies), 린트 오류 수정*
+*v1.10.0 — 2026-10-29 기념일 알림 발송 시각 분 단위 설정(sendMinuteKST, 매분 스케줄), 알림에 받는 사람 기준 관계명 표시(Functions에서 relationLabel 공유), 음력 변환 KASI 기준 교체·관리자 수동 실행 반영, 발송 로그 추가, 랜딩 페이지 개인정보 안내 문구 제거(미적용 기능), 도움말 알림 안내 갱신(브라우저 수신·발송 시각·관계 표시), 미사용 코드 정리(NewFamilyRequestView, 미사용 export·devDependencies), 린트 오류 수정*

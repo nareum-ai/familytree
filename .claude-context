@@ -30,7 +30,7 @@ Routing: all in App.tsx. No react-router. Conditional returns based on localStor
 App.tsx: routing hub, auth state, android back-intercept (backPressedRef+toast), applyMemberLogin (MUST await recordLogin before reload)
 store/familyStore.ts: ALL Firestore CRUD. Components only touch store, never Firestore directly (except dynamic imports in a few admin ops).
 hooks/useTreeLayout.ts: getChusu(BFS촌수), classifyBranch(4계통), canSeeFull(가시성), layout engine. Wide blast radius — touch carefully.
-functions/src/index.ts: 8 functions (see SPEC.md §14). Key: sendAnniversaryReminders(every minute+KST check), onInfoRequestCreated(FCM trigger), cleanupLoginLogs(monthly 1yr purge)
+functions/src/index.ts: 9 functions (see SPEC.md §14). Key: sendAnniversaryReminders(every minute+KST check), onInfoRequestCreated(FCM trigger), cleanupLoginLogs(monthly 1yr purge)
 lib/storageKeys.ts: LS.* and SS.* — always use these, never raw strings.
 sw.ts: Service Worker. Background FCM handling.
 
