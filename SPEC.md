@@ -480,6 +480,7 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
 | `crypto.ts` | `hashPassword(pw)` — SHA-256 |
 | `age.ts` | `getManAge(birthDate)`, `getAgeAtDeath(birth, death)` |
 | `nameParser.ts` | `parseKoreanName(name)` — 복성 처리 |
+| `usePushSendTime.ts`(hooks) | 기념일 알림 발송 시각(settings/push) 조회·"오전 8시" 형식 — 도움말 표시용 |
 | `relationLabel.ts` | `getRelationLabel(...)` — 한국어 관계명 |
 | `anniversary.ts` | 기념일 날짜 계산 (클라이언트 UI용) |
 | `csvExport.ts` | `exportFamilyToCSV`, `downloadCSV` |
@@ -748,4 +749,4 @@ manifest: {
 *v1.7.0 — 2026-06-03 알림 설정을 MyMenu에서 기념일 창으로 이동 (헤더 🔔 버튼 토글)*  
 *v1.8.0 — 2026-06-06 인물 상세 UX 개선 (연락처 SMS/이메일 직접 초대, 버튼 텍스트 개인화, 삭제 버튼 편집 옆으로 이동), 편집 권한 강화 (주인 있는 노드는 본인/관리자만), 알림 차단 시 PWA 설치 유도 모달(NotifBlockedModal) 추가, 알림 차단 종 아이콘 🔕 시각화*  
 *v1.9.0 — 2026-10-23 푸시 수신율 개선: 다중 기기 토큰(fcm_tokens[]), 무효 토큰 자동 정리·발송 결과 기록, 포그라운드 수신 처리(onMessage), 알림 클릭 시 링크 이동, 자동 권한 요청 제거→알림 켜기 배너(PushPermissionPrompt), Android 브라우저 Play 스토어 앱 유도(PLAY_STORE_RELEASED 플래그, 출시 전 비활성), iOS 크롬·엣지 홈 화면 추가 안내, 내메뉴 수신 상태·서버 테스트(PushStatusPanel), 관리자 회원 목록 알림 상태·미수신 필터, iOS 브라우저 알림 토글 오류 수정*  
-*v1.10.0 — 2026-10-29 기념일 알림 발송 시각 분 단위 설정(sendMinuteKST, 매분 스케줄), 알림에 받는 사람 기준 관계명 표시(Functions에서 relationLabel 공유), 음력 변환 KASI 기준 교체·관리자 수동 실행 반영, 발송 로그 추가, 랜딩 페이지 개인정보 안내 문구 제거(미적용 기능), 도움말 알림 안내 갱신(브라우저 수신·발송 시각·관계 표시), 미사용 코드 정리(NewFamilyRequestView, 미사용 export·devDependencies), 린트 오류 수정*
+*v1.10.0 — 2026-10-29 기념일 알림 발송 시각 분 단위 설정(sendMinuteKST, 매분 스케줄), 알림에 받는 사람 기준 관계명 표시(Functions에서 relationLabel 공유), 음력 변환 KASI 기준 교체·관리자 수동 실행 반영, 발송 로그 추가, 랜딩 페이지 개인정보 안내 문구 제거(미적용 기능), 도움말 알림 안내 갱신(브라우저 수신·관리자 설정 발송 시각 표시·관계 표시), 미사용 코드 정리(NewFamilyRequestView, 미사용 export·devDependencies), 린트 오류 수정*
