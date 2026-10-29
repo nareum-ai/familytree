@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMemberId, getUserName } from '../../lib/session';
 import { changePassword, linkGoogleAccount, unlinkGoogleFromMember } from '../../services/authService';
-import { loadPushSendHour, savePushSendHour } from '../../services/adminService';
+import { loadPushSendTime, savePushSendTime } from '../../services/adminService';
 import { validateNewPassword } from '../../utils/password';
 import { FcmDebugPanel } from '../FcmDebugPanel';
 import { GoogleIcon } from '../GoogleIcon';
@@ -156,19 +156,20 @@ const DEFAULT_SEND_HOUR = 8;
 
 export function PushTimeModal({ onClose }: { onClose: () => void }) {
   const [sendHour, setSendHour] = useState(DEFAULT_SEND_HOUR);
+  const [sendMinute, setSendMinute] = useState(0);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<Msg>(null);
 
   useEffect(() => {
-    loadPushSendHour()
-      .then(hour => { if (hour !== null) setSendHour(hour); })
+    loadPushSendTime()
+      .then(t => { if (t) { setSendHour(t.hour); setSendMinute(t.minute); } })
       .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
     setMsg(null);
     try {
-      await savePushSendHour(sendHour);
+      await savePushSendTime(sendHour, sendMinute);
       setMsg({ ok: true, msg: '저장됐습니다.' });
     } catch {
       setMsg({ ok: false, msg: '저장 중 오류가 발생했습니다.' });
@@ -188,7 +189,12 @@ export function PushTimeModal({ onClose }: { onClose: () => void }) {
             <label className="push-label">발송 시간 (KST)</label>
             <select className="push-select" value={sendHour} onChange={e => setSendHour(Number(e.target.value))}>
               {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                <option key={i} value={i}>{String(i).padStart(2, '0')}시</option>
+              ))}
+            </select>
+            <select className="push-select" value={sendMinute} onChange={e => setSendMinute(Number(e.target.value))}>
+              {Array.from({ length: 60 }, (_, i) => (
+                <option key={i} value={i}>{String(i).padStart(2, '0')}분</option>
               ))}
             </select>
           </div>

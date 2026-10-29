@@ -126,10 +126,10 @@ export async function requestAdminPasswordReset(username: string, personName: st
 
 // ── 구글 ──────────────────────────────────────────────────────────────────────
 
-export interface GoogleUser { uid: string; email: string; displayName: string }
+interface GoogleUser { uid: string; email: string; displayName: string }
 
 /** 구글 팝업 로그인. 사용자가 팝업을 닫거나 취소하면 null */
-export async function signInWithGoogle(): Promise<GoogleUser | null> {
+async function signInWithGoogle(): Promise<GoogleUser | null> {
   try {
     const { user } = await signInWithPopup(auth, googleProvider);
     const email = user.email ?? '';
@@ -194,7 +194,7 @@ export function unlinkGoogleFromMember(memberId: string) {
 export type PushScope = 'user' | 'admin';
 
 /** 기기 토큰 저장 필드 — 배열(다중 기기) + 구버전 단일 필드(하위호환) */
-export function fcmTokenFields(scope: PushScope) {
+function fcmTokenFields(scope: PushScope) {
   return scope === 'admin'
     ? { arr: 'fcm_tokens_admin', legacy: 'fcm_token_admin' }
     : { arr: 'fcm_tokens',       legacy: 'fcm_token' };

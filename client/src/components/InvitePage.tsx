@@ -38,6 +38,11 @@ export function InvitePage({ token }: Props) {
   const [usedInvite, setUsedInvite] = useState(false);
   const [copied,     setCopied]     = useState(false);
 
+  const retry = () => {
+    setLoading(true); setError(null); setCanRetry(false); setUsedInvite(false);
+    setRetryKey(k => k + 1);
+  };
+
   useEffect(() => {
     // 주소창 URL을 정상 형태로 정리 (오염된 토큰 경로 교정)
     const clean = canonicalInviteUrl(token);
@@ -49,7 +54,6 @@ export function InvitePage({ token }: Props) {
       if (kakao) openInExternalBrowserFromKakao(clean);
       return;
     }
-    setLoading(true); setError(null); setCanRetry(false); setUsedInvite(false);
     // 이 브라우저에 이미 로그인된 가족 구성원인지
     const loggedIn = !!(getUserName() && localStorage.getItem(LS.FAMILY_ID));
     const goHome = () => {
@@ -130,7 +134,7 @@ export function InvitePage({ token }: Props) {
         {errDetail && <p className="invite-note" style={{ opacity: 0.6, fontSize: 'var(--fs-12)' }}>오류 정보: {errDetail}</p>}
         <div className="invite-btn-group">
           {canRetry && (
-            <button className="invite-view-btn" onClick={() => setRetryKey(k => k + 1)}>
+            <button className="invite-view-btn" onClick={retry}>
               다시 시도
             </button>
           )}

@@ -23,7 +23,7 @@ export interface Person {
   recent_status?: RecentStatus[] | null;  // 근황 (최신순 최대 3개 유지)
 }
 
-export interface RecentStatus {
+interface RecentStatus {
   text: string;
   at: string;  // 작성일 ("YYYY-MM-DD")
 }
@@ -38,7 +38,7 @@ export interface EditGrant {
   granted_at: string;         // ISO 날짜
 }
 
-export type RelationshipType = 'spouse' | 'parent_child';
+type RelationshipType = 'spouse' | 'parent_child';
 
 export interface Relationship {
   id: string;
@@ -85,15 +85,6 @@ export interface Member {
 }
 
 // 비밀번호 초기화 토큰
-export interface PasswordResetToken {
-  id: string;
-  member_id: string;
-  token: string;
-  expires_at: string;
-  used: boolean;
-  created_at: string;
-}
-
 // 관리자 경유 비밀번호 초기화 요청
 export interface PasswordResetRequest {
   id: string;

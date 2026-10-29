@@ -40,17 +40,20 @@ export function PushStatusPanel({ memberId }: { memberId: string }) {
 
   const showPlayRow = shouldOfferPlayApp();
 
-  const refresh = async () => {
+  const loadStatus = async () => {
+    const supported = await isPushSupported();
     const perm = notificationPermission();
     let s: DeviceState;
     if (isIOS() && !isStandalone()) s = 'ios-browser';
-    else if (!(await isPushSupported())) s = 'unsupported';
+    else if (!supported) s = 'unsupported';
     else if (perm === 'denied') s = 'blocked';
     else if (isDeviceRegistered()) s = 'ready';
     else s = 'off';
-    setState(s);
-    setMember((await getMemberData(memberId).catch(() => undefined)) as Partial<Member> ?? null);
+    const m = (await getMemberData(memberId).catch(() => undefined)) as Partial<Member> | undefined;
+    return { s, m: m ?? null };
   };
+
+  const refresh = () => loadStatus().then(({ s, m }) => { setState(s); setMember(m); });
 
   useEffect(() => {
     refresh();

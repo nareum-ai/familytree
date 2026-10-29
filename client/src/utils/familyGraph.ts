@@ -3,7 +3,7 @@
 import type { Person, Relationship, BranchType } from '../types';
 import { LS } from '../lib/storageKeys';
 
-export const ALL_BRANCHES: BranchType[] = ['친가', '외가', '처가', '처외가'];
+const ALL_BRANCHES: BranchType[] = ['친가', '외가', '처가', '처외가'];
 
 export function findRoot(persons: Person[]): Person | undefined {
   return persons.find(p => p.is_root === 1);

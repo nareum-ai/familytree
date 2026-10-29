@@ -16,11 +16,6 @@ export function isStandalone(): boolean {
     || !!(navigator as unknown as { standalone?: boolean }).standalone;
 }
 
-/** 설치되지 않은 iOS Safari — 홈 화면 추가 안내 대상 */
-export function isIOSSafari(): boolean {
-  return isIOS() && !/CriOS|FxiOS|OPiOS/i.test(navigator.userAgent) && !isStandalone();
-}
-
 export function isKakaoTalk(): boolean {
   return /KAKAOTALK/i.test(navigator.userAgent);
 }
@@ -30,7 +25,7 @@ export function openInExternalBrowserFromKakao(url = window.location.href) {
   window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(url)}`;
 }
 
-export function isAndroid(): boolean {
+function isAndroid(): boolean {
   return /Android/i.test(navigator.userAgent);
 }
 
@@ -54,7 +49,6 @@ export function canAddToHomeScreenIOS(): boolean {
 }
 
 // ── Play 스토어(TWA) — 출시 전에는 appConfig.PLAY_STORE_RELEASED=false 로 전부 비활성 ──
-export { ANDROID_PACKAGE, PLAY_STORE_RELEASED, PLAY_STORE_URL };
 
 /** Android 브라우저(앱 아님)에서 Play 스토어 앱 안내를 보여줄지 */
 export function shouldOfferPlayApp(): boolean {

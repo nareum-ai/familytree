@@ -1,4 +1,4 @@
-export const MIN_PASSWORD_LENGTH = 6;
+const MIN_PASSWORD_LENGTH = 6;
 
 /** 새 비밀번호 입력 검증 — 문제가 있으면 오류 메시지, 없으면 null */
 export function validateNewPassword(newPassword: string, confirmPassword: string): string | null {

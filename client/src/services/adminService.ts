@@ -190,14 +190,15 @@ export async function loadFamilyData(familyId: string): Promise<{ persons: Perso
 
 // ── 알림·로그 ─────────────────────────────────────────────────────────────────
 
-export async function loadPushSendHour(): Promise<number | null> {
+export async function loadPushSendTime(): Promise<{ hour: number; minute: number } | null> {
   const snap = await getDoc(doc(db, 'settings', 'push'));
   const hour = snap.data()?.sendHourKST;
-  return typeof hour === 'number' ? hour : null;
+  const minute = snap.data()?.sendMinuteKST;
+  return typeof hour === 'number' ? { hour, minute: typeof minute === 'number' ? minute : 0 } : null;
 }
 
-export function savePushSendHour(sendHourKST: number) {
-  return setDoc(doc(db, 'settings', 'push'), { sendHourKST }, { merge: true });
+export function savePushSendTime(sendHourKST: number, sendMinuteKST: number) {
+  return setDoc(doc(db, 'settings', 'push'), { sendHourKST, sendMinuteKST }, { merge: true });
 }
 
 /** 공지 푸시 발송 요청 — 실제 발송은 Cloud Function이 처리. targetMemberId null이면 전체 */

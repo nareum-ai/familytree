@@ -231,27 +231,6 @@
 .lfa-row { display: flex; justify-content: space-between; font-size: var(--fs-14); }
 .lfa-row b { color: #F3C9A8; }
 
-/* ── 개인정보 안심 ─────────────────────────────────────────────────── */
-.landing-trust { background: var(--pri); color: var(--bg); }
-.landing-trust-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 36px 24px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 20px;
-}
-.landing-trust-icon svg {
-  width: 40px; height: 40px;
-  fill: none; stroke: #F3C9A8; stroke-width: 1.6;
-  stroke-linecap: round; stroke-linejoin: round;
-  display: block;
-}
-.landing-trust-text { flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px; }
-.landing-trust-text strong { font-family: var(--font-display); font-size: var(--fs-22); }
-.landing-trust-text span { font-size: var(--fs-15); color: #CFE2D7; line-height: 1.6; }
-
 /* ── 사용 흐름 ────────────────────────────────────────────────────── */
 .landing-steps {
   max-width: 1200px;
@@ -493,7 +472,7 @@
   .lt-lg { --hex-w: 52px; }
   .lt-sm { --hex-w: 40px; }
   .lt-name { font-size: var(--fs-11); }
-  .landing-trust-inner, .landing-steps, .landing-features, .landing-final-inner { padding-left: 16px; padding-right: 16px; }
+  .landing-steps, .landing-features, .landing-final-inner { padding-left: 16px; padding-right: 16px; }
   .landing-steps { padding-top: 64px; }
   .landing-features { padding-bottom: 64px; }
   .landing-features-grid { grid-template-columns: 1fr; }

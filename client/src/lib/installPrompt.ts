@@ -6,7 +6,6 @@ interface BeforeInstallPromptEvent extends Event {
 let _prompt: BeforeInstallPromptEvent | null = null;
 
 export function getInstallPrompt() { return _prompt; }
-export function clearInstallPrompt() { _prompt = null; }
 
 export function initInstallPromptListener() {
   window.addEventListener('beforeinstallprompt', (e) => {

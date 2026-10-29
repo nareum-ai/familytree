@@ -3,7 +3,7 @@
 // self      : 본인 (해당 노드의 실제 인물)
 // creator   : 노드 작성자 (처음 이 노드를 만든 사람)
 // admin     : 어드민
-export type PermissionRole = 'anyone' | 'authorized' | 'self' | 'creator' | 'admin';
+type PermissionRole = 'anyone' | 'authorized' | 'self' | 'creator' | 'admin';
 
 export interface PersonPermissions {
   view:   PermissionRole;

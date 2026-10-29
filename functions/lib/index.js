@@ -10,6 +10,7 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
 const params_1 = require("firebase-functions/params");
 const nodemailer = require("nodemailer");
+const relationLabel_1 = require("./shared/relationLabel");
 // CJS 빌드는 클래스 자체를 export (esModuleInterop 꺼져 있어 default import 사용 불가)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const klcMod = require('korean-lunar-calendar');
@@ -197,6 +198,7 @@ exports.onInfoRequestCreated = (0, firestore_2.onDocumentCreated)('info_requests
         body: `${requesterName}님이 정보공개를 요청했습니다.`,
     });
 });
+// ── 촌수 계산 (BFS) ───────────────────────────────────────────────────────
 function getChusu(personId, baseId, rels) {
     if (personId === baseId)
         return 0;
@@ -231,6 +233,29 @@ function getChusu(personId, baseId, rels) {
     }
     return null;
 }
+// 사촌류(혈족)는 나이·성별로 형/누나/오빠/언니/동생을 붙임 — '사촌' → '사촌형'
+function withSibTitle(relation, base, target) {
+    var _a, _b;
+    if (!/사촌$/.test(relation) || relation.includes(' '))
+        return relation;
+    const bb = (_a = base.birth_date) !== null && _a !== void 0 ? _a : '', tb = (_b = target.birth_date) !== null && _b !== void 0 ? _b : '';
+    if (!bb || !tb || bb === tb)
+        return relation;
+    if (tb > bb)
+        return `${relation}동생`;
+    if (base.gender === 'female')
+        return relation + (target.gender === 'female' ? '언니' : '오빠');
+    if (base.gender === 'male')
+        return relation + (target.gender === 'female' ? '누나' : '형');
+    return relation;
+}
+// '사촌형 홍재학' 처럼 관계명을 이름 앞에 붙임 — 관계를 못 구하면 이름만
+function annivName(target, base, persons, rels) {
+    const relation = base ? (0, relationLabel_1.getRelationLabel)(target.id, base, persons, rels) : '';
+    if (!base || !relation || relation.includes('세대') || relation === '나')
+        return target.name;
+    return `${withSibTitle(relation, base, target)} ${target.name}`;
+}
 function annivWhen(offset) {
     return offset === 0 ? '오늘' : offset === 1 ? '내일' : `${offset}일 후`;
 }
@@ -260,17 +285,20 @@ function buildAnnivMessage(items) {
     return Object.assign({ title: `📅 가족 기념일 ${sorted.length}건`, body }, common);
 }
 // ── 기념일 알림 스케줄러 ──────────────────────────────────────────────────
-// 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
+// 매분 실행 후 settings/push 의 sendHourKST:sendMinuteKST 와 일치할 때만 발송
 // 개인 설정은 각 members 문서의 push_prefs 필드에서 읽음
-exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '0 * * * *', timeZone: 'UTC' }, async () => {
-    var _a;
-    // 발송 시간만 전역 설정에서 읽음
+exports.sendAnniversaryReminders = (0, scheduler_1.onSchedule)({ schedule: '* * * * *', timeZone: 'UTC' }, async () => {
+    var _a, _b;
+    // 발송 시각만 전역 설정에서 읽음
     const settingsSnap = await db.doc('settings/push').get();
     const sendHourKST = typeof ((_a = settingsSnap.data()) === null || _a === void 0 ? void 0 : _a.sendHourKST) === 'number'
         ? settingsSnap.data().sendHourKST : 8;
+    const sendMinuteKST = typeof ((_b = settingsSnap.data()) === null || _b === void 0 ? void 0 : _b.sendMinuteKST) === 'number'
+        ? settingsSnap.data().sendMinuteKST : 0;
     const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-    if (kst.getUTCHours() !== sendHourKST)
+    if (kst.getUTCHours() !== sendHourKST || kst.getUTCMinutes() !== sendMinuteKST)
         return;
+    console.log(`기념일 알림 시작: KST ${sendHourKST}:${String(sendMinuteKST).padStart(2, '0')}`);
     await runAnniversaryReminders();
 });
 // 관리자 수동 실행 — anniversary_runs 문서 생성 시 발송 시각과 무관하게 오늘 기념일 알림 발송
@@ -296,7 +324,7 @@ async function runAnniversaryReminders() {
     const todayD = kst.getUTCDate();
     // 한국천문연구원(KASI) 기준 음력 — solarlunar(중국 음력)는 합삭 시각 차이로 하루씩 어긋나는 달이 있음
     const lunarCal = new KoreanLunarCalendar();
-    // 가능한 4개 offset 전체 미리 계산
+    // 회원이 고를 수 있는 offset(당일·1·3·7일 전) 날짜를 양력·음력으로 미리 계산
     const allCheckDates = [0, 1, 3, 7].map(offset => {
         const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
         const m = d.getUTCMonth() + 1;
@@ -333,8 +361,10 @@ async function runAnniversaryReminders() {
         list.push({ ref: doc.ref, data: d, personId: d.person_id, prefs, items: [] });
         familyMap.set(d.family_id, list);
     }
-    if (familyMap.size === 0)
+    if (familyMap.size === 0) {
+        console.log('기념일 알림: 토큰 있는 회원 없음');
         return { total: 0, targets: 0, okMembers: 0 };
+    }
     for (const [familyId, memberList] of familyMap) {
         const [personsSnap, relsSnap] = await Promise.all([
             db.collection('persons').where('family_id', '==', familyId).get(),
@@ -347,6 +377,8 @@ async function runAnniversaryReminders() {
             const checkDates = allCheckDates.filter(cd => prefs.offsets.includes(cd.offset));
             if (checkDates.length === 0)
                 continue;
+            const base = persons.find(p => p.id === member.personId);
+            const nameOf = (p) => annivName(p, base, persons, rels);
             for (const person of persons) {
                 const p = person;
                 const chusu = getChusu(p.id, member.personId, rels);
@@ -361,7 +393,7 @@ async function runAnniversaryReminders() {
                             : (bm === chk.solarM && bd === chk.solarD);
                         if (!match)
                             continue;
-                        member.items.push({ kind: 'birth', offset: chk.offset, name: p.name, age: todayY - by });
+                        member.items.push({ kind: 'birth', offset: chk.offset, name: nameOf(p), age: todayY - by });
                     }
                 }
                 // ── 기일 체크 ────────────────────────────────────────────────────
@@ -373,7 +405,7 @@ async function runAnniversaryReminders() {
                             : (dm === chk.solarM && dd === chk.solarD);
                         if (!match)
                             continue;
-                        member.items.push({ kind: 'death', offset: chk.offset, name: p.name });
+                        member.items.push({ kind: 'death', offset: chk.offset, name: nameOf(p) });
                     }
                 }
             }

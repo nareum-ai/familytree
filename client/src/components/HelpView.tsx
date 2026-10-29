@@ -253,11 +253,12 @@ const GROUPS: Group[] = [
         content: (
           <>
             <p className="help-para">생일·기일을 미리 알려주고, 정보공개 요청이 오면 바로 알려줘요.</p>
-            <div className="help-warn"><Icon name="alert" /> 알림은 <b>앱을 설치한 경우</b>에만 와요. 인터넷 창으로만 열면 알림이 오지 않아요.</div>
+            <p className="help-para">기념일 알림은 <b>매일 아침 8시</b>에 하루 한 번 모아서 와요. "내일은 사촌형 ○○○님의 생일"처럼 <b>나와의 관계</b>도 함께 보여줘요.</p>
+            <div className="help-warn"><Icon name="alert" /> 안드로이드 폰과 컴퓨터는 인터넷 창으로 열어도 알림이 와요. <b>아이폰</b>은 <b>홈 화면에 추가</b>한 앱으로 열어야만 알림이 와요.</div>
 
             <b className="help-label">켜는 방법</b>
             <ol className="help-steps">
-              <Step n={1}>앱 설치 후 처음 열 때 나오는 알림 권한 창에서 <b>허용</b>을 누르세요.</Step>
+              <Step n={1}>알림 켜기 안내가 나오면 버튼을 누르고, 알림 권한 창에서 <b>허용</b>을 누르세요.</Step>
               <Step n={2}><b><Icon name="user" /> My</b> 아래쪽의 <b>기념일 알림</b>을 <b>ON</b>으로 켜세요.</Step>
               <Step n={3}>테스트 알림이 뜨는지 확인하세요. 안 보이면 "아니요"를 눌러 안내를 따라 주세요.</Step>
             </ol>
@@ -341,7 +342,8 @@ const GROUPS: Group[] = [
         keywords: '알림 안옴 푸시 차단',
         content: (
           <ul className="help-list">
-            <li>앱으로 <b>설치</b>했는지 확인하세요. 인터넷 창에서는 알림이 오지 않아요.</li>
+            <li>아이폰은 <b>홈 화면에 추가</b>한 앱으로 열어야 알림이 와요.</li>
+            <li>기념일 알림은 아침 8시에 와요. 알림 범위(촌수) 안에 다가오는 생일·기일이 없으면 오지 않아요.</li>
             <li>휴대폰 설정에서 이 앱의 <b>알림이 허용</b>되어 있는지 확인하세요.</li>
             <li><Icon name="bell-off" /> 표시가 보이면 눌러서 안내를 따라 주세요.</li>
           </ul>

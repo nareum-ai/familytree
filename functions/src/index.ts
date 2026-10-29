@@ -6,6 +6,8 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { defineSecret } from 'firebase-functions/params';
 import * as nodemailer from 'nodemailer';
+import { getRelationLabel } from './shared/relationLabel';
+import type { Person as LabelPerson, Relationship as Rel } from './shared/types';
 // CJS 빌드는 클래스 자체를 export (esModuleInterop 꺼져 있어 default import 사용 불가)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const klcMod = require('korean-lunar-calendar');
@@ -210,7 +212,6 @@ export const onInfoRequestCreated = onDocumentCreated(
 );
 
 // ── 촌수 계산 (BFS) ───────────────────────────────────────────────────────
-interface Rel { type: string; person1_id: string; person2_id: string; }
 
 function getChusu(personId: string, baseId: string, rels: Rel[]): number | null {
   if (personId === baseId) return 0;
@@ -250,6 +251,24 @@ function getChusu(personId: string, baseId: string, rels: Rel[]): number | null 
 // 회원 1명당 하루 1건으로 묶어서 발송 — 누르면 기념일 화면(/?view=anniversary)으로 이동
 interface AnnivItem { kind: 'birth' | 'death'; offset: number; name: string; age?: number; }
 
+// 사촌류(혈족)는 나이·성별로 형/누나/오빠/언니/동생을 붙임 — '사촌' → '사촌형'
+function withSibTitle(relation: string, base: LabelPerson, target: LabelPerson): string {
+  if (!/사촌$/.test(relation) || relation.includes(' ')) return relation;
+  const bb = base.birth_date ?? '', tb = target.birth_date ?? '';
+  if (!bb || !tb || bb === tb) return relation;
+  if (tb > bb) return `${relation}동생`;
+  if (base.gender === 'female') return relation + (target.gender === 'female' ? '언니' : '오빠');
+  if (base.gender === 'male')   return relation + (target.gender === 'female' ? '누나' : '형');
+  return relation;
+}
+
+// '사촌형 홍재학' 처럼 관계명을 이름 앞에 붙임 — 관계를 못 구하면 이름만
+function annivName(target: LabelPerson, base: LabelPerson | undefined, persons: LabelPerson[], rels: Rel[]): string {
+  const relation = base ? getRelationLabel(target.id, base, persons, rels) : '';
+  if (!base || !relation || relation.includes('세대') || relation === '나') return target.name;
+  return `${withSibTitle(relation, base, target)} ${target.name}`;
+}
+
 function annivWhen(offset: number): string {
   return offset === 0 ? '오늘' : offset === 1 ? '내일' : `${offset}일 후`;
 }
@@ -283,18 +302,21 @@ function buildAnnivMessage(items: AnnivItem[]): PushMsg {
 }
 
 // ── 기념일 알림 스케줄러 ──────────────────────────────────────────────────
-// 매시간 실행 후 settings/push 의 sendHourKST 와 일치할 때만 발송
+// 매분 실행 후 settings/push 의 sendHourKST:sendMinuteKST 와 일치할 때만 발송
 // 개인 설정은 각 members 문서의 push_prefs 필드에서 읽음
 export const sendAnniversaryReminders = onSchedule(
-  { schedule: '0 * * * *', timeZone: 'UTC' },
+  { schedule: '* * * * *', timeZone: 'UTC' },
   async () => {
-    // 발송 시간만 전역 설정에서 읽음
+    // 발송 시각만 전역 설정에서 읽음
     const settingsSnap = await db.doc('settings/push').get();
     const sendHourKST: number = typeof settingsSnap.data()?.sendHourKST === 'number'
       ? (settingsSnap.data()!.sendHourKST as number) : 8;
+    const sendMinuteKST: number = typeof settingsSnap.data()?.sendMinuteKST === 'number'
+      ? (settingsSnap.data()!.sendMinuteKST as number) : 0;
 
     const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-    if (kst.getUTCHours() !== sendHourKST) return;
+    if (kst.getUTCHours() !== sendHourKST || kst.getUTCMinutes() !== sendMinuteKST) return;
+    console.log(`기념일 알림 시작: KST ${sendHourKST}:${String(sendMinuteKST).padStart(2, '0')}`);
 
     await runAnniversaryReminders();
   }
@@ -325,7 +347,7 @@ async function runAnniversaryReminders() {
     // 한국천문연구원(KASI) 기준 음력 — solarlunar(중국 음력)는 합삭 시각 차이로 하루씩 어긋나는 달이 있음
     const lunarCal = new KoreanLunarCalendar();
 
-    // 가능한 4개 offset 전체 미리 계산
+    // 회원이 고를 수 있는 offset(당일·1·3·7일 전) 날짜를 양력·음력으로 미리 계산
     const allCheckDates = [0, 1, 3, 7].map(offset => {
       const d = new Date(Date.UTC(todayY, todayM - 1, todayD + offset));
       const m = d.getUTCMonth() + 1;
@@ -373,7 +395,7 @@ async function runAnniversaryReminders() {
       familyMap.set(d.family_id as string, list);
     }
 
-    if (familyMap.size === 0) return { total: 0, targets: 0, okMembers: 0 };
+    if (familyMap.size === 0) { console.log('기념일 알림: 토큰 있는 회원 없음'); return { total: 0, targets: 0, okMembers: 0 }; }
 
     for (const [familyId, memberList] of familyMap) {
       const [personsSnap, relsSnap] = await Promise.all([
@@ -381,17 +403,18 @@ async function runAnniversaryReminders() {
         db.collection('relationships').where('family_id', '==', familyId).get(),
       ]);
 
-      const persons = personsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const persons = personsSnap.docs.map(d => ({ id: d.id, ...d.data() }) as LabelPerson);
       const rels    = relsSnap.docs.map(d => d.data() as Rel);
 
       for (const member of memberList) {
         const { prefs } = member;
         const checkDates = allCheckDates.filter(cd => prefs.offsets.includes(cd.offset));
         if (checkDates.length === 0) continue;
+        const base = persons.find(p => p.id === member.personId);
+        const nameOf = (p: LabelPerson) => annivName(p, base, persons, rels);
 
         for (const person of persons) {
-          const p = person as {
-            id: string; name: string;
+          const p = person as LabelPerson & {
             birth_date?: string; birth_lunar?: boolean; is_deceased?: boolean;
             death_date?: string; death_lunar?: boolean;
           };
@@ -407,7 +430,7 @@ async function runAnniversaryReminders() {
                 ? (bm === chk.lunarM && bd === chk.lunarD)
                 : (bm === chk.solarM && bd === chk.solarD);
               if (!match) continue;
-              member.items.push({ kind: 'birth', offset: chk.offset, name: p.name, age: todayY - by });
+              member.items.push({ kind: 'birth', offset: chk.offset, name: nameOf(p), age: todayY - by });
             }
           }
 
@@ -419,7 +442,7 @@ async function runAnniversaryReminders() {
                 ? (dm === chk.lunarM && dd === chk.lunarD)
                 : (dm === chk.solarM && dd === chk.solarD);
               if (!match) continue;
-              member.items.push({ kind: 'death', offset: chk.offset, name: p.name });
+              member.items.push({ kind: 'death', offset: chk.offset, name: nameOf(p) });
             }
           }
         }

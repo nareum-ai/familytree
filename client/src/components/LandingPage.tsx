@@ -171,9 +171,6 @@ const Icon = {
   link: (
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
   ),
-  shield: (
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-  ),
 };
 
 const features = [
@@ -245,17 +242,6 @@ export function LandingPage({ onRegister, onLogin }: Props) {
             <span className="lfa-title">다가오는 기념일</span>
             <div className="lfa-row"><span>민준 생일</span><b>D-12</b></div>
             <div className="lfa-row"><span>부모님 결혼기념일</span><b>D-23</b></div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 개인정보 안심 ─────────────────────────────────── */}
-      <section className="landing-trust">
-        <div className="landing-trust-inner">
-          <span className="landing-trust-icon">{Icon.shield}</span>
-          <div className="landing-trust-text">
-            <strong>우리 가족 정보는 우리 가족만</strong>
-            <span>가계도는 로그인한 가족 구성원에게만 보이고, 2촌 밖의 상세 정보는 본인이 승인해야 공개돼요.</span>
           </div>
         </div>
       </section>

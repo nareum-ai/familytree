@@ -82,7 +82,7 @@ export function rememberSavedToken(memberId: string, scope: PushScope, token: st
 }
 
 /** 권한이 없으면 요청한다. 최종적으로 허용됐으면 true. 반드시 버튼 클릭 등 사용자 동작 안에서 호출할 것 */
-export async function ensureNotificationPermission(): Promise<boolean> {
+async function ensureNotificationPermission(): Promise<boolean> {
   if (typeof Notification === 'undefined') return false;
   if (Notification.permission === 'granted') return true;
   if (Notification.permission === 'denied') return false;
