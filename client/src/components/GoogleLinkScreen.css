@@ -1,0 +1,127 @@
+.glink-screen {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--pri-bg) 0%, var(--pri-bg-2) 100%);
+}
+
+.glink-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 40px 36px 36px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(46,94,78, 0.15);
+  width: 380px;
+  max-width: 92vw;
+  animation: fadeUp 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.glink-google-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.glink-email {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.glink-email a,
+.glink-email-sub a {
+  color: inherit;
+  text-decoration: none;
+  pointer-events: none;
+}
+
+.glink-email-sub {
+  font-size: var(--fs-13);
+  color: var(--text-4);
+  margin: 0 0 20px;
+}
+
+.glink-desc {
+  font-size: var(--fs-14);
+  color: var(--text-3);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.glink-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.glink-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: var(--fs-15);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.glink-btn.primary {
+  background: var(--pri);
+  color: white;
+}
+
+.glink-btn.primary:hover:not(:disabled) { background: var(--pri-dark); }
+
+.glink-btn.secondary {
+  background: var(--pri-bg-2);
+  color: var(--pri);
+  border: 1.5px solid var(--pri);
+}
+
+.glink-btn.secondary:hover { background: var(--pri-bg); }
+
+.glink-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.glink-btn-sub {
+  font-size: var(--fs-11);
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+
+.glink-cancel {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  padding: 6px;
+  text-decoration: underline;
+}
+
+.glink-cancel:hover { color: var(--text-3); }

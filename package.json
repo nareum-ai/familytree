@@ -1,0 +1,17 @@
+{
+  "name": "familytree",
+  "version": "2.1.0",
+  "scripts": {
+    "dev": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "deploy": "cd client && npm run build && cd .. && firebase deploy --only hosting"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  },
+  "devDependencies": {
+    "jimp": "^1.6.1",
+    "playwright": "^1.60.0",
+    "puppeteer": "^25.1.0"
+  }
+}

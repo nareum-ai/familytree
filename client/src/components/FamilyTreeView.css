@@ -1,0 +1,179 @@
+.tree-container {
+  display: flex; flex-direction: column;
+  height: 100%; width: 100%;
+}
+
+.viewpoint-banner {
+  background: var(--pri-bg);
+  border-bottom: 1px solid var(--border-pri);
+  padding: 8px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--fs-13); font-weight: 600; color: var(--pri-dark);
+  flex-shrink: 0;
+}
+.viewpoint-banner button {
+  background: var(--surface); border: 1px solid var(--pri-light);
+  border-radius: 8px; color: var(--pri);
+  font-size: var(--fs-12); font-weight: 600; padding: 4px 12px; cursor: pointer;
+  transition: all 0.15s;
+}
+.viewpoint-banner button:hover { background: var(--pri-bg); }
+
+/* 탭 */
+.branch-tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.branch-tab {
+  flex: 1; padding: 13px 8px;
+  font-size: var(--fs-14); font-weight: 600;
+  color: var(--text-3);
+  background: none; border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer; transition: all 0.15s;
+  margin-bottom: -1px;
+  white-space: nowrap; text-align: center;
+  letter-spacing: -0.2px;
+  font-family: inherit;
+}
+
+.branch-tab:hover { color: var(--pri); }
+.branch-tab.active {
+  color: var(--pri);
+  border-bottom-color: var(--pri);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .branch-tabs { padding: 0 8px; border-bottom-width: 2px; }
+  .branch-tab { padding: 12px 4px; font-size: var(--fs-14); font-weight: 700; }
+}
+
+/* 미니맵 — 줌 슬라이더 위, 오른쪽 하단 */
+.react-flow__minimap {
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(42,38,32,0.13), 0 1px 6px rgba(42,38,32,0.07) !important;
+  border: 1px solid var(--border) !important;
+  bottom: 46px !important;
+  right: 4px !important;
+  left: auto !important;
+  width: 148px !important;
+  height: 100px !important;
+  background: var(--surface) !important;
+}
+
+.flow-wrapper {
+  flex: 1; position: relative;
+  background: var(--bg);
+}
+
+/* React Flow 배경 */
+.react-flow__background { background: var(--bg); }
+
+/* ── 줌 슬라이더 — 미니맵과 독립, 오른쪽 하단 ─────────────────────────── */
+.zoom-controls-panel {
+  bottom: 8px !important;
+  right: 8px !important;
+  margin: 0 !important;
+}
+
+.zoom-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 0 10px;
+  height: 34px;
+  box-shadow: 0 4px 20px rgba(42,38,32,0.13), 0 1px 6px rgba(42,38,32,0.07);
+  border: 1px solid var(--border);
+  width: 148px;
+  box-sizing: border-box;
+}
+
+.zoom-step-btn {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--pri-bg);
+  border: none; border-radius: 50%;
+  color: var(--pri); cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.zoom-step-btn:hover { background: var(--border-pri); }
+
+.zoom-slider-input {
+  flex: 1;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--pri-bg);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.zoom-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--pri);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(46,94,78,0.4);
+  transition: transform 0.1s;
+}
+.zoom-slider-input::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.zoom-pct {
+  font-size: var(--fs-11); font-weight: 700;
+  color: var(--text-3); min-width: 32px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── GPS / 나 위치 버튼 ──────────────────────────────────────────────────── */
+.focus-me-panel {
+  top: 12px !important;
+  right: 12px !important;
+  margin: 0 !important;
+}
+
+.focus-me-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface);
+  border: none; border-radius: 20px;
+  padding: 8px 14px 8px 10px;
+  color: var(--pri);
+  font-size: var(--fs-13); font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 2px 12px rgba(42,38,32,0.14), 0 1px 4px rgba(42,38,32,0.08);
+  transition: all 0.15s;
+}
+.focus-me-btn:hover {
+  background: var(--pri-bg);
+  box-shadow: 0 4px 16px rgba(46,94,78,0.2);
+  transform: translateY(-1px);
+}
+.focus-me-btn:active { transform: translateY(0); }
+
+.empty-branch {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--text-2); pointer-events: none;
+}
+.empty-branch p { margin: 4px 0; font-size: var(--fs-15); }
+.empty-branch .empty-hint { font-size: var(--fs-13); color: var(--text-4); }
+
+/* 모바일: 줌 버튼·슬라이더를 손가락 크기로 (미니맵은 그만큼 위로) */
+@media (max-width: 640px) {
+  .zoom-slider-wrap { height: 42px; }
+  .zoom-step-btn { width: 32px; height: 32px; }
+  .zoom-slider-input::-webkit-slider-thumb { width: 20px; height: 20px; }
+  .react-flow__minimap { bottom: 54px !important; }
+}

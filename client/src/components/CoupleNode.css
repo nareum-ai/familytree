@@ -1,0 +1,152 @@
+.couple-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.couple-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+/* Individual hex inside a couple */
+.chex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  width: 76px; /* = useTreeLayout CHEX_W. 육각형은 64px 그대로, 이름 자리만 여유 */
+  user-select: none;
+}
+
+.chex-shape {
+  width: 64px;
+  height: 64px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: filter 0.15s;
+  position: relative;
+}
+
+.chex.male .chex-shape    { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
+.chex.female .chex-shape  { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
+.chex.me .chex-shape      { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
+
+.chex.selected .chex-shape {
+  filter: drop-shadow(0 0 8px rgba(46,94,78,0.6));
+}
+
+.chex-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chex-initial {
+  font-size: var(--fs-24);
+  font-weight: 700;
+  color: white;
+}
+
+/* Wrapper needed to position ribbon relative to hex */
+.chex-shape-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.couple-hidden-badge {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-3);
+  color: white;
+  font-size: var(--fs-10);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.anon-chex { cursor: default; }
+.anon-chex .anon-hex { background: linear-gradient(135deg, var(--text-4), var(--text-3)) !important; }
+.anon-chex .anon-icon { font-size: var(--fs-18); }
+.anon-chex .anon-name { color: var(--text-4) !important; font-style: italic; }
+
+/* 고인: 테두리는 회갈색, 아바타는 살짝 바래게, 이름은 연하게 */
+.chex.deceased .chex-shape { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.chex.deceased .avatar-hex-inner img { filter: grayscale(45%); opacity: 0.88; }
+.chex.deceased .chex-name { color: var(--text-3); }
+
+.chex-name {
+  font-size: var(--fs-12);
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 6px;
+  text-align: center;
+  max-width: 76px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.chex-age {
+  font-weight: 400;
+  color: var(--text-3);
+  font-size: var(--fs-12);
+  margin-left: 2px;
+}
+
+.chex-birth {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.chusu-badge {
+  position: absolute;
+  top: -6px;
+  left: calc(50% - 40px);
+  background: var(--pri);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(42,38,32,0.2);
+}
+
+.me-badge {
+  position: absolute;
+  top: -6px;
+  right: calc(50% - 40px);
+  background: var(--gold);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(42,38,32,0.2);
+}
+

@@ -1,0 +1,303 @@
+.ann-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(42,38,32,0.45);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+.ann-panel {
+  width: 360px;
+  max-width: 100vw;
+  height: 100%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease;
+  box-shadow: -4px 0 24px rgba(42,38,32,0.15);
+  /* 기념일 창은 전역 토큰보다 1px 작게 */
+  --fs-11: 14px; --fs-12: 15px; --fs-13: 16px; --fs-14: 17px;
+  --fs-17: 19px; --fs-18: 20px;
+}
+
+@keyframes slideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
+
+.ann-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--pri-bg);
+  flex-shrink: 0;
+}
+
+.ann-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ann-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: var(--fs-13);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.ann-settings-btn svg { width: 15px; height: 15px; }
+/* 꺼짐 — 눈에 띄게: 강조색으로 채우고 종이 살짝 흔들림 */
+.ann-settings-btn.off { background: var(--acc); color: #fff; box-shadow: var(--shadow-sm); }
+.ann-settings-btn.off:hover { background: var(--acc-dark); }
+.ann-settings-btn.off svg { animation: bellRing 2.4s ease-in-out 0.6s 3; transform-origin: 50% 10%; }
+/* 켜짐 — 차분하게 */
+.ann-settings-btn.on { background: var(--pri-bg); color: var(--pri); border-color: var(--border-pri); }
+.ann-settings-btn.on:hover { background: var(--pri-bg-2); }
+/* 차단 */
+.ann-settings-btn.blocked { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+.ann-settings-btn.blocked:hover { border-color: var(--red); }
+
+@keyframes bellRing {
+  0%, 20%, 100% { transform: rotate(0); }
+  4%  { transform: rotate(14deg); }
+  8%  { transform: rotate(-12deg); }
+  12% { transform: rotate(8deg); }
+  16% { transform: rotate(-4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ann-settings-btn.off svg { animation: none; }
+}
+
+.ann-header h2 {
+  font-size: var(--fs-17);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.ann-close {
+  background: none;
+  border: none;
+  font-size: var(--fs-18);
+  cursor: pointer;
+  color: var(--text-4);
+  padding: 4px;
+}
+.ann-close:hover { color: var(--text); }
+
+.ann-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.ann-section-label {
+  font-size: var(--fs-11);
+  font-weight: 700;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 20px 6px;
+}
+
+.ann-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--surface-2);
+  transition: background 0.1s;
+}
+
+.ann-row.clickable { cursor: pointer; }
+.ann-row.clickable:hover { background: var(--pri-bg-2); }
+.ann-row.clickable:hover .ann-name { color: var(--pri); }
+.ann-row.memorial { background: var(--surface-2); }
+.ann-row.memorial:hover { background: var(--surface-2); }
+
+/* Day chips */
+.day-chip {
+  min-width: 52px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: var(--fs-12);
+  font-weight: 700;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.day-chip.today { background: var(--red); color: white; }
+.day-chip.soon  { background: var(--acc); color: white; }
+.day-chip.near  { background: var(--pri); color: white; }
+.day-chip.far   { background: var(--surface-2); color: var(--text-3); }
+
+.ann-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;   /* 공간 부족 시 이름은 지키고 태그를 다음 줄로 */
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.ann-name {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ann-chusu {
+  font-size: var(--fs-11);
+  font-weight: 700;
+  color: var(--pri);
+  background: var(--pri-bg);
+  padding: 1px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.ann-type {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.ann-type.birthday  { background: var(--pri-bg); color: var(--pri); }
+.ann-type.memorial  { background: var(--surface-2); color: var(--text-3); }
+.ann-type.wedding   { background: var(--female-bg); color: var(--female-dark); }
+.ann-row.wedding:hover { background: var(--female-bg); }
+
+.ann-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.ann-date-main {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+}
+
+.ann-count {
+  font-size: var(--fs-11);
+  color: var(--text-4);
+  margin-top: 1px;
+}
+
+.ann-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-4);
+  font-size: var(--fs-14);
+}
+
+/* 알림 설정 */
+.ann-push-section { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+
+.ann-push-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.ann-push-toggle-row { padding-bottom: 14px; border-bottom: 1px solid var(--surface-3); }
+
+.ann-push-label { font-size: var(--fs-13); font-weight: 600; color: var(--text); flex-shrink: 0; }
+
+.ann-push-toggle {
+  padding: 5px 16px; border-radius: 20px; border: 2px solid var(--border);
+  background: var(--surface-3); color: var(--text-4); font-size: var(--fs-13); font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.ann-push-toggle.on { background: var(--pri); border-color: var(--pri); color: white; }
+.ann-push-toggle:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ann-push-group { display: flex; flex-direction: column; gap: 8px; }
+.ann-push-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.ann-push-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface-3); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: var(--fs-13); font-weight: 600; color: var(--text-3);
+  cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.ann-push-chip.on { background: var(--pri-bg); border-color: var(--pri); color: var(--pri); }
+.ann-push-chip.dim { opacity: 0.4; cursor: not-allowed; }
+.ann-push-chip input { display: none; }
+
+.ann-push-select {
+  padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: var(--fs-13); background: var(--surface); cursor: pointer; outline: none;
+}
+.ann-push-select:focus { border-color: var(--pri); }
+.ann-push-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ann-push-msg { font-size: var(--fs-13); margin: 0; }
+.ann-push-msg.ok { color: var(--green); }
+.ann-push-msg.err { color: var(--red); }
+
+.ann-push-save-btn {
+  padding: 10px; border-radius: 8px; border: none;
+  background: var(--pri); color: white; font-size: var(--fs-14); font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.ann-push-save-btn:hover:not(:disabled) { background: var(--pri-dark); }
+.ann-push-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ann-notif-test-prompt {
+  margin-top: -8px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.ann-notif-test-q {
+  margin: 0 0 10px;
+  font-size: var(--fs-13);
+  font-weight: 700;
+  color: var(--text-2);
+  text-align: center;
+}
+.ann-notif-test-actions { display: flex; gap: 8px; }
+.ann-notif-test-yes,
+.ann-notif-test-no {
+  flex: 1;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: var(--fs-13);
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid transparent;
+}
+.ann-notif-test-yes {
+  background: var(--pri-bg);
+  color: var(--pri);
+  border-color: var(--border-pri);
+}
+.ann-notif-test-no {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red-border);
+}
+
+@media (max-width: 640px) {
+  .ann-row { gap: 10px; padding: 12px 16px; }
+}

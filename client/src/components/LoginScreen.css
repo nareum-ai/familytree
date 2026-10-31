@@ -1,0 +1,218 @@
+.login-screen {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  padding: 24px 0;
+}
+
+/* 배경 장식 — 은은한 초록·테라코타 빛 */
+.login-screen::before {
+  content: '';
+  position: absolute;
+  width: 640px; height: 640px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(46,94,78,0.10) 0%, transparent 70%);
+  top: -240px; right: -220px;
+  pointer-events: none;
+}
+.login-screen::after {
+  content: '';
+  position: absolute;
+  width: 440px; height: 440px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(169,80,47,0.08) 0%, transparent 70%);
+  bottom: -160px; left: -120px;
+  pointer-events: none;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 44px 40px 40px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  width: 400px;
+  max-width: 92vw;
+  animation: fadeUp 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.login-logo { margin-bottom: 14px; }
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-26);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.login-desc { font-size: var(--fs-14); color: var(--text-3); margin: 0 0 24px; }
+
+/* 구글 버튼 */
+.google-login-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 13px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: var(--fs-15); font-weight: 600; color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 4px;
+  box-shadow: 0 1px 4px rgba(42,38,32,0.06);
+}
+.google-login-btn:hover:not(:disabled) {
+  border-color: var(--pri);
+  box-shadow: 0 2px 12px rgba(46,94,78,0.15);
+  transform: translateY(-1px);
+}
+.google-login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 구분선 */
+.login-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 10px 0; color: var(--border-2); font-size: var(--fs-12); font-weight: 500;
+}
+.login-divider::before, .login-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* 폼 */
+.login-form { display: flex; flex-direction: column; gap: 10px; }
+
+.login-input {
+  padding: 13px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: var(--fs-15);
+  text-align: left;
+  outline: none;
+  transition: all 0.15s;
+  color: var(--text);
+  background: var(--surface-2);
+  font-family: inherit;
+}
+.login-input:focus {
+  border-color: var(--pri);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(46,94,78,0.08);
+}
+.login-input::placeholder { color: var(--text-4); }
+
+.login-btn {
+  padding: 14px;
+  background: var(--pri);
+  color: white; border: none; border-radius: 12px;
+  font-size: var(--fs-15); font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  font-family: inherit;
+}
+.login-btn:hover:not(:disabled) { background: var(--pri-dark); }
+.login-btn:active:not(:disabled) { transform: translateY(0); }
+.login-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.login-error {
+  color: var(--red); font-size: var(--fs-13); margin: 0; text-align: center;
+  background: var(--red-bg); border-radius: 8px; padding: 8px 12px;
+}
+
+.login-success {
+  background: var(--green-bg);
+  border: 1.5px solid var(--green-bg);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: var(--fs-14); font-weight: 600; color: var(--green);
+  text-align: center;
+  line-height: 1.5;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  margin-bottom: 4px;
+}
+.login-success-icon { font-size: var(--fs-28); line-height: 1; }
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: var(--fs-13);
+  font-weight: 500;
+  color: var(--text-2);
+  user-select: none;
+  align-self: flex-start;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--pri);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.login-register-btn {
+  background: none; border: none;
+  color: var(--pri); font-size: var(--fs-13); font-weight: 600;
+  cursor: pointer; padding: 6px 0;
+  font-family: inherit;
+}
+.login-register-btn:hover { color: var(--pri-dark); text-decoration: underline; }
+
+.login-forgot-btn {
+  background: none; border: none;
+  color: var(--text-3); font-size: var(--fs-12);
+  cursor: pointer; padding: 4px 0;
+  font-family: inherit;
+}
+.login-forgot-btn:hover { color: var(--text-2); text-decoration: underline; }
+
+.login-desc {
+  font-size: var(--fs-14); color: var(--text-3);
+  line-height: 1.6; margin-bottom: 16px;
+  text-align: center;
+}
+
+.reg-optional-label {
+  font-size: var(--fs-12); color: var(--text-4);
+  margin: 4px 0 2px; text-align: left;
+}
+
+/* 인앱브라우저 경고 배너 */
+.inapp-banner {
+  background: var(--gold-bg);
+  border: 1.5px solid var(--gold-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.inapp-banner-msg {
+  font-size: var(--fs-13); color: var(--gold-dark); margin: 0 0 10px;
+  line-height: 1.6;
+}
+.inapp-banner-msg strong { color: var(--gold-dark); }
+.inapp-open-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--acc);
+  color: white; border: none; border-radius: 10px;
+  font-size: var(--fs-14); font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+}
+.inapp-open-btn:active { opacity: 0.85; }
+.inapp-banner-hint {
+  font-size: var(--fs-11); color: var(--gold-dark); margin: 0;
+  line-height: 1.7;
+}

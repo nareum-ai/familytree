@@ -1,0 +1,48 @@
+/** localStorage / sessionStorage 키 중앙 관리 */
+
+// 관리자 PWA 모드: 'adm_' prefix로 일반 사용자 세션과 완전 분리
+let _adminMode = false;
+export function setAdminPWAMode(on: boolean) { _adminMode = on; }
+
+const BASE_LS = {
+  USER_NAME:    'familyTreeUser',
+  FAMILY_ID:    'familyTreeFamilyId',
+  IS_ADMIN:     'familyTreeIsAdmin',
+  ADMIN_RETURN: 'familyTreeAdminReturn',
+  MEMBER_ID:    'familyTreeMemberId',
+  MY_PERSON_ID: 'familyTreeMyPersonId',
+  ACCOUNT_NAME: 'familyTreeAccountName',
+  GOOGLE_EMAIL:    'familyTreeGoogleEmail',
+  FCM_TOKEN_SAVED:      'familyTreeFcmTokenSaved',
+  NOTIF_CONFIRMED_BLOCKED: 'familyTreeNotifConfirmedBlocked',
+  PENDING_INVITE_TOKEN: 'familyTreePendingInviteToken',
+  LAST_ACTIVITY: 'familyTreeLastActivity',
+  PWA_INSTALL_DISMISSED: 'pwa_install_dismissed',
+  PUSH_PROMPT_SNOOZED_UNTIL: 'familyTreePushPromptSnoozedUntil',
+  GOOGLE_LINK_PROMPT_SNOOZED_UNTIL: 'familyTreeGoogleLinkPromptSnoozedUntil',
+} as const;
+
+type LSKey = keyof typeof BASE_LS;
+
+// Proxy: 접근 시점에 prefix 결정 → 기존 코드 변경 불필요
+export const LS = new Proxy(BASE_LS as { [K in LSKey]: string }, {
+  get(_, key: string) {
+    const base = BASE_LS[key as LSKey];
+    if (!base) return undefined;
+    return _adminMode ? `adm_${base}` : base;
+  },
+});
+
+/** 현재 로그인 계정명 — ACCOUNT_NAME 우선, 없으면 USER_NAME으로 폴백 */
+export function getCurrentUserName(): string | null {
+  return localStorage.getItem(LS.ACCOUNT_NAME) ?? localStorage.getItem(LS.USER_NAME);
+}
+
+export const SS = {
+  VIEWPOINT_PERSON_ID: 'viewpointPersonId',
+  INVITE_TOKEN:        'inviteToken',
+  INVITE_PERSON_ID:    'invitePersonId',
+  INVITE_PERSON_NAME:  'invitePersonName',
+  INVITE_FAMILY_ID:    'inviteFamilyId',
+  ADMIN_PWA:           '_admin_pwa',
+} as const;

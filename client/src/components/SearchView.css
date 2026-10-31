@@ -1,0 +1,163 @@
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(42,38,32,0.4);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 60px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+.search-panel {
+  width: 480px;
+  max-width: 96vw;
+  max-height: 75vh;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(42,38,32,0.25);
+  display: flex;
+  flex-direction: column;
+  animation: slideDown 0.18s ease;
+  overflow: hidden;
+}
+
+@keyframes slideDown { from { transform:translateY(-12px); opacity:0 } to { transform:translateY(0); opacity:1 } }
+
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--pri-bg);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0; /* 글자가 커져도 닫기(✕) 버튼이 밀려나지 않게 */
+  padding: 10px 14px;
+  border: 1.5px solid var(--pri);
+  border-radius: 10px;
+  font-size: var(--fs-15);
+  outline: none;
+}
+
+.search-close {
+  background: none;
+  border: none;
+  font-size: var(--fs-18);
+  color: var(--text-4);
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.search-close:hover { color: var(--text); }
+
+.search-count {
+  padding: 6px 16px;
+  font-size: var(--fs-12);
+  color: var(--text-4);
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.search-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--surface-2);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.search-item:hover { background: var(--pri-bg-2); }
+.search-item.unclassified { cursor: default; opacity: 0.6; }
+.search-item.unclassified:hover { background: none; }
+
+.search-hex {
+  width: 36px;
+  height: 36px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-14);
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.search-hex.male    { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
+.search-hex.female  { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
+.search-hex.root    { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
+.search-hex.deceased { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.search-hex.deceased img { filter: grayscale(45%); opacity: 0.88; }
+
+.search-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-name {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.search-chusu {
+  font-size: var(--fs-11);
+  font-weight: 700;
+  color: var(--pri);
+  background: var(--pri-bg);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.search-meta {
+  font-size: var(--fs-12);
+  color: var(--text-4);
+}
+
+.search-branches {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 90px;
+}
+
+.branch-tag {
+  font-size: var(--fs-10);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+
+.unclassified-tag {
+  background: var(--gold-bg);
+  color: var(--gold-dark);
+}
+
+.search-empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: var(--text-4);
+  font-size: var(--fs-14);
+}

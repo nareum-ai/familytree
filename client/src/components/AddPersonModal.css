@@ -1,0 +1,322 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(42,38,32, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+
+.modal-box {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 28px;
+  width: 380px;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(42,38,32,0.25);
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+}
+
+.modal-title {
+  font-size: var(--fs-20);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.modal-subtitle {
+  font-size: var(--fs-13);
+  color: var(--text-3);
+  margin: 0 0 20px;
+}
+
+.rel-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.rel-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s;
+  gap: 2px;
+}
+
+.rel-btn:hover {
+  border-color: var(--pri);
+  background: var(--pri-bg-2);
+}
+
+.rel-btn.active {
+  border-color: var(--pri);
+  background: var(--pri-bg);
+}
+
+.rel-label {
+  font-size: var(--fs-15);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rel-desc {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.form-field {
+  margin-bottom: 16px;
+}
+
+.form-field label {
+  display: block;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: var(--fs-14);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.form-field input:focus {
+  border-color: var(--pri);
+}
+
+
+/* .form-field label { display: block } 을 덮어써야 해서 !important 사용 */
+.lunar-check.sub {
+  margin-top: 6px !important;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.lunar-check {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-13);
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0 !important;
+}
+
+.lunar-check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--pri);
+  flex-shrink: 0;
+}
+
+/* 고인 체크 — 카드 스타일 */
+.deceased-check {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0 !important;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.deceased-check:hover {
+  border-color: var(--text-4);
+  background: var(--surface-2);
+}
+
+.deceased-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.gender-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.gender-btn {
+  flex: 1;
+  padding: 9px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-2);
+}
+
+.gender-btn:hover { border-color: var(--text-4); }
+.gender-btn.active.male { border-color: var(--pri); background: var(--pri-bg); color: var(--pri); }
+.gender-btn.active.female { border-color: var(--female); background: var(--female-bg); color: var(--female); }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: var(--fs-14);
+  cursor: pointer;
+  color: var(--text-3);
+  transition: all 0.15s;
+}
+
+.btn-cancel:hover { background: var(--surface-2); }
+
+.btn-save {
+  flex: 2;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: var(--pri);
+  color: white;
+  font-size: var(--fs-14);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-save:hover:not(:disabled) { background: var(--pri-dark); }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-3);
+  padding: 20px 0;
+}
+
+.poly-confirm-box {
+  background: var(--gold-bg);
+  border: 1.5px solid var(--gold);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 12px 0;
+  text-align: center;
+}
+.poly-confirm-msg {
+  font-size: var(--fs-14);
+  color: var(--gold-dark);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+.poly-confirm-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.poly-hidden {
+  display: none;
+}
+
+.poly-error-box {
+  background: var(--red-bg);
+  border: 1.5px solid var(--red);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+.poly-error-msg {
+  font-size: var(--fs-13);
+  color: var(--red-dark);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 아바타 선택 */
+/* 이름 + 성별 한 줄 */
+.name-gender-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-gender-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.gender-btns-inline {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gender-btns-inline .gender-btn {
+  flex: none;
+  width: 42px;
+  padding: 9px 0;
+}
+
+/* 날짜 + 음력 한 줄 */
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-row .date-input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 추가 완료 후 초대 단계 */
+.add-invite-btn,
+.add-invite-later {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+.add-invite-btn { margin-top: 20px; padding: 13px; font-size: var(--fs-15); }

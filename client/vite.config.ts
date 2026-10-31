@@ -1,0 +1,43 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import { PLAY_STORE_RELEASED, ANDROID_PACKAGE, PLAY_STORE_URL } from './src/lib/appConfig';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectRegister: 'auto',
+      registerType: 'autoUpdate',
+      devOptions: { enabled: false },
+      manifest: {
+        name: '우리 가족 가계도',
+        short_name: '가계도',
+        description: '우리 가족 관계를 시각적으로 관리하는 앱',
+        theme_color: '#2E5E4E',
+        background_color: '#F7F2E9',
+        display: 'standalone',
+        orientation: 'any',
+        start_url: '/',
+        // Play 스토어 출시 후(PLAY_STORE_RELEASED=true): 브라우저 PWA 설치 대신 Play 앱으로 유도 + getInstalledRelatedApps 감지
+        ...(PLAY_STORE_RELEASED ? {
+          related_applications: [{ platform: 'play', id: ANDROID_PACKAGE, url: PLAY_STORE_URL }],
+          prefer_related_applications: true,
+        } : {}),
+        icons: [
+          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webp}'],
+      },
+    }),
+  ],
+});

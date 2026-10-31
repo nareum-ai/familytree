@@ -1,0 +1,91 @@
+.person-node {
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; position: relative;
+  width: 90px; user-select: none;
+}
+
+.anon-hex {
+  background: linear-gradient(135deg, var(--border-2), var(--text-4)) !important;
+  filter: none !important;
+}
+.anon-icon { font-size: var(--fs-20); }
+.anon-name { color: var(--text-4) !important; font-style: italic; }
+
+.hex-wrapper { width: 64px; height: 64px; position: relative; }
+
+.hex-shape {
+  width: 64px; height: 64px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: filter 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.male   .hex-shape { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
+.female .hex-shape { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
+.person-node.me .hex-shape { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
+
+.person-node:hover .hex-shape { transform: scale(1.06); filter: brightness(1.05); }
+.person-node.selected .hex-shape {
+  filter: drop-shadow(0 0 10px rgba(46,94,78,0.7));
+}
+/* 고인: 테두리는 회갈색, 아바타는 살짝 바래게, 이름은 연하게 */
+.person-node.deceased .hex-shape { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.person-node.deceased .avatar-hex-inner img { filter: grayscale(45%); opacity: 0.88; }
+.person-node.deceased .person-name { color: var(--text-3); }
+
+/* 아바타 이미지 — 컬러 테두리를 남기고 내부 작은 헥사곤에 표시 */
+.avatar-hex-inner {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 54px; height: 54px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar-hex-inner img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-initial { font-size: var(--fs-22); font-weight: 800; color: white; }
+
+.person-name {
+  font-size: var(--fs-12); font-weight: 700; color: var(--text);
+  margin-top: 7px; text-align: center;
+  max-width: 90px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.person-age { font-weight: 400; color: var(--text-4); font-size: var(--fs-11); margin-left: 2px; }
+
+.hidden-badge {
+  position: absolute; bottom: -18px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-3); color: white;
+  font-size: var(--fs-10); font-weight: 700;
+  padding: 2px 8px; border-radius: 10px;
+  white-space: nowrap; pointer-events: none; z-index: 10;
+}
+
+.chusu-badge {
+  position: absolute; top: -6px; left: calc(50% - 40px);
+  background: var(--pri); color: white;
+  font-size: 10px; font-weight: 800;
+  border-radius: 11px; min-width: 22px; height: 22px; padding: 0 4px; white-space: nowrap;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10; box-shadow: 0 2px 6px rgba(46,94,78,0.4);
+}
+
+.me-badge {
+  position: absolute; top: -6px; right: calc(50% - 40px);
+  background: var(--gold); color: white;
+  font-size: 9px; font-weight: 800;
+  border-radius: 50%; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10; box-shadow: 0 2px 6px rgba(183,134,43,0.4);
+}
+

@@ -1,0 +1,124 @@
+.invite-box {
+  background: var(--pri-bg);
+  border: 1.5px solid var(--border-pri);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invite-label {
+  font-size: var(--fs-12);
+  font-weight: 700;
+  color: var(--pri);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invite-expiry {
+  font-weight: 500;
+  color: var(--pri-light);
+  font-size: var(--fs-11);
+}
+
+/* 핵심 안내 문구 */
+.invite-desc-block {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(46,94,78,0.10);
+}
+
+.invite-desc-main {
+  margin: 0;
+  font-size: var(--fs-15);
+  color: var(--text-2);
+  line-height: 1.7;
+}
+
+.invite-name-highlight {
+  font-size: var(--fs-22);
+  font-weight: 800;
+  color: var(--pri);
+  display: block;
+  margin: 4px 0 2px;
+  letter-spacing: -0.5px;
+}
+
+.invite-desc-sub {
+  font-size: var(--fs-15);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.invite-link-row {
+  display: flex;
+  gap: 6px;
+}
+
+.invite-input {
+  flex: 1;
+  font-size: var(--fs-11);
+  padding: 7px 8px;
+  border: 1px solid var(--border-pri);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-copy {
+  background: var(--pri);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.btn-copy:hover { background: var(--pri-dark); }
+
+/* 공유 버튼 행 */
+.invite-share-row {
+  display: flex;
+  gap: 8px;
+}
+
+.invite-share-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--fs-13);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+.invite-share-btn:active { transform: scale(0.97); }
+
+.invite-share-btn.kakao {
+  background: #FEE500;
+  color: #191919;
+}
+.invite-share-btn.kakao:hover { opacity: 0.88; }
+
+.invite-share-btn.sms {
+  background: var(--pri);
+  color: white;
+}
+.invite-share-btn.sms:hover { opacity: 0.88; }

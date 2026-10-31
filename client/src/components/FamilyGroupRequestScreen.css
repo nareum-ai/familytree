@@ -1,0 +1,131 @@
+.fgr-card { max-width: 400px; }
+
+.fgr-desc {
+  font-size: var(--fs-14);
+  color: var(--text-2);
+  line-height: 1.7;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.fgr-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fgr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.fgr-label {
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.fgr-required { color: var(--red); }
+
+.fgr-textarea {
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: var(--fs-14);
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.fgr-textarea:focus { border-color: var(--pri); }
+
+.fgr-gender-row {
+  display: flex;
+  gap: 10px;
+}
+
+.fgr-gender-btn {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: all 0.15s;
+}
+.fgr-gender-btn:hover       { border-color: var(--text-4); }
+.fgr-gender-btn.active-male   { border-color: var(--pri); background: var(--pri-bg); color: var(--pri); }
+.fgr-gender-btn.active-female { border-color: var(--female); background: var(--female-bg); color: var(--female); }
+
+.fgr-lunar-check {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.fgr-pending-box {
+  background: var(--pri-bg-2);
+  border: 1.5px solid var(--pri);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin: 4px 0 12px;
+}
+.fgr-pending-name { font-size: var(--fs-18); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.fgr-pending-date { font-size: var(--fs-12); color: var(--text-4); margin: 0 0 8px; }
+.fgr-pending-msg  { font-size: var(--fs-13); color: var(--pri); font-weight: 600; margin: 0; }
+
+.fgr-cancel-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--surface);
+  color: var(--red);
+  border: 1.5px solid var(--red-border);
+  border-radius: 10px;
+  font-size: var(--fs-14);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fgr-cancel-btn:hover:not(:disabled) { background: var(--red-bg); }
+.fgr-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fgr-done-icon { font-size: var(--fs-48); margin-bottom: 12px; }
+
+.fgr-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--gold-bg);
+  border: 1.5px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 18px;
+  text-align: left;
+}
+.fgr-notice-icon { font-size: var(--fs-18); flex-shrink: 0; line-height: 1.5; }
+.fgr-notice p { font-size: var(--fs-13); color: var(--gold-dark); line-height: 1.65; margin: 0; }
+.fgr-notice strong { color: var(--gold-dark); }
+
+.fgr-contact {
+  margin: 14px 0 0;
+  font-size: var(--fs-12);
+  color: var(--text-4);
+  text-align: center;
+  line-height: 1.6;
+}
+.fgr-contact-link {
+  color: var(--pri);
+  font-weight: 600;
+  text-decoration: none;
+}
+.fgr-contact-link:hover { text-decoration: underline; }

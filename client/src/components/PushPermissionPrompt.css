@@ -1,0 +1,116 @@
+/* 알림 켜기 안내 배너 — 데스크톱: 우하단 카드, 모바일: 하단 내비 위 전체폭 */
+.ppp-banner {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 900;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-pri);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(42,38,32,0.16);
+  animation: ppp-up 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ppp-banner.ppp-done { width: auto; padding: 12px 18px; }
+
+.ppp-icon {
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--pri-bg);
+  color: var(--pri);
+}
+.ppp-icon svg { width: 20px; height: 20px; }
+
+.ppp-text { flex: 1; min-width: 0; }
+.ppp-title {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: 700;
+  color: var(--text);
+  word-break: keep-all;
+  line-height: 1.35;
+}
+.ppp-desc {
+  margin: 3px 0 0;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  word-break: keep-all;
+  line-height: 1.4;
+}
+
+.ppp-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.ppp-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: var(--pri);
+  color: #fff;
+  font-size: var(--fs-13);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ppp-btn:hover { background: var(--pri-dark); }
+.ppp-btn:disabled { opacity: 0.6; cursor: default; }
+.ppp-later {
+  border: none;
+  background: none;
+  padding: 4px;
+  color: var(--text-4);
+  font-size: var(--fs-12);
+  cursor: pointer;
+}
+
+/* 포그라운드 수신 토스트 — 화면 상단 */
+.ppp-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-pri);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(42,38,32,0.18);
+  cursor: pointer;
+  animation: ppp-down 0.25s ease-out;
+}
+
+@keyframes ppp-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ppp-down {
+  from { opacity: 0; transform: translate(-50%, -12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 640px) {
+  .ppp-banner {
+    left: 16px;
+    right: 16px;
+    bottom: calc(76px + 12px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: none;
+  }
+  .ppp-banner.ppp-done { left: 50%; right: auto; transform: translateX(-50%); animation: none; }
+}
