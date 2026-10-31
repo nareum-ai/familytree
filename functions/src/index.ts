@@ -256,22 +256,11 @@ function getChusu(personId: string, baseId: string, rels: Rel[]): number | null 
 // 회원 1명당 하루 1건으로 묶어서 발송 — 누르면 기념일 화면(/?view=anniversary)으로 이동
 interface AnnivItem { kind: 'birth' | 'death'; offset: number; name: string; age?: number; }
 
-// 사촌류(혈족)는 나이·성별로 형/누나/오빠/언니/동생을 붙임 — '사촌' → '사촌형'
-function withSibTitle(relation: string, base: LabelPerson, target: LabelPerson): string {
-  if (!/사촌$/.test(relation) || relation.includes(' ')) return relation;
-  const bb = base.birth_date ?? '', tb = target.birth_date ?? '';
-  if (!bb || !tb || bb === tb) return relation;
-  if (tb > bb) return `${relation}동생`;
-  if (base.gender === 'female') return relation + (target.gender === 'female' ? '언니' : '오빠');
-  if (base.gender === 'male')   return relation + (target.gender === 'female' ? '누나' : '형');
-  return relation;
-}
-
 // '사촌형 홍재학' 처럼 관계명을 이름 앞에 붙임 — 관계를 못 구하면 이름만
 function annivName(target: LabelPerson, base: LabelPerson | undefined, persons: LabelPerson[], rels: Rel[]): string {
   const relation = base ? getRelationLabel(target.id, base, persons, rels) : '';
   if (!base || !relation || relation.includes('세대') || relation === '나') return target.name;
-  return `${withSibTitle(relation, base, target)} ${target.name}`;
+  return `${relation} ${target.name}`;
 }
 
 function annivWhen(offset: number): string {

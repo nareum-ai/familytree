@@ -33,16 +33,19 @@
 
 .invfam-btn {
   flex-shrink: 0;
-  padding: 7px 16px;
-  border: none;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border-pri);
   border-radius: 999px;
-  background: var(--pri);
-  color: white;
-  font-size: var(--fs-13);
+  background: transparent;
+  color: var(--pri);
+  font-size: var(--fs-11);
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
-.invfam-btn.active { background: var(--pri-bg); color: var(--pri-dark); }
+.invfam-btn:hover { background: var(--pri-bg-2); border-color: var(--pri); }
+.invfam-btn.active { background: var(--pri-bg); border-color: var(--pri); color: var(--pri-dark); }
 .invfam-btn:disabled { opacity: 0.5; cursor: default; }
 
 .invfam-creating {

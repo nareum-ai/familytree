@@ -7,7 +7,7 @@ import { classifyBranch, getGeneration, getChusu, canSeeFull, findRoot, getChusu
 const PERSON_W = 90;
 // 부부 노드 안 1인 폭 (CoupleNode.css .chex width와 일치) — 이름이 커져도 잘리지 않게 여유
 const CHEX_W = 76;
-const NODE_H = 110;
+const NODE_H = 124; // 육각형 + 이름 + 관계명 + 나이
 const H_GAP = 10;
 const V_GAP = 28;
 

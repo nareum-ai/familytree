@@ -30,8 +30,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid var(--pri-bg);
+  padding: 18px 16px 14px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -79,7 +80,8 @@
 }
 
 .ann-header h2 {
-  font-size: var(--fs-17);
+  font-family: var(--font-display);
+  font-size: var(--fs-22);
   font-weight: 700;
   color: var(--text);
   margin: 0;
@@ -98,110 +100,121 @@
 .ann-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 0 0 24px;
 }
 
-.ann-section-label {
-  font-size: var(--fs-11);
-  font-weight: 700;
-  color: var(--text-4);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 12px 20px 6px;
+/* 오늘 기념일 — 맨 위 강조 카드 */
+.ann-today-card {
+  width: calc(100% - 32px);
+  margin: 16px 16px 4px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--acc-bg);
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
 }
+.ann-today-label { font-size: var(--fs-13); font-weight: 700; color: var(--acc-dark); }
+.ann-today-title { font-size: var(--fs-18); font-weight: 800; }
+
+/* 월별 묶음 */
+.ann-month { padding: 0 20px; }
+.ann-month-title {
+  margin: 22px 0 4px;
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  font-weight: 700;
+  color: var(--text);
+}
+.ann-month-count {
+  margin-left: 8px;
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-4);
+}
+.ann-group { display: flex; flex-direction: column; }
 
 .ann-row {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--surface-2);
-  transition: background 0.1s;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid var(--surface-3);
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
 }
+.ann-row:last-child { border-bottom: none; }
+.ann-row:hover .ann-name { color: var(--pri); }
 
-.ann-row.clickable { cursor: pointer; }
-.ann-row.clickable:hover { background: var(--pri-bg-2); }
-.ann-row.clickable:hover .ann-name { color: var(--pri); }
-.ann-row.memorial { background: var(--surface-2); }
-.ann-row.memorial:hover { background: var(--surface-2); }
+/* 날짜 칸 — 달력처럼 숫자 크게, 일요일은 빨강 */
+.ann-day {
+  width: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text);
+}
+.ann-day.sun { color: var(--red); }
+.ann-day-num { font-size: var(--fs-20); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ann-day-wd  { font-size: var(--fs-11); margin-top: 2px; }
 
-/* Day chips */
-.day-chip {
-  min-width: 52px;
-  padding: 4px 8px;
-  border-radius: 20px;
-  font-size: var(--fs-12);
-  font-weight: 700;
-  text-align: center;
+/* 육각형 아바타 — 바깥 육각형 = 성별 색 테두리 */
+.ann-avatar {
+  width: 42px; height: 42px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: var(--border-2);
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-
-.day-chip.today { background: var(--red); color: white; }
-.day-chip.soon  { background: var(--acc); color: white; }
-.day-chip.near  { background: var(--pri); color: white; }
-.day-chip.far   { background: var(--surface-2); color: var(--text-3); }
+.ann-avatar.lg { width: 56px; height: 56px; }
+.ann-avatar.male   { background: var(--male); }
+.ann-avatar.female { background: var(--female); }
+.ann-avatar.deceased { background: var(--deceased); }
+.ann-avatar img {
+  width: 36px; height: 36px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.ann-avatar.lg img { width: 48px; height: 48px; }
+.ann-avatar.deceased img { filter: grayscale(60%); opacity: 0.85; }
+.ann-avatar-initial { font-size: var(--fs-16); font-weight: 700; color: white; }
+.ann-avatar.lg .ann-avatar-initial { font-size: var(--fs-20); }
 
 .ann-info {
   flex: 1;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;   /* 공간 부족 시 이름은 지키고 태그를 다음 줄로 */
-  gap: 4px 6px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-
 .ann-name {
-  font-size: var(--fs-14);
-  font-weight: 600;
-  color: var(--text);
-  max-width: 100%;
+  font-size: var(--fs-15);
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.ann-chusu {
-  font-size: var(--fs-11);
+.ann-detail { font-size: var(--fs-12); color: var(--text-4); }
+.ann-dday {
+  flex-shrink: 0;
+  font-size: var(--fs-13);
   font-weight: 700;
-  color: var(--pri);
-  background: var(--pri-bg);
-  padding: 1px 6px;
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-
-.ann-type {
-  font-size: var(--fs-11);
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-
-.ann-type.birthday  { background: var(--pri-bg); color: var(--pri); }
-.ann-type.memorial  { background: var(--surface-2); color: var(--text-3); }
-.ann-type.wedding   { background: var(--female-bg); color: var(--female-dark); }
-.ann-row.wedding:hover { background: var(--female-bg); }
-
-.ann-date {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex-shrink: 0;
-  font-size: var(--fs-12);
   color: var(--text-3);
+  font-variant-numeric: tabular-nums;
 }
-
-.ann-date-main {
-  color: var(--text-2);
-  font-size: var(--fs-12);
-}
-
-.ann-count {
-  font-size: var(--fs-11);
-  color: var(--text-4);
-  margin-top: 1px;
-}
+.ann-row.memorial .ann-name { color: var(--text-2); }
 
 .ann-empty {
   padding: 40px 20px;
@@ -299,5 +312,5 @@
 }
 
 @media (max-width: 640px) {
-  .ann-row { gap: 10px; padding: 12px 16px; }
+  .ann-row { gap: 10px; }
 }
