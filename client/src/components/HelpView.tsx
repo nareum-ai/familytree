@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useAdminEmailStatus } from '../hooks/useAdminEmail';
 import { formatSendTime, usePushSendTime } from '../hooks/usePushSendTime';
+import { AI_ENABLED } from '../lib/appConfig';
 import './HelpView.css';
 import { Icon, type IconName } from './Icon';
 
@@ -22,7 +23,7 @@ const Step = ({ n, children }: { n: number; children: React.ReactNode }) => (
 /** 관리자가 정한 기념일 알림 발송 시각 */
 const SendTime = () => <>{formatSendTime(usePushSendTime())}</>;
 
-const GROUPS: Group[] = [
+const ALL_GROUPS: Group[] = [
   {
     id: 'basic',
     label: '둘러보기',
@@ -389,6 +390,9 @@ const GROUPS: Group[] = [
     ],
   },
 ];
+
+const GROUPS: Group[] = AI_ENABLED ? ALL_GROUPS
+  : ALL_GROUPS.map(g => ({ ...g, items: g.items.filter(i => i.id !== 'ai') })).filter(g => g.items.length > 0);
 
 const QUICK_START: Array<{ icon: IconName; text: string }> = [
   { icon: 'hand', text: '"나"를 눌러 내 정보 채우기' },

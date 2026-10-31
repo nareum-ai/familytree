@@ -34,6 +34,7 @@ import {
 } from './services/authService';
 import { useFCMToken, useForegroundPush } from './hooks/useFCMToken';
 import { ForegroundPushToast, PushPermissionPrompt } from './components/PushPermissionPrompt';
+import { GoogleLinkPrompt, shouldSuggestGoogleLink } from './components/GoogleLinkPrompt';
 import { NotifBlockedModal } from './components/NotifBlockedModal';
 import './components/NotifBlockedModal.css';
 import { useAdminEmail } from './hooks/useAdminEmail';
@@ -130,6 +131,8 @@ function App() {
   const [familyGroupRequested, setFamilyGroupRequested] = useState(false);
   const [familyDisabled, setFamilyDisabled] = useState(false);
   const [googleSigningIn, setGoogleSigningIn] = useState(false);
+  // 아이디·비밀번호 로그인 직후 Google 연결 안내 (알림 켜기 안내보다 먼저 표시)
+  const [suggestGoogleLink, setSuggestGoogleLink] = useState(false);
   const [googleLinkData, setGoogleLinkData] = useState<{
     uid: string; email: string; displayName: string;
   } | null>(null);
@@ -213,7 +216,8 @@ function App() {
 
   // 모듈 함수라 렌더마다 참조가 바뀌지 않음 → idle 타이머가 매 렌더 재등록되지 않는다
   const handleLogout = logout;
-  useIdleTimeout(handleLogout, isLoggedIn);
+  // 일반 회원은 직접 로그아웃할 때까지 로그인 유지 — 유휴 자동 로그아웃은 관리자 대리 접속에만 적용
+  useIdleTimeout(handleLogout, isLoggedIn && isAdminReturn);
 
   // ── 로그인 처리 (공통) ──────────────────────────────────────────────────────
   const applyMemberLogin = async (member: Member, displayName?: string) => {
@@ -278,6 +282,7 @@ function App() {
     try {
       const member = await loginMember(username, password);
       if (!member) { setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
+      setSuggestGoogleLink(shouldSuggestGoogleLink(member));
       await loginAs(member, username);
     } finally {
       setLoginLoading(false);
@@ -494,7 +499,10 @@ function App() {
         <div className="back-exit-toast">한 번 더 누르면 앱을 종료합니다</div>
       )}
       {showIOSInstall && <IOSInstallGuide onClose={() => setShowIOSInstall(false)} />}
-      {pushMemberId && (
+      {pushMemberId && suggestGoogleLink && (
+        <GoogleLinkPrompt memberId={pushMemberId} onClose={() => setSuggestGoogleLink(false)} />
+      )}
+      {pushMemberId && !suggestGoogleLink && (
         <PushPermissionPrompt
           memberId={pushMemberId}
           onBlocked={() => setShowNotifBlocked(true)}

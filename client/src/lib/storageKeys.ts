@@ -19,6 +19,7 @@ const BASE_LS = {
   LAST_ACTIVITY: 'familyTreeLastActivity',
   PWA_INSTALL_DISMISSED: 'pwa_install_dismissed',
   PUSH_PROMPT_SNOOZED_UNTIL: 'familyTreePushPromptSnoozedUntil',
+  GOOGLE_LINK_PROMPT_SNOOZED_UNTIL: 'familyTreeGoogleLinkPromptSnoozedUntil',
 } as const;
 
 type LSKey = keyof typeof BASE_LS;

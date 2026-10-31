@@ -40,6 +40,8 @@ export function startFamilySession({ userName, familyId, personId, memberId, acc
 export function startImpersonation(session: FamilySession) {
   localStorage.removeItem(LS.IS_ADMIN);
   localStorage.setItem(LS.ADMIN_RETURN, 'true');
+  // 일반 회원 사용 중엔 갱신되지 않던 값 — 남아 있으면 대리 접속 직후 유휴 로그아웃됨
+  localStorage.setItem(LS.LAST_ACTIVITY, String(Date.now()));
   startFamilySession(session);
 }
 

@@ -103,7 +103,7 @@ FamilyTree/
 │   │   │   ├── useTreeLayout.ts    # 트리 레이아웃 엔진 + canSeeFull
 │   │   │   ├── useFCMToken.ts      # FCM 토큰 등록 및 포그라운드 알림
 │   │   │   ├── useAdminEmail.ts    # 관리자 구글 이메일 조회 훅
-│   │   │   └── useIdleTimeout.ts   # 30분 비활동 자동 로그아웃
+│   │   │   └── useIdleTimeout.ts   # 관리자 대리 접속 30분 비활동 자동 로그아웃
 │   │   ├── store/
 │   │   │   └── familyStore.ts      # Zustand 전역 스토어
 │   │   ├── utils/
@@ -390,7 +390,7 @@ BFS 그래프 거리. **배우자 = 0 hop**.
 ## 8. 컴포넌트 구조
 
 ```
-App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, 유휴 자동 로그아웃)
+App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, 대리 접속 유휴 자동 로그아웃)
 ├── LandingPage              미로그인 첫 진입 (서비스 소개, 지금 시작하기→가입 / 로그인 분기)
 ├── LoginScreen              로그인 (아이디/비밀번호 + Google, 인앱 브라우저시 Google 버튼 숨김)
 │   └── InAppBrowserBanner   인앱 브라우저 감지 시 Chrome/Safari 전환 안내
@@ -471,7 +471,7 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
 | `useTreeLayout.ts` | 트리 레이아웃 엔진, `classifyBranch`, `getChusu`, `canSeeFull` |
 | `useFCMToken.ts` | `useFCMToken`: 권한 허용 상태면 앱 시작 시 토큰 동기화 (권한은 묻지 않음, 토큰 변경·회원 변경·7일 경과 시 재저장). `useForegroundPush`: 포그라운드 수신(onMessage) → 시스템 알림 + 토스트 |
 | `useAdminEmail.ts` | 관리자 `google_email` 조회 훅 (HelpView·MyMenuView·FamilyGroupRequestScreen·비활성화 화면 공용) |
-| `useIdleTimeout.ts` | 30분 비활동 자동 로그아웃 (`mousemove`, `mousedown`, `keydown`, `touchstart`, `scroll` 감지) |
+| `useIdleTimeout.ts` | 관리자 대리 접속 중 30분 비활동 자동 로그아웃 — 일반 회원은 직접 로그아웃 전까지 유지 (`mousemove`, `mousedown`, `keydown`, `touchstart`, `scroll` 감지) |
 
 ### utils/
 
@@ -523,7 +523,7 @@ App.tsx (라우팅·인증 허브, 안드로이드 뒤로가기 인터셉트, �
  ├──────────────────────────────────────────────► FamilyGroupRequestScreen
  │
  └── 정상 로그인 ────────────────────────────────► Main App
-                                                    (유휴 30분 → 자동 로그아웃)
+                                                    (대리 접속만 유휴 30분 → 자동 로그아웃)
 ```
 
 ### 안드로이드 뒤로가기 동작
@@ -719,7 +719,7 @@ manifest: {
 | 초대 토큰 | UUID v4, 30일 만료, 공유 시 대상자 이름 미포함, 사용 후 즉시 삭제 |
 | 초대 중복 사용 | `ALREADY_MAPPED` 에러로 차단 |
 | 가족 비활성화 | 관리자가 특정 가족 전체 접근 차단 가능 |
-| 세션 | localStorage (영구) + 유휴 30분 자동 로그아웃 |
+| 세션 | localStorage (영구, 직접 로그아웃 전까지 유지) + 관리자 대리 접속만 유휴 30분 자동 로그아웃 |
 | 관리자 세션 분리 | `adm_` prefix로 일반 사용자와 localStorage 키 분리 |
 | HTTPS | Firebase Hosting 기본 제공 |
 | 접속 로그 | 1년 보관 후 자동 삭제 (monthly Cloud Function) |

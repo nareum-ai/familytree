@@ -2,6 +2,7 @@
 import { getToken, isSupported } from 'firebase/messaging';
 import { getMessagingInstance } from './firebase';
 import { LS, SS } from './storageKeys';
+import { isAdminSession } from './session';
 import { updateMember } from './firestore';
 import { saveFcmToken, type PushScope } from '../services/authService';
 
@@ -10,9 +11,12 @@ export const VAPID_KEY = 'BLRyRDSVY-2HCMviKpkqFKB2Nf2WHLipd2dh6WdQSK7thzEVX1UNEN
 /** 토큰이 그대로여도 이 주기마다 회원 문서에 다시 기록 (서버 쪽 누락·정리 대비) */
 const RESAVE_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** 관리자 PWA는 별도 필드(fcm_tokens_admin)에 토큰을 저장한다 */
+/**
+ * 관리자 PWA·관리자 로그인은 별도 필드(fcm_tokens_admin)에 토큰을 저장한다.
+ * 같은 기기에서 관리자와 일반 계정을 오가도 일반 계정의 토큰(fcm_tokens)이 지워지지 않아 둘 다 수신된다.
+ */
 export function pushScope(): PushScope {
-  return sessionStorage.getItem(SS.ADMIN_PWA) === '1' ? 'admin' : 'user';
+  return sessionStorage.getItem(SS.ADMIN_PWA) === '1' || isAdminSession() ? 'admin' : 'user';
 }
 
 /** 이 브라우저가 웹푸시를 지원하는지 (iOS는 홈 화면 앱에서만 true) */

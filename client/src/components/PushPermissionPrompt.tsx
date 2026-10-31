@@ -12,7 +12,7 @@ import './PushPermissionPrompt.css';
 const SHOW_DELAY_MS = 2500;
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 
-type Variant = 'enable' | 'ios-install' | 'android-open-app' | 'done';
+type Variant = 'enable' | 'blocked' | 'ios-install' | 'android-open-app' | 'done';
 
 interface Props {
   memberId: string;
@@ -30,9 +30,10 @@ function snoozed(): boolean {
 /**
  * 알림 켜기 안내 배너 — 권한 요청은 반드시 이 버튼 클릭(사용자 동작) 안에서 한다.
  *  · 푸시 지원 + 권한 미결정            → [알림 켜기]
+ *  · 푸시 지원 + 알림 차단됨             → [켜는 방법] (설정에서 허용하는 안내)
  *  · iOS 브라우저(홈 화면 미추가)        → [홈 화면 추가 방법]
  *  · Android 브라우저 + Play 앱 설치됨   → [앱에서 열기] (앱 알림이 더 안정적)
- * "나중에"는 7일간 다시 띄우지 않는다. 이미 허용·차단한 사용자에겐 띄우지 않는다.
+ * "나중에"는 7일간 다시 띄우지 않는다. 이미 허용한 사용자에겐 띄우지 않는다.
  */
 export function PushPermissionPrompt({ memberId, onBlocked, onIOSInstall }: Props) {
   const [variant, setVariant] = useState<Variant | null>(null);
@@ -47,8 +48,10 @@ export function PushPermissionPrompt({ memberId, onBlocked, onIOSInstall }: Prop
         v = 'ios-install';
       } else if (shouldOfferPlayApp() && !isDeviceRegistered() && await isAndroidAppInstalled()) {
         v = 'android-open-app';
-      } else if (await isPushSupported() && notificationPermission() === 'default') {
-        v = 'enable';
+      } else if (await isPushSupported()) {
+        const perm = notificationPermission();
+        if (perm === 'default') v = 'enable';
+        else if (perm === 'denied') v = 'blocked';
       }
       if (!cancelled) setVariant(v);
     }, SHOW_DELAY_MS);
@@ -96,6 +99,13 @@ export function PushPermissionPrompt({ memberId, onBlocked, onIOSInstall }: Prop
       desc: '생일·기일과 정보공개 요청을 놓치지 않게 알려드려요',
       action: busy ? '...' : '알림 켜기',
       onAction: enable,
+    },
+    'blocked': {
+      icon: 'bell' as const,
+      title: '알림이 꺼져 있어요',
+      desc: '설정에서 허용하면 생일·기일 알림을 받을 수 있어요',
+      action: '켜는 방법',
+      onAction: () => { later(); onBlocked(); },
     },
     'ios-install': {
       icon: 'install' as const,

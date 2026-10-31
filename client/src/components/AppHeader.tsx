@@ -1,3 +1,4 @@
+import { AI_ENABLED } from '../lib/appConfig';
 export type AppView = 'my' | 'search' | 'anniversary' | 'invite' | 'ai' | 'help';
 
 /** 선 아이콘 (24px 격자, currentColor) */
@@ -19,14 +20,14 @@ const ICONS = {
 
 const SHIELD_ICON = <NavIcon d={<path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/>} />;
 
-const NAV_ITEMS: Array<{ view: AppView; label: string; title: string }> = [
+const NAV_ITEMS = ([
   { view: 'my',          label: 'My',     title: 'My 메뉴' },
   { view: 'search',      label: '검색',   title: '검색' },
   { view: 'anniversary', label: '기념일', title: '기념일' },
   { view: 'invite',      label: '초대',   title: '가족 초대' },
   { view: 'ai',          label: 'AI',     title: 'AI' },
   { view: 'help',        label: '도움말', title: '사용 안내' },
-];
+] as Array<{ view: AppView; label: string; title: string }>).filter(item => AI_ENABLED || item.view !== 'ai');
 
 interface Props {
   displayName: string | null;

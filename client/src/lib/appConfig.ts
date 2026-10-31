@@ -11,3 +11,10 @@ export const PLAY_STORE_RELEASED = false;
 
 export const ANDROID_PACKAGE = 'app.web.familytree_3221b.twa';
 export const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
+
+/**
+ * AI_ENABLED: 사용자 화면의 AI 메뉴(네비게이션·도움말 항목) 노출 여부.
+ *   Gemini 크레딧 소진 등으로 AI를 쓸 수 없을 때 false. 관리자 AI 채팅은 영향 없음.
+ *   다시 켤 때 true로 바꾸고 build + deploy.
+ */
+export const AI_ENABLED = false;
