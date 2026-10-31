@@ -10,6 +10,7 @@ const util_1 = require("util");
 const auth_1 = require("firebase-admin/auth");
 const firestore_1 = require("firebase-admin/firestore");
 const https_1 = require("firebase-functions/v2/https");
+const resetTokens_1 = require("./resetTokens");
 const scrypt = (0, util_1.promisify)(crypto_1.scrypt);
 // 함수 로드 시점엔 initializeApp() 전일 수 있어 지연 호출
 const db = () => (0, firestore_1.getFirestore)();
@@ -199,7 +200,8 @@ exports.resetPassword = (0, https_1.onCall)(callOpts, async (req) => {
     if (Date.parse(t.data().expires_at) < Date.now())
         return { error: '만료된 링크입니다. 다시 요청해주세요.' };
     await setPassword(t.data().member_id, newPassword);
-    await t.ref.update({ used: true });
+    // 이 링크와 함께 남아 있던 다른 링크도 모두 사용 불가로
+    await (0, resetTokens_1.invalidateResetTokens)(t.data().member_id);
     return { ok: true };
 });
 // ── Google ────────────────────────────────────────────────────────────────────

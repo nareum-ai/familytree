@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, type DocumentData, type DocumentSnapshot } from 'firebase-admin/firestore';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { invalidateResetTokens } from './resetTokens';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, keylen: number) => Promise<Buffer>;
 
@@ -193,7 +194,8 @@ export const resetPassword = onCall(callOpts, async (req) => {
   const t = snap.docs[0];
   if (Date.parse(t.data().expires_at as string) < Date.now()) return { error: '만료된 링크입니다. 다시 요청해주세요.' };
   await setPassword(t.data().member_id as string, newPassword);
-  await t.ref.update({ used: true });
+  // 이 링크와 함께 남아 있던 다른 링크도 모두 사용 불가로
+  await invalidateResetTokens(t.data().member_id as string);
   return { ok: true };
 });
 

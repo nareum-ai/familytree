@@ -74,7 +74,8 @@ export function ForgotPasswordScreen({ onBack }: Props) {
           <h1 className="login-title">이메일 발송 완료</h1>
           <p className="login-desc">
             입력하신 이메일로 비밀번호 초기화 링크를 보냈습니다.<br />
-            링크는 <strong>1시간</strong> 동안 유효합니다.
+            링크는 <strong>1시간</strong> 동안 유효합니다.<br />
+            메일이 보이지 않으면 <strong>스팸함</strong>을 확인해주세요.
           </p>
           <button className="login-btn" onClick={onBack}>로그인으로 돌아가기</button>
         </div>

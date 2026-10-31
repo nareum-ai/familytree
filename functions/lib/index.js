@@ -25,6 +25,7 @@ const v2_1 = require("firebase-functions/v2");
 const params_1 = require("firebase-functions/params");
 const nodemailer = require("nodemailer");
 const relationLabel_1 = require("./shared/relationLabel");
+const resetTokens_1 = require("./resetTokens");
 // CJS 빌드는 클래스 자체를 export (esModuleInterop 꺼져 있어 default import 사용 불가)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const klcMod = require('korean-lunar-calendar');
@@ -140,6 +141,8 @@ exports.onPasswordResetTokenCreated = (0, firestore_2.onDocumentCreated)({ docum
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data)
         return;
+    // 새 링크가 생기면 이전 링크는 무효화 — 가장 최근 메일의 링크만 작동 (본인 요청·관리자 승인 공통)
+    await (0, resetTokens_1.invalidateResetTokens)(data.member_id, event.params.docId);
     let toEmail = data.contact_email;
     if (!toEmail) {
         const memberSnap = await db.doc(`members/${data.member_id}`).get();
