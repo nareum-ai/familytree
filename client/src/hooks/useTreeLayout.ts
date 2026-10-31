@@ -5,8 +5,10 @@ import { classifyBranch, getGeneration, getChusu, canSeeFull, findRoot, getChusu
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 const PERSON_W = 90;
-// 부부 노드 안 1인 폭 (CoupleNode.css .chex width와 일치) — 이름이 커져도 잘리지 않게 여유
-const CHEX_W = 76;
+// 부부 노드 안 1인 폭 (CoupleNode.css .chex width와 일치) — 육각형끼리 딱 붙게
+const CHEX_W = 64;
+// 부부 노드 양끝 여유 (CoupleNode.css .couple-row padding 합) — 이름이 육각형보다 넓을 때 이웃과 겹치지 않게
+const COUPLE_PAD = 12;
 const NODE_H = 124; // 육각형 + 이름 + 관계명 + 나이
 const H_GAP = 10;
 const V_GAP = 28;
@@ -172,7 +174,7 @@ export function useTreeLayout(
           kind: 'couple',
           persons: ordered,
           gen: getGeneration(ordered[0].id, root, relationships),
-          width: ordered.length * CHEX_W,
+          width: ordered.length * CHEX_W + COUPLE_PAD,
         });
         ordered.forEach(m => { personToUnitId.set(m.id, unitId); processed.add(m.id); });
       } else {

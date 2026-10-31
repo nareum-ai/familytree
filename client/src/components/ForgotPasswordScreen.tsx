@@ -162,7 +162,7 @@ export function ForgotPasswordScreen({ onBack }: Props) {
             placeholder="이름 (가계도에 등록된 이름)"
             maxLength={30}
           />
-          <p className="reg-optional-label">생년월일 (가계도에 등록한 경우만 입력, 없으면 비워두세요)</p>
+          <p className="reg-optional-label">생년월일 (양력·음력 아는 쪽으로 입력, 가계도에 없으면 비워두세요)</p>
           <DateInput value={birthDate} onChange={setBirthDate} max={todayStr()} placeholder="생년월일 YYYY-MM-DD" />
           <p className="reg-optional-label">이메일 (가계도 내 정보에 등록한 이메일)</p>
           <input

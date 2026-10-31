@@ -37,6 +37,8 @@ interface Props {
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+// 기념일 표시·알림 공통 촌수 범위. 99 = 전체
+const CHUSU_RANGES = [2, 3, 4, 5, 6, 7, 8, 99];
 
 function annTitle(item: AnniversaryItem): string {
   return `${item.personName} ${item.type}`;
@@ -174,8 +176,16 @@ export function AnniversaryView({ onClose }: Props) {
     });
     return () => { cancelled = true; };
   }, [annInput, persons]);
-  const loading = annResult?.input !== annInput;
-  const items = annResult?.items ?? [];
+  const loading = annResult?.input !== annInput || pushLoading;
+  // 범위 밖 사람은 목록에서도 빼고 알림도 보내지 않는다 (서버도 push_prefs.maxChusu로 거름)
+  // 결혼기념일은 직계 가족만 들어오므로 범위와 무관하게 유지
+  const items = (annResult?.items ?? []).filter(i =>
+    !canUsePush || i.type === '결혼기념일' || (i.chusu != null && i.chusu <= pushPrefs.maxChusu));
+
+  const changeRange = (maxChusu: number) => {
+    setPushPrefs(p => ({ ...p, maxChusu }));
+    if (memberId) updateMember(memberId, { 'push_prefs.maxChusu': maxChusu }).catch(() => {});
+  };
 
   useEffect(() => {
     if (!canUsePush || !memberId) return;
@@ -336,16 +346,9 @@ export function AnniversaryView({ onClose }: Props) {
                 </div>
               </div>
 
-              <div className="ann-push-row">
-                <span className="ann-push-label">촌수 범위</span>
-                <select className="ann-push-select" value={pushPrefs.maxChusu}
-                  disabled={!pushPrefs.enabled}
-                  onChange={e => setPushPrefs(p => ({ ...p, maxChusu: Number(e.target.value) }))}>
-                  {[3,4,5,6,7,8].map(n => (
-                    <option key={n} value={n}>{n}촌 이내</option>
-                  ))}
-                </select>
-              </div>
+              <p className="ann-push-hint">
+                알림은 기념일 목록의 표시 범위({pushPrefs.maxChusu >= 99 ? '전체' : `${pushPrefs.maxChusu}촌 이내`}) 안에서만 보냅니다.
+              </p>
 
               <div className="ann-push-group">
                 <span className="ann-push-label">알림 종류</span>
@@ -375,10 +378,27 @@ export function AnniversaryView({ onClose }: Props) {
             </div>
           )
         ) : (
-          loading ? (
+          <>
+          {canUsePush && !pushLoading && (
+            <div className="ann-range-bar">
+              <span className="ann-range-label">표시 범위</span>
+              <select className="ann-push-select" value={pushPrefs.maxChusu}
+                onChange={e => changeRange(Number(e.target.value))}>
+                {CHUSU_RANGES.map(n => (
+                  <option key={n} value={n}>{n >= 99 ? '전체' : `${n}촌 이내`}</option>
+                ))}
+              </select>
+              <span className="ann-range-note">알림도 이 범위만</span>
+            </div>
+          )}
+          {loading ? (
             <p className="ann-empty">불러오는 중...</p>
           ) : items.length === 0 ? (
-            <p className="ann-empty">생년월일 또는 기일이 입력된 가족이 없습니다.</p>
+            <p className="ann-empty">
+              {(annResult?.items.length ?? 0) > 0
+                ? '이 범위에는 기념일이 없습니다. 표시 범위를 넓혀 보세요.'
+                : '생년월일 또는 기일이 입력된 가족이 없습니다.'}
+            </p>
           ) : (
             <div className="ann-list">
               {todayItems.map(item => (
@@ -395,7 +415,8 @@ export function AnniversaryView({ onClose }: Props) {
                 </section>
               ))}
             </div>
-          )
+          )}
+          </>
         )}
       </div>
     </div>

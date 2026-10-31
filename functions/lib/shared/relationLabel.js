@@ -96,6 +96,24 @@ function cousinPrefix(bp, g) {
         return uncleIsFemale ? '이종사촌' : '외사촌';
     return uncleIsFemale ? '고종사촌' : '사촌';
 }
+/** 육촌·팔촌 접두어: 외가 쪽이면 외육촌/외팔촌 */
+function sameGenPrefix(bp, g) {
+    var _a;
+    const maternal = ((_a = g.byId.get(bp.basePath[1])) === null || _a === void 0 ? void 0 : _a.gender) === 'female';
+    return `${maternal ? '외' : ''}${bp.up === 3 ? '육촌' : '팔촌'}`;
+}
+/** 같은 세대 방계 호칭에 손위·손아래를 붙임. 나이 판별 불가면 접두어만 */
+function withElder(prefix, base, target) {
+    const cmp = ageCompare(target, base);
+    if (cmp < 0)
+        return `${prefix}동생`;
+    if (cmp > 0) {
+        if (target.gender === 'female')
+            return prefix + (base.gender === 'male' ? '누나' : '언니');
+        return prefix + (base.gender === 'female' ? '오빠' : '형');
+    }
+    return prefix;
+}
 function bloodLabel(bp, base, target, g) {
     var _a, _b;
     const { up, down, basePath, targetPath } = bp;
@@ -165,13 +183,7 @@ function bloodLabel(bp, base, target, g) {
     }
     // ── 사촌 (4촌) ── 친사촌 / 고종사촌 / 외사촌 / 이종사촌 + 형·누나·오빠·언니·동생
     if (up === 2 && down === 2) {
-        const prefix = cousinPrefix(bp, g);
-        const cmp = ageCompare(target, base);
-        if (cmp < 0)
-            return `${prefix}동생`;
-        if (cmp > 0)
-            return prefix + (F ? (me === 'male' ? '누나' : '언니') : (me === 'female' ? '오빠' : '형'));
-        return prefix; // 나이 판별 불가 → 손위·손아래를 붙이지 않음
+        return withElder(cousinPrefix(bp, g), base, target);
     }
     // ── 5촌 조카: 당질 / 종질 ──
     if (up === 2 && down === 3) {
@@ -205,12 +217,10 @@ function bloodLabel(bp, base, target, g) {
             return F ? '종이모' : '외당숙';
         return F ? '당고모' : '당숙';
     }
-    // ── 육촌 / 팔촌 (같은 세대) ──
+    // ── 육촌 / 팔촌 (같은 세대) + 형·누나·오빠·언니·동생 ──
     if (up === down) {
-        if (up === 3)
-            return `${oe}육촌`;
-        if (up === 4)
-            return `${oe}팔촌`;
+        if (up === 3 || up === 4)
+            return withElder(sameGenPrefix(bp, g), base, target);
         return `${up + down}촌`;
     }
     // ── 그 밖의 방계: N촌 + 세대 호칭 ──
@@ -327,6 +337,12 @@ function getRelationLabel(targetId, base, persons, rels) {
             const lbl = siblingSpouseLabel(rel, base, target);
             if (lbl)
                 return cousinPrefix(rbp, g) + lbl;
+        }
+        // 육촌·팔촌의 배우자: 육촌형수 / 외육촌매형 …
+        if (rbp.up === rbp.down && (rbp.up === 3 || rbp.up === 4) && ageCompare(rel, base) !== 0) {
+            const lbl = siblingSpouseLabel(rel, base, target);
+            if (lbl)
+                return sameGenPrefix(rbp, g) + lbl;
         }
         // 여기 도달한 부모의 배우자는 내 친부모가 아님 → 새어머니/새아버지
         const relLabel = bloodLabel(rbp, base, rel, g);

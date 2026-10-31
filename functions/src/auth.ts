@@ -8,6 +8,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, type DocumentData, type DocumentSnapshot } from 'firebase-admin/firestore';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { invalidateResetTokens } from './resetTokens';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const klcMod = require('korean-lunar-calendar');
+const KoreanLunarCalendar: typeof import('korean-lunar-calendar').default = klcMod.default ?? klcMod;
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, keylen: number) => Promise<Buffer>;
 
@@ -162,6 +165,30 @@ export const changePassword = onCall(callOpts, async (req) => {
   return { ok: true };
 });
 
+const ymd = (y: number, m: number, d: number) =>
+  `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+/** 저장된 생년월일과 입력값 비교 — 본인이 양력·음력 어느 쪽으로 기억하든 맞으면 통과 */
+function birthMatches(stored: string, lunar: boolean, input: string): boolean {
+  if (stored === input) return true;
+  const [y, m, d] = stored.split('-').map(Number);
+  if (!y || !m || !d) return false;
+  const cal = new KoreanLunarCalendar();
+  if (lunar) {
+    // 음력 저장 → 양력으로 바꿔 비교 (윤달 여부는 저장 안 하므로 둘 다 시도)
+    for (const leap of [false, true]) {
+      if (!cal.setLunarDate(y, m, d, leap)) continue;
+      const s = cal.getSolarCalendar();
+      if (ymd(s.year, s.month, s.day) === input) return true;
+    }
+    return false;
+  }
+  // 양력 저장 → 음력으로 바꿔 비교
+  if (!cal.setSolarDate(y, m, d)) return false;
+  const l = cal.getLunarCalendar();
+  return ymd(l.year, l.month, l.day) === input;
+}
+
 /** 본인 정보(이름·생년월일·이메일)가 일치하면 초기화 토큰 발급 — 메일은 onPasswordResetTokenCreated가 발송 */
 export const requestPasswordReset = onCall(callOpts, async (req) => {
   const { username, personName, birthDate, email } = req.data ?? {};
@@ -171,7 +198,12 @@ export const requestPasswordReset = onCall(callOpts, async (req) => {
   const m = memberSnap.data()!;
   if ((m.person_name ?? '') !== personName || !m.person_id) return { ok: false, notFound: false };
   const p = (await db().doc(`persons/${m.person_id}`).get()).data();
-  if (!p || (p.birth_date ?? '') !== birthDate || (p.email ?? '') !== email) return { ok: false, notFound: false };
+  if (!p || (p.email ?? '') !== email) return { ok: false, notFound: false };
+  const storedBirth = (p.birth_date as string | undefined) ?? '';
+  const birthOk = !storedBirth
+    ? birthDate === ''
+    : typeof birthDate === 'string' && birthMatches(storedBirth, !!p.birth_lunar, birthDate);
+  if (!birthOk) return { ok: false, notFound: false };
 
   console.log(`초기화 토큰 생성: member ${memberSnap.id}`);
   await db().collection('password_reset_tokens').add({

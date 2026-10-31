@@ -262,6 +262,20 @@
 .ann-push-select:focus { border-color: var(--pri); }
 .ann-push-select:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.ann-push-hint { font-size: var(--fs-12); color: var(--text-3); margin: 0; }
+
+/* 목록 위 촌수 범위: 목록·알림 공통 */
+.ann-range-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ann-range-label { font-size: var(--fs-13); font-weight: 700; color: var(--text-2); }
+.ann-range-bar .ann-push-select { padding: 5px 8px; }
+.ann-range-note { margin-left: auto; font-size: var(--fs-12); color: var(--text-4); }
+
 .ann-push-msg { font-size: var(--fs-13); margin: 0; }
 .ann-push-msg.ok { color: var(--green); }
 .ann-push-msg.err { color: var(--red); }

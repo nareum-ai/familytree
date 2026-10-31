@@ -1,4 +1,5 @@
 "use strict";
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAdminContact = exports.registerFcmToken = exports.acceptInvite = exports.getInvite = exports.refreshSession = exports.unlinkGoogle = exports.linkGoogle = exports.authRegisterGoogle = exports.authGoogle = exports.resetPassword = exports.requestPasswordReset = exports.changePassword = exports.authRegister = exports.authLogin = void 0;
 // ── 인증·계정 관련 Callable 함수 ──────────────────────────────────────────────
@@ -11,6 +12,9 @@ const auth_1 = require("firebase-admin/auth");
 const firestore_1 = require("firebase-admin/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const resetTokens_1 = require("./resetTokens");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const klcMod = require('korean-lunar-calendar');
+const KoreanLunarCalendar = (_a = klcMod.default) !== null && _a !== void 0 ? _a : klcMod;
 const scrypt = (0, util_1.promisify)(crypto_1.scrypt);
 // 함수 로드 시점엔 initializeApp() 전일 수 있어 지연 호출
 const db = () => (0, firestore_1.getFirestore)();
@@ -160,6 +164,32 @@ exports.changePassword = (0, https_1.onCall)(callOpts, async (req) => {
     await setPassword(memberId, newPassword);
     return { ok: true };
 });
+const ymd = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+/** 저장된 생년월일과 입력값 비교 — 본인이 양력·음력 어느 쪽으로 기억하든 맞으면 통과 */
+function birthMatches(stored, lunar, input) {
+    if (stored === input)
+        return true;
+    const [y, m, d] = stored.split('-').map(Number);
+    if (!y || !m || !d)
+        return false;
+    const cal = new KoreanLunarCalendar();
+    if (lunar) {
+        // 음력 저장 → 양력으로 바꿔 비교 (윤달 여부는 저장 안 하므로 둘 다 시도)
+        for (const leap of [false, true]) {
+            if (!cal.setLunarDate(y, m, d, leap))
+                continue;
+            const s = cal.getSolarCalendar();
+            if (ymd(s.year, s.month, s.day) === input)
+                return true;
+        }
+        return false;
+    }
+    // 양력 저장 → 음력으로 바꿔 비교
+    if (!cal.setSolarDate(y, m, d))
+        return false;
+    const l = cal.getLunarCalendar();
+    return ymd(l.year, l.month, l.day) === input;
+}
 /** 본인 정보(이름·생년월일·이메일)가 일치하면 초기화 토큰 발급 — 메일은 onPasswordResetTokenCreated가 발송 */
 exports.requestPasswordReset = (0, https_1.onCall)(callOpts, async (req) => {
     var _a, _b, _c, _d;
@@ -173,7 +203,13 @@ exports.requestPasswordReset = (0, https_1.onCall)(callOpts, async (req) => {
     if (((_b = m.person_name) !== null && _b !== void 0 ? _b : '') !== personName || !m.person_id)
         return { ok: false, notFound: false };
     const p = (await db().doc(`persons/${m.person_id}`).get()).data();
-    if (!p || ((_c = p.birth_date) !== null && _c !== void 0 ? _c : '') !== birthDate || ((_d = p.email) !== null && _d !== void 0 ? _d : '') !== email)
+    if (!p || ((_c = p.email) !== null && _c !== void 0 ? _c : '') !== email)
+        return { ok: false, notFound: false };
+    const storedBirth = (_d = p.birth_date) !== null && _d !== void 0 ? _d : '';
+    const birthOk = !storedBirth
+        ? birthDate === ''
+        : typeof birthDate === 'string' && birthMatches(storedBirth, !!p.birth_lunar, birthDate);
+    if (!birthOk)
         return { ok: false, notFound: false };
     console.log(`초기화 토큰 생성: member ${memberSnap.id}`);
     await db().collection('password_reset_tokens').add({
