@@ -16,7 +16,7 @@ import { db } from '../lib/firebase';
 import { findDocs, grantInfoAccess, logActivity, nowIso } from '../lib/firestore';
 import { LS, SS } from '../lib/storageKeys';
 import { getMemberId, getMyPersonId, getUserName } from '../lib/session';
-import type { Person, Relationship, BranchType, EditGrant } from '../types';
+import type { Person, Relationship, BranchType, EditGrant, MemoEntry } from '../types';
 import { DEFAULT_PERMISSIONS } from '../types/permissions';
 import { parseKoreanName } from '../utils/nameParser';
 import { getChusu } from '../utils/familyGraph';
@@ -124,6 +124,11 @@ interface FamilyState {
   approveInfoRequest: (requestId: string, personId: string) => Promise<void>;
   rejectInfoRequest:  (requestId: string) => Promise<void>;
 
+  // 메모 — 내가 쓴 것만 (personId → 항목, 최신순)
+  memos: Record<string, MemoEntry[]>;
+  loadMemos: () => Promise<void>;
+  saveMemo: (personId: string, entries: MemoEntry[]) => Promise<void>;
+
   // 노드별 편집 권한 위임
   editGrantedPersonIds: Set<string>;
   loadEditGrants: () => Promise<void>;
@@ -148,6 +153,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
     focusRequest: null,
     infoRequestPersonId: null,
     grantedPersonIds: new Set<string>(),
+    memos: {},
     editGrantedPersonIds: new Set<string>(),
     tempUnlockAll: false,
 
@@ -188,6 +194,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
         }
         get().loadGrantedAccess();
         get().loadEditGrants();
+        get().loadMemos();
       };
 
       // 루트 자동 생성이 없어졌으므로 옛 데이터 이관을 기다리지 않고 바로 구독 시작
@@ -271,7 +278,6 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
         created_at:  nowIso(),
         phone:       personData.phone  ?? null,
         email:       personData.email  ?? null,
-        recent_status: personData.recent_status ?? null,
       };
       const ref = await addDoc(collection(db, 'persons'), fields);
       logActivity('add', name, actorName(), familyId);
@@ -343,6 +349,31 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
         expires_at: new Date(Date.now() + INVITE_TTL_MS).toISOString(),
       });
       return token;
+    },
+
+    // ── 메모 (person_memos/{personId}_{memberId}, 작성자만 읽기·쓰기) ─────────
+
+    loadMemos: async () => {
+      const memberId = getMemberId();
+      if (!memberId) return;
+      const snap = await findDocs('person_memos', where('member_id', '==', memberId));
+      set({ memos: Object.fromEntries(snap.docs.map(d => [d.data().person_id as string, (d.data().entries ?? []) as MemoEntry[]])) });
+    },
+
+    saveMemo: async (personId, entries) => {
+      const memberId = getMemberId();
+      if (!memberId) return;
+      const ref = doc(db, 'person_memos', `${personId}_${memberId}`);
+      if (entries.length === 0) await deleteDoc(ref);
+      else await setDoc(ref, {
+        person_id: personId, member_id: memberId, family_id: familyIdOrMain(),
+        entries, updated_at: nowIso(),
+      });
+      set(s => {
+        const memos = { ...s.memos };
+        if (entries.length === 0) delete memos[personId]; else memos[personId] = entries;
+        return { memos };
+      });
     },
 
     // ── 정보공개 요청 ─────────────────────────────────────────────────────────

@@ -29,6 +29,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
       editGrantedPersonIds: s.editGrantedPersonIds, tempUnlockAll: s.tempUnlockAll,
     }))
   );
+  const myMemos = useFamilyStore(s => s.memos[person.id]);
   const { deletePerson, createInvite, loadInfoRequestsForMe, approveInfoRequest, rejectInfoRequest,
           updateRelationship, addRelationship } = useFamilyStore.getState();
 
@@ -180,13 +181,14 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
               );
             })}
           </div>
-          {person.recent_status && person.recent_status.length > 0 && (
+          {myMemos && myMemos.length > 0 && (
             <div className="detail-recent-status">
               <div className="recent-status-head">
                 <span className="contact-icon"><Icon name="chat" /></span>
-                <span className="recent-status-label">근황</span>
+                <span className="recent-status-label">메모</span>
+                <span className="recent-status-date">나만 보기</span>
               </div>
-              {person.recent_status.map((s, i) => (
+              {myMemos.map((s, i) => (
                 <div key={i} className="recent-status-entry">
                   <div className="recent-status-body">{s.text}</div>
                   <span className="recent-status-date">{formatDotDate(s.at, false)}</span>

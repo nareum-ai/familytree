@@ -65,14 +65,14 @@ const ALL_GROUPS: Group[] = [
         id: 'detail',
         icon: 'user',
         title: '가족 정보 보기',
-        keywords: '상세 나이 촌수 관계 연락처 전화 메일 근황 결혼기념일 기일',
+        keywords: '상세 나이 촌수 관계 연락처 전화 메일 메모 결혼기념일 기일',
         content: (
           <>
             <p className="help-para">가계도에서 사람을 <b>누르면</b> 자세한 정보가 열려요.</p>
             <ul className="help-list">
               <li><b>나이·생일</b> — 만 나이로 보여요. 음력 생일은 날짜 옆에 "(음)"이 붙어요.</li>
               <li><b>촌수·관계</b> — "3촌 (삼촌)"처럼 나와의 관계를 자동으로 계산해 줘요.</li>
-              <li><b><Icon name="chat" /> 근황</b> — 가족이 남긴 최근 소식이에요.</li>
+              <li><b><Icon name="chat" /> 메모</b> — 내가 남긴 메모예요. 나만 볼 수 있어요.</li>
               <li><b><Icon name="phone" /> 연락처</b> — 번호나 메일을 누르면 바로 전화·메일을 보낼 수 있어요.</li>
               <li><b><Icon name="ring" /> 배우자</b> — 결혼기념일이 있으면 함께 보여요.</li>
             </ul>
@@ -123,10 +123,10 @@ const ALL_GROUPS: Group[] = [
         id: 'edit',
         icon: 'edit',
         title: '정보 수정 · 사진 바꾸기',
-        keywords: '편집 수정 사진 아바타 프로필 근황 삭제 권한 관리 결혼기념일 연락처',
+        keywords: '편집 수정 사진 아바타 프로필 메모 삭제 권한 관리 결혼기념일 연락처',
         content: (
           <>
-            <p className="help-para">사람을 누른 뒤 <b><Icon name="edit" /> 편집</b>을 누르면 이름, 생년월일, 연락처, 근황, 결혼기념일 등을 고칠 수 있어요.</p>
+            <p className="help-para">사람을 누른 뒤 <b><Icon name="edit" /> 편집</b>을 누르면 이름, 생년월일, 연락처, 메모, 결혼기념일 등을 고칠 수 있어요.</p>
 
             <b className="help-label">사진 · 아바타</b>
             <ul className="help-list">
@@ -134,8 +134,8 @@ const ALL_GROUPS: Group[] = [
               <li><b><Icon name="camera" /> 사진 올리기</b>로 실제 사진을 넣거나, 인물·동물·식물 캐릭터 중에서 고를 수 있어요.</li>
             </ul>
 
-            <b className="help-label"><Icon name="chat" /> 근황 남기기</b>
-            <p className="help-para">편집 화면의 근황 칸에 적으면 오늘 날짜로 기록돼요. 최근 소식 몇 개만 남아요.</p>
+            <b className="help-label"><Icon name="chat" /> 메모 남기기</b>
+            <p className="help-para">편집 화면의 메모 칸에 적으면 오늘 날짜로 기록돼요. 메모는 입력한 나만 볼 수 있고, 그 사람 본인과 다른 가족에게는 보이지 않아요. 최근 메모 몇 개만 남아요.</p>
 
             <b className="help-label">누가 수정할 수 있나요?</b>
             <ul className="help-list">

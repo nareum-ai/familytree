@@ -313,6 +313,13 @@
   line-height: 1.5;
 }
 
+.memo-privacy-note {
+  margin: 2px 0 6px;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
 .recent-status-hint {
   font-size: var(--fs-11);
   font-weight: 400;

@@ -5,8 +5,9 @@ import { todayStr, formatDotDate } from '../utils/date';
 import { DateInput } from './DateInput';
 import { AvatarPicker } from './AvatarPicker';
 import { AvatarSelector } from './AvatarSelector';
+import { getMemberId } from '../lib/session';
 
-const MAX_RECENT_STATUS = 3;
+const MAX_MEMOS = 3;
 
 interface Props {
   person: Person;
@@ -18,6 +19,9 @@ interface Props {
 export function PersonEditForm({ person, spouseRel, onDone }: Props) {
   const updatePerson       = useFamilyStore(s => s.updatePerson);
   const updateRelationship = useFamilyStore(s => s.updateRelationship);
+  const saveMemo           = useFamilyStore(s => s.saveMemo);
+  const myMemos            = useFamilyStore(s => s.memos[person.id]);
+  const canMemo            = !!getMemberId();  // 회원 세션에서만 (관리자 가족 보기 제외)
 
   const [name, setName] = useState(person.name);
   const [gender, setGender] = useState<'male' | 'female'>(person.gender ?? 'male');
@@ -30,8 +34,8 @@ export function PersonEditForm({ person, spouseRel, onDone }: Props) {
   const [marriageLunar, setMarriageLunar] = useState(spouseRel?.marriage_lunar ?? false);
   const [phone, setPhone] = useState(person.phone ?? '');
   const [email, setEmail] = useState(person.email ?? '');
-  const [recentStatusList, setRecentStatusList] = useState(person.recent_status ?? []);
-  const [newStatusText, setNewStatusText] = useState('');
+  const [memoList, setMemoList] = useState(myMemos ?? []);
+  const [newMemoText, setNewMemoText] = useState('');
   const [photoUrl, setPhotoUrl] = useState(person.photo_url ?? '');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,10 +44,10 @@ export function PersonEditForm({ person, spouseRel, onDone }: Props) {
 
   const handleSave = async () => {
     setSaving(true);
-    const newText = newStatusText.trim();
-    const finalStatusList = newText
-      ? [{ text: newText, at: today }, ...recentStatusList].slice(0, MAX_RECENT_STATUS)
-      : recentStatusList;
+    const newText = newMemoText.trim();
+    const finalMemoList = newText
+      ? [{ text: newText, at: today }, ...memoList].slice(0, MAX_MEMOS)
+      : memoList;
     await updatePerson(person.id, {
       name,
       gender,
@@ -54,9 +58,11 @@ export function PersonEditForm({ person, spouseRel, onDone }: Props) {
       death_lunar: isDeceased ? deathLunar : false,
       phone: phone.trim() || null,
       email: email.trim() || null,
-      recent_status: finalStatusList.length > 0 ? finalStatusList : null,
       photo_url: photoUrl || null,
     });
+    if (canMemo && (newText || finalMemoList.length !== (myMemos?.length ?? 0))) {
+      await saveMemo(person.id, finalMemoList);
+    }
     if (spouseRel) {
       await updateRelationship(spouseRel.id, {
         marriage_date: marriageDate || null,
@@ -113,23 +119,28 @@ export function PersonEditForm({ person, spouseRel, onDone }: Props) {
           <input value={email} onChange={e => setEmail(e.target.value)}
             placeholder="이메일" maxLength={80} />
         </div>
-        <div className="form-field">
-          <label>근황 <span className="recent-status-hint">(최근 {MAX_RECENT_STATUS}개만 유지)</span></label>
-          {recentStatusList.length > 0 && (
-            <div className="recent-status-edit-list">
-              {recentStatusList.map((s, i) => (
-                <div key={i} className="recent-status-edit-entry">
-                  <div className="recent-status-edit-text">{s.text}</div>
-                  <span className="recent-status-edit-date">{formatDotDate(s.at, false)}</span>
-                  <button type="button" className="recent-status-remove-btn"
-                    onClick={() => setRecentStatusList(list => list.filter((_, j) => j !== i))}>✕</button>
-                </div>
-              ))}
-            </div>
-          )}
-          <textarea value={newStatusText} onChange={e => setNewStatusText(e.target.value)}
-            className="edit-input edit-recent-status" placeholder="새 근황을 입력하면 오늘 날짜로 추가됩니다" rows={2} maxLength={150} />
-        </div>
+        {canMemo && (
+          <div className="form-field">
+            <label>메모 <span className="recent-status-hint">(최근 {MAX_MEMOS}개만 유지)</span></label>
+            <p className="memo-privacy-note">
+              메모는 <b>입력한 나만</b> 볼 수 있어요. 이 사람 본인과 다른 가족에게는 보이지 않아요.
+            </p>
+            {memoList.length > 0 && (
+              <div className="recent-status-edit-list">
+                {memoList.map((s, i) => (
+                  <div key={i} className="recent-status-edit-entry">
+                    <div className="recent-status-edit-text">{s.text}</div>
+                    <span className="recent-status-edit-date">{formatDotDate(s.at, false)}</span>
+                    <button type="button" className="recent-status-remove-btn"
+                      onClick={() => setMemoList(list => list.filter((_, j) => j !== i))}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <textarea value={newMemoText} onChange={e => setNewMemoText(e.target.value)}
+              className="edit-input edit-recent-status" placeholder="새 메모를 입력하면 오늘 날짜로 추가됩니다" rows={2} maxLength={150} />
+          </div>
+        )}
       </div>
 
       <div className="modal-actions">

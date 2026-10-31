@@ -24,6 +24,12 @@ service cloud.firestore {
       allow update:       if isAdmin()
                           || (inMyFamily(resource.data) && !changes().hasAny(['family_id', 'family_disabled']));
     }
+    // 메모: 쓴 사람만 읽고 쓴다 (인물 본인·다른 가족·관리자 화면에도 노출 안 함). id = {personId}_{memberId}
+    match /person_memos/{id} {
+      allow read, delete: if signedIn() && resource.data.member_id == request.auth.uid;
+      allow create, update: if signedIn() && request.resource.data.member_id == request.auth.uid
+                            && id == request.resource.data.person_id + '_' + request.auth.uid;
+    }
     match /relationships/{id} {
       allow read, delete: if isAdmin() || inMyFamily(resource.data);
       allow create:       if isAdmin() || inMyFamily(request.resource.data);
