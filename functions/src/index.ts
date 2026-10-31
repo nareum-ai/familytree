@@ -8,6 +8,7 @@ import { defineSecret } from 'firebase-functions/params';
 import * as nodemailer from 'nodemailer';
 import { getRelationLabel } from './shared/relationLabel';
 import type { Person as LabelPerson, Relationship as Rel } from './shared/types';
+import { invalidateResetTokens } from './resetTokens';
 // CJS 빌드는 클래스 자체를 export (esModuleInterop 꺼져 있어 default import 사용 불가)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const klcMod = require('korean-lunar-calendar');
@@ -127,6 +128,9 @@ export const onPasswordResetTokenCreated = onDocumentCreated(
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
+
+    // 새 링크가 생기면 이전 링크는 무효화 — 가장 최근 메일의 링크만 작동 (본인 요청·관리자 승인 공통)
+    await invalidateResetTokens(data.member_id as string, event.params.docId);
 
     let toEmail = data.contact_email as string | undefined;
     if (!toEmail) {
