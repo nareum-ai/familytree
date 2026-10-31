@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMemberId, getUserName } from '../../lib/session';
+import { getMemberId } from '../../lib/session';
 import { changePassword, linkGoogleAccount, unlinkGoogleFromMember } from '../../services/authService';
 import { loadPushSendTime, savePushSendTime } from '../../services/adminService';
 import { validateNewPassword } from '../../utils/password';
@@ -33,16 +33,16 @@ export function GoogleLinkModal({ googleEmail, onChange, onClose }: {
     }
   };
 
-  const handleLink = () => run(async memberId => {
-    const res = await linkGoogleAccount(memberId);
+  const handleLink = () => run(async () => {
+    const res = await linkGoogleAccount();
     if (!res) return; // 팝업 취소
     if (!res.ok) { setMsg({ ok: false, msg: res.error ?? '연결 실패' }); return; }
     onChange(res.email);
     setMsg({ ok: true, msg: '구글 계정이 연결됐습니다.' });
   }, '연결 중 오류가 발생했습니다.');
 
-  const handleUnlink = () => run(async memberId => {
-    await unlinkGoogleFromMember(memberId);
+  const handleUnlink = () => run(async () => {
+    await unlinkGoogleFromMember();
     onChange(null);
     setMsg({ ok: true, msg: '구글 연결이 해제됐습니다.' });
   }, '해제 중 오류가 발생했습니다.');
@@ -99,7 +99,7 @@ export function AdminPasswordModal({ onClose }: { onClose: () => void }) {
     if (invalid) return;
     setLoading(true);
     try {
-      if (await changePassword(getUserName() ?? '관리자', oldPw, newPw) === 'wrong-password') {
+      if (await changePassword(oldPw, newPw) === 'wrong-password') {
         setMsg({ ok: false, msg: '현재 비밀번호가 올바르지 않습니다.' });
         return;
       }

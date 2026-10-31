@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../lib/firebase';
-import { findDocs, nowIso, updateMember } from '../lib/firestore';
+import { findDocs, grantInfoAccess, nowIso, updateMember } from '../lib/firestore';
 import { getMemberId } from '../lib/session';
 import { DEFAULT_PERMISSIONS } from '../types/permissions';
 import { parseKoreanName } from '../utils/nameParser';
@@ -96,6 +96,25 @@ export function rejectPasswordResetRequest(requestId: string) {
 export async function listMembers(): Promise<Member[]> {
   const snap = await getDocs(collection(db, 'members'));
   return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Member, 'id'>) }));
+}
+
+/** 회원을 트리 인물에 연결 (관리자 매핑). 다른 계정이 이미 연결돼 있으면 ALREADY_MAPPED */
+export async function mapMemberToPerson(memberId: string, personId: string, familyId: string, personName: string) {
+  const existingSnap = await findDocs('members', where('person_id', '==', personId));
+  if (existingSnap.docs.some(d => d.id !== memberId)) throw new Error('ALREADY_MAPPED');
+
+  await updateMember(memberId, { person_id: personId, family_id: familyId, person_name: personName });
+
+  // 이 인물과 합의된 양방향 페어가 있으면 즉시 접근권 부여
+  const [pairsA, pairsB] = await Promise.all([
+    findDocs('person_access_pairs', where('person_a_id', '==', personId)),
+    findDocs('person_access_pairs', where('person_b_id', '==', personId)),
+  ]);
+  const partnerIds = [
+    ...pairsA.docs.map(d => d.data().person_b_id as string),
+    ...pairsB.docs.map(d => d.data().person_a_id as string),
+  ];
+  for (const partnerId of partnerIds) await grantInfoAccess(memberId, partnerId);
 }
 
 export function deleteMember(memberId: string) {

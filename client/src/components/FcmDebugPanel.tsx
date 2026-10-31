@@ -64,7 +64,7 @@ export function FcmDebugPanel({ scope = 'user' }: FcmDebugProps) {
       const memberId = localStorage.getItem(LS.MEMBER_ID);
       if (!memberId) { add('❌ memberId 없음'); return; }
 
-      await saveFcmToken(memberId, token, scope, getSavedToken());
+      await saveFcmToken(token, scope, getSavedToken());
       rememberSavedToken(memberId, scope, token);
       add('✅ Firestore 저장 완료!');
     } catch (e: unknown) {

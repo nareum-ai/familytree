@@ -30,7 +30,8 @@ export function RegisterScreen({ onBack, onSuccess, onGoogleLogin, googleError, 
     if (password !== confirm)        { setError('비밀번호가 일치하지 않습니다.'); return; }
 
     setLoading(true);
-    const result = await registerMember(username.trim(), password);
+    const result = await registerMember(username.trim(), password)
+      .catch(() => ({ ok: false, error: '가입 중 오류가 발생했습니다. 다시 시도해주세요.' }));
     setLoading(false);
     if (result.ok) {
       onSuccess(username.trim(), password);

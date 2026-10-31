@@ -39,7 +39,7 @@ export function PersonDetail({ person, onAddFamily, onClose }: Props) {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   useEffect(() => {
-    isPersonMapped(person.id).then(setAlreadyMapped).catch(() => {});
+    isPersonMapped(person.id, person.family_id).then(setAlreadyMapped).catch(() => {});
     loadInfoRequestsForMe()
       .then(reqs => setInfoRequests(reqs.filter(r => r.personId === person.id)))
       .catch(() => {});

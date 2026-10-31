@@ -1,8 +1,108 @@
 rules_version = '2';
+
+// 세션 = Cloud Functions가 발급한 커스텀 토큰
+//   request.auth.uid      회원(members) 문서 id
+//   request.auth.token.fid 가족 id (가족에 배정된 회원만)
+//   request.auth.token.adm 관리자 여부
+// 클라이언트는 같은 가족 데이터와 본인 계정만 다룰 수 있다. 로그인·가입·비밀번호·초대 수락은 Functions 전용.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin()  { return signedIn() && request.auth.token.adm == true; }
+    function isMe(memberId) { return signedIn() && request.auth.uid == memberId; }
+    function inMyFamily(data) {
+      return signedIn() && ('fid' in request.auth.token) && data.family_id == request.auth.token.fid;
+    }
+    function changes() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    // ── 가계도 ──────────────────────────────────────────────────────────────
+    match /persons/{id} {
+      allow read, delete: if isAdmin() || inMyFamily(resource.data);
+      allow create:       if isAdmin() || inMyFamily(request.resource.data);
+      // 가족 이동·가족 비활성화는 관리자만
+      allow update:       if isAdmin()
+                          || (inMyFamily(resource.data) && !changes().hasAny(['family_id', 'family_disabled']));
+    }
+    match /relationships/{id} {
+      allow read, delete: if isAdmin() || inMyFamily(resource.data);
+      allow create:       if isAdmin() || inMyFamily(request.resource.data);
+      allow update:       if isAdmin() || (inMyFamily(resource.data) && !changes().hasAny(['family_id']));
+    }
+    match /invites/{id} {
+      allow read:   if isAdmin() || inMyFamily(resource.data);
+      allow create: if isAdmin() || inMyFamily(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    // ── 회원 ────────────────────────────────────────────────────────────────
+    // 같은 가족은 서로의 회원 정보(이름·연결 인물)를 볼 수 있다. 본인은 알림 설정·접속 시각만 수정.
+    match /members/{id} {
+      allow read:   if isAdmin() || isMe(id) || inMyFamily(resource.data);
+      allow update: if isAdmin() || (isMe(id) && changes().hasOnly(['push_prefs', 'last_login_at']));
+      allow create, delete: if isAdmin();
+    }
+    match /member_secrets/{id} {
+      allow read, write: if false;
+    }
+    match /login_logs/{id} {
+      allow create: if signedIn() && request.resource.data.member_id == request.auth.uid;
+      allow read, delete: if isAdmin();
+    }
+
+    // ── 가족 신청·정보공개·편집 위임 ─────────────────────────────────────────
+    match /approval_requests/{id} {
+      allow read:   if isAdmin() || isMe(resource.data.member_id);
+      allow create: if isMe(request.resource.data.member_id) && request.resource.data.status == 'pending';
+      allow delete: if isAdmin() || (isMe(resource.data.member_id) && resource.data.status == 'pending');
+      allow update: if isAdmin();
+    }
+    match /info_requests/{id} {
+      allow read:   if isAdmin() || isMe(resource.data.requester_member_id) || isMe(resource.data.holder_member_id);
+      allow create: if isMe(request.resource.data.requester_member_id);
+      allow update: if isAdmin() || isMe(resource.data.holder_member_id);
+      allow delete: if isAdmin();
+    }
+    match /info_access/{id} {
+      allow read, create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+    match /person_access_pairs/{id} {
+      allow read, create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+    match /edit_grants/{id} {
+      allow read, create, delete: if signedIn();
+      allow update: if isAdmin();
+    }
+    match /activity_logs/{id} {
+      allow create: if signedIn();
+      allow read, delete: if isAdmin();
+    }
+
+    // ── 비밀번호 초기화 ─────────────────────────────────────────────────────
+    match /password_reset_requests/{id} {
+      allow create: if request.resource.data.status == 'pending';
+      allow read, update, delete: if isAdmin();
+    }
+    match /password_reset_tokens/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── 알림·설정 ───────────────────────────────────────────────────────────
+    match /push_tests/{id} {
+      allow create: if isAdmin() || isMe(request.resource.data.member_id);
+      allow read:   if isAdmin() || isMe(resource.data.member_id);
+    }
+    match /push_broadcasts/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /anniversary_runs/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /settings/{id} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
     }
   }
 }

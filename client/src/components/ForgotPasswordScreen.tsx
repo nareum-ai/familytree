@@ -34,8 +34,15 @@ export function ForgotPasswordScreen({ onBack }: Props) {
     if (!email.trim())      { setError('이메일을 입력해주세요.'); return; }
 
     setLoading(true);
-    const result = await requestPasswordReset(username.trim(), personName.trim(), birthDate, email.trim());
-    setLoading(false);
+    let result: { ok: boolean };
+    try {
+      result = await requestPasswordReset(username.trim(), personName.trim(), birthDate, email.trim());
+    } catch {
+      setError('요청 중 오류가 발생했습니다. 인터넷 연결을 확인한 뒤 다시 시도해주세요.');
+      return;
+    } finally {
+      setLoading(false);
+    }
 
     if (result.ok) {
       setStep('sent');
@@ -49,8 +56,14 @@ export function ForgotPasswordScreen({ onBack }: Props) {
     setError('');
     if (!contactEmail.trim()) { setError('이메일을 입력해주세요.'); return; }
     setLoading(true);
-    await requestAdminPasswordReset(username.trim(), personName.trim(), contactEmail.trim(), message.trim() || undefined);
-    setLoading(false);
+    try {
+      await requestAdminPasswordReset(username.trim(), personName.trim(), contactEmail.trim(), message.trim() || undefined);
+    } catch {
+      setError('요청 중 오류가 발생했습니다. 다시 시도해주세요.');
+      return;
+    } finally {
+      setLoading(false);
+    }
     setStep('fallback_sent');
   };
 

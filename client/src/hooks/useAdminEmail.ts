@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { where } from 'firebase/firestore';
-import { findDocs } from '../lib/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../lib/firebase';
 
 /** 관리자 계정에 구글 이메일이 연결되어 있지 않을 때 쓰는 문의 주소 (선택) */
 const FALLBACK_EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) || null;
@@ -9,14 +9,9 @@ const FALLBACK_EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined
 let adminEmailPromise: Promise<string | null> | null = null;
 
 function fetchAdminEmail(): Promise<string | null> {
-  // 관리자가 여럿일 수 있으므로 구글 이메일이 연결된 첫 번째 관리자를 사용
-  adminEmailPromise ??= findDocs('members', where('is_admin', '==', true))
-    .then(snap => {
-      const email = snap.docs
-        .map(d => d.data()?.google_email as string | undefined)
-        .find(e => !!e);
-      return email ?? FALLBACK_EMAIL;
-    })
+  // 회원 문서는 비공개라 서버가 구글 이메일이 연결된 관리자 주소만 알려준다 (로그인 전에도 사용)
+  adminEmailPromise ??= httpsCallable<unknown, { email: string | null }>(functions, 'getAdminContact')({})
+    .then(r => r.data.email ?? FALLBACK_EMAIL)
     .catch(() => { adminEmailPromise = null; return FALLBACK_EMAIL; });
   return adminEmailPromise;
 }

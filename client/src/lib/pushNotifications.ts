@@ -76,7 +76,7 @@ export async function syncFcmToken(memberId: string, opts: { force?: boolean } =
     && Date.now() - saved.at < RESAVE_MS;
   if (fresh && !opts.force) return token;
 
-  await saveFcmToken(memberId, token, scope, saved?.token);
+  await saveFcmToken(token, scope, saved?.token);
   rememberSavedToken(memberId, scope, token);
   return token;
 }

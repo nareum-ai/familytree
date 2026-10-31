@@ -64,7 +64,6 @@ export type AddRelationType =
 export interface Member {
   id: string;
   username: string;
-  password_hash: string;
   person_id: string | null;
   family_id: string | null;
   person_name: string | null;

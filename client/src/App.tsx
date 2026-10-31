@@ -29,8 +29,8 @@ import {
   startAdminSession, startFamilySession,
 } from './lib/session';
 import {
-  consumeInviteToken, ensureAdminAccount, isFamilyDisabled, linkGoogleToMember, loginMember,
-  loginWithGoogle, mapMemberToPerson, recordLogin, registerWithGoogle,
+  acceptInvite, endSession, isFamilyDisabled, linkGoogleToMember, LOGIN_ERROR_MSG, loginMember,
+  loginWithGoogle, recordLogin, registerWithGoogle, type GoogleUser,
 } from './services/authService';
 import { useFCMToken, useForegroundPush } from './hooks/useFCMToken';
 import { ForegroundPushToast, PushPermissionPrompt } from './components/PushPermissionPrompt';
@@ -65,7 +65,7 @@ const hasRegisterParam = () => new URLSearchParams(window.location.search).has('
 
 function logout() {
   clearSession();
-  window.location.reload();
+  endSession().finally(() => window.location.reload());
 }
 
 function FamilyDisabledScreen({ adminEmail }: { adminEmail: string | null }) {
@@ -133,9 +133,7 @@ function App() {
   const [googleSigningIn, setGoogleSigningIn] = useState(false);
   // 아이디·비밀번호 로그인 직후 Google 연결 안내 (알림 켜기 안내보다 먼저 표시)
   const [suggestGoogleLink, setSuggestGoogleLink] = useState(false);
-  const [googleLinkData, setGoogleLinkData] = useState<{
-    uid: string; email: string; displayName: string;
-  } | null>(null);
+  const [googleLinkData, setGoogleLinkData] = useState<GoogleUser | null>(null);
 
   // 가족 미배정 계정 → 가족집단 신청 화면
   // (초대 검증 중이면 신청 화면으로 넘기지 않음 — 렌더 순서상 초대 검증 화면이 먼저)
@@ -163,10 +161,6 @@ function App() {
     const alreadyInFlow = !!sessionStorage.getItem(SS.INVITE_PERSON_ID);
     if (pending && !alreadyInFlow) window.location.replace(`/invite/${pending}`);
   }, [isInviteRoute, isAdmin]);
-
-  useEffect(() => {
-    ensureAdminAccount();
-  }, []);
 
   // 내가 권한자인 정보공개 요청 건수 (헤더 배지)
   useEffect(() => {
@@ -280,8 +274,8 @@ function App() {
     setLoginError('');
     setLoginLoading(true);
     try {
-      const member = await loginMember(username, password);
-      if (!member) { setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
+      const { member, error } = await loginMember(username, password);
+      if (!member) { setLoginError(LOGIN_ERROR_MSG[error ?? 'invalid']); return; }
       setSuggestGoogleLink(shouldSuggestGoogleLink(member));
       await loginAs(member, username);
     } finally {
@@ -297,34 +291,37 @@ function App() {
       // 계정 선택이 끝나면 로그인 화면 대신 로딩 화면 표시
       const result = await loginWithGoogle(() => setGoogleSigningIn(true));
       if (!result) return; // 팝업 취소
-      const { member, googleUid, googleEmail, displayName } = result;
+      const { member, error, google } = result;
+      if (error) { setLoginError(LOGIN_ERROR_MSG[error]); return; }
 
       if (!member) {
         // 초대 링크 컨텍스트가 있으면 바로 계정 생성 → InviteVerifyScreen
         if (hasInviteContext()) {
-          const newMember = await registerWithGoogle(googleUid, googleEmail, displayName);
-          localStorage.setItem(LS.GOOGLE_EMAIL, googleEmail);
-          await applyMemberLogin(newMember, displayName);
+          const newMember = await registerWithGoogle(google);
+          localStorage.setItem(LS.GOOGLE_EMAIL, google.email);
+          await applyMemberLogin(newMember, google.displayName);
           return;
         }
         // 일반 신규 구글 사용자 → 기존 계정 연결 or 새로 시작 화면
-        setGoogleLinkData({ uid: googleUid, email: googleEmail, displayName });
+        setGoogleLinkData(google);
         return;
       }
-      if (member.status !== 'suspended') localStorage.setItem(LS.GOOGLE_EMAIL, googleEmail);
-      await loginAs(member, member.username, displayName);
-    } catch {
-      setLoginError('구글 로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      localStorage.setItem(LS.GOOGLE_EMAIL, google.email);
+      await loginAs(member, member.username, google.displayName);
+    } catch (e: unknown) {
+      // 원인 파악용으로 오류 코드를 함께 표시
+      const code = (e as { code?: string })?.code ?? (e instanceof Error ? e.message : '');
+      setLoginError(`구글 로그인 중 오류가 발생했습니다. 다시 시도해주세요.${code ? ` (${code})` : ''}`);
     } finally {
       setLoginLoading(false);
       setGoogleSigningIn(false);
     }
   };
 
-  // ── 구글 → 기존 계정 연결 완료 ─────────────────────────────────────────────
+  // ── 구글 → 기존 계정 연결 완료 (GoogleLinkScreen에서 기존 계정으로 로그인된 상태) ──
   const handleGoogleLinkedToExisting = async (member: Member) => {
     if (!googleLinkData) return;
-    const res = await linkGoogleToMember(member.id, googleLinkData.uid, googleLinkData.email);
+    const res = await linkGoogleToMember(googleLinkData);
     if (!res.ok) {
       setLoginError(res.error ?? '구글 연결 중 오류가 발생했습니다.');
       setGoogleLinkData(null);
@@ -338,7 +335,7 @@ function App() {
   // ── 구글 → 새로 시작 ────────────────────────────────────────────────────────
   const handleGoogleNewStart = async () => {
     if (!googleLinkData) return;
-    const member = await registerWithGoogle(googleLinkData.uid, googleLinkData.email, googleLinkData.displayName);
+    const member = await registerWithGoogle(googleLinkData);
     localStorage.setItem(LS.GOOGLE_EMAIL, googleLinkData.email);
     setGoogleLinkData(null);
     applyMemberLogin(member, googleLinkData.displayName);
@@ -347,11 +344,9 @@ function App() {
   // ── 초대 이름 검증 성공 ─────────────────────────────────────────────────────
   const handleInviteVerified = async () => {
     const invite = getInviteContext();
-    const personId   = invite.personId!;
-    const personName = invite.personName!;
-    const familyId   = invite.familyId!;
+    let member: Member;
     try {
-      await mapMemberToPerson(getMemberId()!, personId, familyId, personName);
+      member = await acceptInvite(invite.token ?? '');
     } catch (e: unknown) {
       const alreadyMapped = e instanceof Error && e.message === 'ALREADY_MAPPED';
       alert(alreadyMapped
@@ -359,12 +354,11 @@ function App() {
         : '계정 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
       return;
     }
-    // 토큰 소비 — 재사용 방지
-    if (invite.token) await consumeInviteToken(invite.token).catch(() => {});
     clearInviteContext();
-    localStorage.setItem(LS.USER_NAME, personName);
-    localStorage.setItem(LS.FAMILY_ID, familyId);
-    sessionStorage.setItem(SS.VIEWPOINT_PERSON_ID, personId);
+    localStorage.setItem(LS.USER_NAME, member.person_name ?? invite.personName ?? '');
+    localStorage.setItem(LS.FAMILY_ID, member.family_id ?? '');
+    localStorage.setItem(LS.MY_PERSON_ID, member.person_id ?? '');
+    sessionStorage.setItem(SS.VIEWPOINT_PERSON_ID, member.person_id ?? '');
     setPendingInviteMemberId(null);
     window.location.reload();
   };
@@ -500,7 +494,7 @@ function App() {
       )}
       {showIOSInstall && <IOSInstallGuide onClose={() => setShowIOSInstall(false)} />}
       {pushMemberId && suggestGoogleLink && (
-        <GoogleLinkPrompt memberId={pushMemberId} onClose={() => setSuggestGoogleLink(false)} />
+        <GoogleLinkPrompt onClose={() => setSuggestGoogleLink(false)} />
       )}
       {pushMemberId && !suggestGoogleLink && (
         <PushPermissionPrompt

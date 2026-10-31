@@ -21,7 +21,8 @@ export function ResetPasswordScreen({ token }: Props) {
     if (password !== confirm)   { setError('비밀번호가 일치하지 않습니다.'); return; }
 
     setLoading(true);
-    const result = await resetPasswordWithToken(token, password);
+    const result = await resetPasswordWithToken(token, password)
+      .catch(() => ({ ok: false, error: '오류가 발생했습니다. 다시 시도해주세요.' }));
     setLoading(false);
 
     if (result.ok) {

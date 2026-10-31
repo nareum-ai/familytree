@@ -137,7 +137,7 @@ export const onPasswordResetTokenCreated = onDocumentCreated(
         toEmail = personSnap.data()?.email as string | undefined;
       }
     }
-    if (!toEmail) return;
+    if (!toEmail) { console.warn(`초기화 메일 생략: 받을 이메일 없음 (member ${data.member_id})`); return; }
 
     const link = `${APP_URL}/reset/${data.token}`;
     const transporter = nodemailer.createTransport({
@@ -157,6 +157,7 @@ export const onPasswordResetTokenCreated = onDocumentCreated(
         본인이 요청하지 않았다면 이 이메일을 무시하세요.</p>
       `,
     });
+    console.log(`초기화 메일 발송: member ${data.member_id}`);
   }
 );
 
@@ -551,3 +552,6 @@ export const cleanupLoginLogs = onSchedule(
     console.log(`로그 정리 완료: 접속 ${loginSnap.size}건, 활동 ${actSnap.size}건 삭제`);
   }
 );
+
+// ── 인증·계정 Callable ───────────────────────────────────────────────────────
+export * from './auth';

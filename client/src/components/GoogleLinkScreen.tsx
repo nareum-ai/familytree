@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { loginMember } from '../services/authService';
+import { LOGIN_ERROR_MSG, loginMember } from '../services/authService';
 import type { Member } from '../types';
 import { GoogleIcon } from './GoogleIcon';
 import './GoogleLinkScreen.css';
@@ -25,8 +25,8 @@ export function GoogleLinkScreen({ googleEmail, displayName, onLinkedToExisting,
     setError('');
     setLoading(true);
     try {
-      const member = await loginMember(username.trim(), password);
-      if (!member) { setError('아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
+      const { member, error } = await loginMember(username.trim(), password);
+      if (!member) { setError(LOGIN_ERROR_MSG[error ?? 'invalid']); return; }
       onLinkedToExisting(member);
     } finally {
       setLoading(false);

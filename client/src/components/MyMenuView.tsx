@@ -107,7 +107,7 @@ export function MyMenuView({ onClose }: Props) {
     if (invalid) return;
     setPwLoading(true);
     try {
-      if (await changePassword(username, oldPw, newPw) === 'wrong-password') {
+      if (await changePassword(oldPw, newPw) === 'wrong-password') {
         setPwMsg({ ok: false, msg: '현재 비밀번호가 올바르지 않습니다.' });
         return;
       }
@@ -126,7 +126,7 @@ export function MyMenuView({ onClose }: Props) {
     setGoogleMsg(null);
     setGoogleLoading(true);
     try {
-      const res = await linkGoogleAccount(memberId);
+      const res = await linkGoogleAccount();
       if (!res) return; // 팝업 취소
       if (!res.ok) {
         setGoogleMsg({ ok: false, msg: res.error ?? '구글 연결 중 오류가 발생했습니다.' });
@@ -148,7 +148,7 @@ export function MyMenuView({ onClose }: Props) {
     setGoogleMsg(null);
     setGoogleLoading(true);
     try {
-      await unlinkGoogleFromMember(memberId);
+      await unlinkGoogleFromMember();
       localStorage.removeItem(LS.GOOGLE_EMAIL);
       setGoogleEmail(null);
       setGoogleMsg({ ok: true, msg: '구글 연결이 해제됐습니다.' });

@@ -13,8 +13,11 @@ User saying "변경이 안 보여요" = forgot build+deploy.
 
 --- ARCHITECTURE ---
 NO_BACKEND. Client-only + Cloud Functions.
-Auth: Firebase Auth (Google popup only) + custom Firestore members collection.
-  google_uid links Firebase Auth <-> members doc. Not using Firebase Auth for session.
+Auth: Firebase Auth custom-token sessions + custom Firestore members collection.
+  Session = Firebase Auth custom token issued by Functions (functions/src/auth.ts): uid = members doc id, claims fid(family) + adm.
+  Login/register/password/Google link/invite accept are callables. Google popup runs on separate googleAuth instance; only its ID token goes to server.
+  Password hashes (scrypt) live in member_secrets/{id} — never readable by clients.
+  main.tsx awaits syncAuthSession() (lib/authSession.ts) before render: drops local session if no matching Auth user, refreshes claims after family assignment.
   Session state = localStorage (LS.* constants from lib/storageKeys.ts). NEVER hardcode key strings.
   After login: await recordLogin(id) THEN window.location.reload(). Order matters — reload kills pending Firestore writes.
 
@@ -104,7 +107,8 @@ prefers fixing root cause over workarounds
 3. FamilyGroupRequestScreen requires !hasFamilyId check BEFORE loading check in useEffect.
 4. GoogleLinkScreen does NOT receive googleUid prop (removed — unused). App.tsx closes over googleLinkData.uid directly.
 5. PersonNode data cast requires `as unknown as PersonNodeData` due to NodeProps.data typing.
-6. Firestore rules: allow read, write: if true — no server-side auth enforcement.
+6. Firestore rules enforce family scope via token.fid. Client member/relationship/invite queries MUST include where('family_id','==',fid) or rules reject the whole query.
+   Custom token signing needs roles/iam.serviceAccountTokenCreator on 237404804989-compute SA (granted 2026-10-31).
 7. iOS browser tab has no Notification API (typeof Notification === 'undefined') — guard every Notification access. Android/desktop browser tabs DO receive push.
 8. Admin email displayed to users comes from admin member's google_email field. If admin hasn't linked Google, field is null.
 9. settings/push defaults when doc/field missing: sendHourKST 8, sendMinuteKST 0. push_prefs defaults: offsets [0,1,3,7], maxChusu 6, birthday/deathday on.
@@ -113,4 +117,4 @@ prefers fixing root cause over workarounds
 --- CURRENT_STATE ---
 Version: v1.10.0, deployed.
 Last session work (2026-10-29): anniversary push minute-level time + relation label, landing privacy section removed, unused code cleanup, SPEC v1.10.0.
-Outstanding: Firestore security rules still open (known, intentional for now).
+Outstanding: within a family, all person fields (phone/email) are readable regardless of info-disclosure approval (UI-only gating).

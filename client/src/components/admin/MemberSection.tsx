@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { Member } from '../../types';
 import { startImpersonation } from '../../lib/session';
-import { mapMemberToPerson } from '../../services/authService';
 import {
-  deleteMember, loadLoginLogs, searchPersonsByName,
+  deleteMember, mapMemberToPerson, loadLoginLogs, searchPersonsByName,
   type FamilyInfo, type LoginLog, type PersonSearchResult,
 } from '../../services/adminService';
 import { formatCompactDateTime } from '../../utils/date';

@@ -1,4 +1,18 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanupLoginLogs = exports.onPushTestCreated = exports.onBroadcastPushCreated = exports.onAnniversaryRunRequested = exports.sendAnniversaryReminders = exports.onInfoRequestCreated = exports.onApprovalRequestCreated = exports.onPasswordResetRequestCreated = exports.onPasswordResetTokenCreated = void 0;
@@ -135,8 +149,10 @@ exports.onPasswordResetTokenCreated = (0, firestore_2.onDocumentCreated)({ docum
             toEmail = (_c = personSnap.data()) === null || _c === void 0 ? void 0 : _c.email;
         }
     }
-    if (!toEmail)
+    if (!toEmail) {
+        console.warn(`초기화 메일 생략: 받을 이메일 없음 (member ${data.member_id})`);
         return;
+    }
     const link = `${APP_URL}/reset/${data.token}`;
     const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -155,6 +171,7 @@ exports.onPasswordResetTokenCreated = (0, firestore_2.onDocumentCreated)({ docum
         본인이 요청하지 않았다면 이 이메일을 무시하세요.</p>
       `,
     });
+    console.log(`초기화 메일 발송: member ${data.member_id}`);
 });
 // 관리자 초기화 요청 → 관리자 FCM 알림
 exports.onPasswordResetRequestCreated = (0, firestore_2.onDocumentCreated)('password_reset_requests/{docId}', async (event) => {
@@ -494,4 +511,6 @@ exports.cleanupLoginLogs = (0, scheduler_1.onSchedule)({ schedule: '0 0 1 * *', 
     ]);
     console.log(`로그 정리 완료: 접속 ${loginSnap.size}건, 활동 ${actSnap.size}건 삭제`);
 });
+// ── 인증·계정 Callable ───────────────────────────────────────────────────────
+__exportStar(require("./auth"), exports);
 //# sourceMappingURL=index.js.map

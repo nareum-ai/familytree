@@ -138,7 +138,7 @@ FamilyTree/
 │       ├── index.ts                # Cloud Functions (9개)
 │       └── shared/                 # relationLabel.ts(자동 생성)·generation.ts·types.ts
 ├── firebase.json
-├── firestore.rules                 # 현재: allow read, write: if true
+├── firestore.rules                 # 가족 단위 접근 제한 (커스텀 토큰 클레임 fid·adm)
 ├── firestore.indexes.json
 └── SPEC.md
 ```
@@ -193,7 +193,7 @@ interface Relationship {
 interface Member {
   id: string;
   username: string;
-  password_hash: string;           // SHA-256(salt + password), 구글 전용은 ''
+  // 비밀번호 해시는 member_secrets/{id} (scrypt, 클라이언트 접근 불가)
   person_id: string | null;
   family_id: string | null;
   person_name: string | null;
@@ -713,7 +713,7 @@ manifest: {
 
 | 항목 | 현황 |
 |------|------|
-| Firestore rules | `allow read, write: if true` (가족 내 신뢰 환경 가정) |
+| Firestore rules | 서버 발급 커스텀 토큰(uid=회원 id, fid·adm 클레임) 기준 — 같은 가족·본인 데이터만 허용, 로그인·비밀번호·초대 수락은 Functions(auth.ts) |
 | 비밀번호 | SHA-256 클라이언트 해싱 |
 | Google OAuth | Firebase Auth 표준 방식 |
 | 초대 토큰 | UUID v4, 30일 만료, 공유 시 대상자 이름 미포함, 사용 후 즉시 삭제 |
@@ -735,7 +735,7 @@ manifest: {
 | 3 | 동시 편집 충돌 | 실시간 동기화로 기본 처리, 충돌 해결 로직 없음 |
 | 4 | CSV 복수 배우자 | 배우자 1명만 지원 |
 | 5 | 가족 병합 자동화 | 수동 CSV 편집으로 가능, 전용 merge UI 미구현 |
-| 6 | Firestore 보안 규칙 | 현재 전체 공개 — 프로덕션 확장 시 규칙 강화 필요 |
+| 6 | Firestore 보안 규칙 | 가족 단위 제한 적용. 같은 가족 안에서는 정보공개 승인과 무관하게 인물 필드 열람 가능 (화면에서만 가림) |
 
 ---
 

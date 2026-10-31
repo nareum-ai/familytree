@@ -33,9 +33,11 @@ export interface InfoRequestItem {
 }
 
 // 인물의 정보공개 권한자(보유 계정) 조회 — createInfoRequest와 getInfoHolderName이 공유
-async function lookupInfoHolder(targetPersonId: string, persons: Person[]) {
+// 회원 조회는 보안 규칙상 같은 가족(family_id) 조건이 있어야 한다
+async function lookupInfoHolder(targetPersonId: string, persons: Person[], familyId: string) {
   // 1순위: 해당 인물에 직접 매핑된 계정
-  const holderSnap = await findDocs('members', where('person_id', '==', targetPersonId));
+  const holderSnap = await findDocs('members',
+    where('family_id', '==', familyId), where('person_id', '==', targetPersonId));
   if (!holderSnap.empty) {
     const d = holderSnap.docs[0];
     return {
@@ -48,7 +50,8 @@ async function lookupInfoHolder(targetPersonId: string, persons: Person[]) {
   // 2순위: created_by 계정
   const createdBy = persons.find(p => p.id === targetPersonId)?.created_by;
   if (createdBy) {
-    const creatorSnap = await findDocs('members', where('username', '==', createdBy));
+    const creatorSnap = await findDocs('members',
+      where('family_id', '==', familyId), where('username', '==', createdBy));
     if (!creatorSnap.empty) {
       const d = creatorSnap.docs[0];
       return {
@@ -299,8 +302,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
     deleteRelationshipsByPerson: async (personId) => {
       // 로컬 상태 + Firestore 직접 쿼리 병행 — 타이밍 이슈로 로컬에 없는 관계도 삭제
       const [snap1, snap2] = await Promise.all([
-        findDocs('relationships', where('person1_id', '==', personId)),
-        findDocs('relationships', where('person2_id', '==', personId)),
+        findDocs('relationships', where('family_id', '==', familyIdOrMain()), where('person1_id', '==', personId)),
+        findDocs('relationships', where('family_id', '==', familyIdOrMain()), where('person2_id', '==', personId)),
       ]);
       const ids = new Set([...snap1.docs, ...snap2.docs].map(d => d.id));
       get().relationships
@@ -327,7 +330,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
     },
 
     createInvite: async (person_id) => {
-      const snap = await findDocs('invites', where('person_id', '==', person_id));
+      const snap = await findDocs('invites',
+        where('family_id', '==', get().currentFamilyId), where('person_id', '==', person_id));
       const reusable = snap.docs.find(d => !d.data().used_at);
       if (reusable) return reusable.data().token as string;
       const token = uuidv4();
@@ -353,7 +357,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
       const myPersonId = getMyPersonId();
       const myPerson = get().persons.find(p => p.id === myPersonId);
       if (myPerson?.created_by) {
-        const creatorSnap = await findDocs('members', where('username', '==', myPerson.created_by));
+        const creatorSnap = await findDocs('members',
+          where('family_id', '==', familyIdOrMain()), where('username', '==', myPerson.created_by));
         const creatorPersonId = creatorSnap.docs[0]?.data().person_id as string | undefined;
         if (creatorPersonId) ids.add(creatorPersonId);
       }
@@ -384,7 +389,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
       }
 
       // 임시 권한 해제 중이거나, 권한자가 관리자이거나 없으면 → 즉시 자동 승인
-      const { holderMemberId, holderName, holderIsAdmin } = await lookupInfoHolder(targetPersonId, persons);
+      const { holderMemberId, holderName, holderIsAdmin } = await lookupInfoHolder(targetPersonId, persons, familyIdOrMain());
       if (!holderMemberId || holderIsAdmin || get().tempUnlockAll) return autoGrant();
 
       // 일반 회원이 권한자 → 대기 요청 생성 (이미 대기 중이면 생략)
@@ -408,7 +413,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
     },
 
     getInfoHolderName: async (targetPersonId) => {
-      const { holderName } = await lookupInfoHolder(targetPersonId, get().persons);
+      const { holderName } = await lookupInfoHolder(targetPersonId, get().persons, familyIdOrMain());
       return holderName;
     },
 
@@ -454,7 +459,8 @@ export const useFamilyStore = create<FamilyState>((set, get) => {
         });
       }
 
-      const holderSnap = await findDocs('members', where('person_id', '==', personId));
+      const holderSnap = await findDocs('members',
+        where('family_id', '==', familyIdOrMain()), where('person_id', '==', personId));
       if (!holderSnap.empty) await grantInfoAccess(holderSnap.docs[0].id, requesterPersonId);
     },
 

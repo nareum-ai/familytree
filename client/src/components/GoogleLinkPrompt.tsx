@@ -15,7 +15,6 @@ export function shouldSuggestGoogleLink(member: { google_uid?: string | null; is
 }
 
 interface Props {
-  memberId: string;
   onClose: () => void;
 }
 
@@ -23,7 +22,7 @@ interface Props {
  * Google 연결 안내 배너 — 연결하면 다음부터 아이디·비밀번호 없이 버튼 한 번으로 로그인.
  * "나중에"는 30일간 다시 띄우지 않는다.
  */
-export function GoogleLinkPrompt({ memberId, onClose }: Props) {
+export function GoogleLinkPrompt({ onClose }: Props) {
   const [busy, setBusy]   = useState(false);
   const [done, setDone]   = useState(false);
   const [error, setError] = useState('');
@@ -33,7 +32,7 @@ export function GoogleLinkPrompt({ memberId, onClose }: Props) {
     setBusy(true);
     setError('');
     try {
-      const res = await linkGoogleAccount(memberId);
+      const res = await linkGoogleAccount();
       if (!res) return; // 팝업 취소
       if (!res.ok) { setError(res.error ?? 'Google 연결 중 오류가 발생했습니다.'); return; }
       localStorage.setItem(LS.GOOGLE_EMAIL, res.email);

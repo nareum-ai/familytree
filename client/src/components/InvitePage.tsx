@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
-import { doc, getDoc, where } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { findDocs } from '../lib/firestore';
+import { getInvite, type InviteInfo } from '../services/authService';
 import { isInAppBrowser, isIOS as detectIOS, isKakaoTalk, openInExternalBrowserFromKakao } from '../lib/device';
 import { LS, SS } from '../lib/storageKeys';
 import { getMyPersonId, getUserName } from '../lib/session';
-import type { Person } from '../types';
 import { Icon } from './Icon';
 import { canonicalInviteUrl } from '../lib/inviteMessage';
 
@@ -62,35 +59,29 @@ export function InvitePage({ token }: Props) {
     };
     (async () => {
       try {
-        // 앱 전환 직후엔 네트워크가 늦게 붙어 Firestore가 실패할 수 있음 → 재시도
-        let inviteSnap;
+        // 앱 전환 직후엔 네트워크가 늦게 붙어 서버 호출이 실패할 수 있음 → 재시도
+        let invite: InviteInfo;
         for (let i = 0; ; i++) {
-          try { inviteSnap = await findDocs('invites', where('token', '==', token)); break; }
+          try { invite = await getInvite(token); break; }
           catch (e) { if (i >= 3) throw e; await sleep(1000 * (i + 1)); }
         }
-        if (inviteSnap.empty) {
+        if (invite.status === 'notfound') {
           // 예전 방식(사용 후 삭제)으로 처리된 초대일 수 있음 — 로그인 상태면 그냥 홈으로
           if (loggedIn) { goHome(); return; }
           throw new Error('not found');
         }
-        const invite = inviteSnap.docs[0].data();
 
         // 내 인물에 대한 초대 → 이미 가입한 본인이 다시 누른 것
-        if (loggedIn && invite.person_id === getMyPersonId()) { goHome(); return; }
+        if (loggedIn && invite.personId === getMyPersonId()) { goHome(); return; }
 
         // 이미 사용된 초대이거나, 해당 인물에 연결된 계정이 이미 있음
-        const mapped = invite.used_at ? null
-          : await findDocs('members', where('person_id', '==', invite.person_id));
-        if (invite.used_at || (mapped && !mapped.empty)) {
+        if (invite.status === 'used') {
           if (loggedIn) { goHome(); return; }
           throw new Error('used');
         }
 
-        setSenderName(invite.created_by ?? null);
-
-        const personSnap = await getDoc(doc(db, 'persons', invite.person_id as string));
-        if (!personSnap.exists()) throw new Error('person not found');
-        const person = { ...(personSnap.data() as Omit<Person, 'id'>), id: personSnap.id };
+        setSenderName(invite.senderName ?? null);
+        const person = { id: invite.personId!, name: invite.personName ?? '', family_id: invite.familyId };
 
         // 초대 컨텍스트 저장 — sessionStorage(현재 탭)와 localStorage(앱 설치 후 재진입 대비)
         sessionStorage.setItem(SS.INVITE_TOKEN,       token);

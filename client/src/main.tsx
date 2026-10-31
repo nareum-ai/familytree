@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { setAdminPWAMode, SS } from './lib/storageKeys.ts'
 import { initInstallPromptListener } from './lib/installPrompt.ts'
+import { syncAuthSession } from './lib/authSession.ts'
 
 initInstallPromptListener();
 
@@ -17,8 +18,11 @@ if (sessionStorage.getItem(SS.ADMIN_PWA) === '1') {
   setAdminPWAMode(true);
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// 로그인 세션 확인이 끝난 뒤 렌더 — 첫 Firestore 요청부터 보안 규칙을 통과하도록
+syncAuthSession().finally(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+})
