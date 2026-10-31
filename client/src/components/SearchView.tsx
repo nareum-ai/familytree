@@ -62,7 +62,7 @@ export function SearchView({ onClose }: Props) {
                 onClick={() => branches.length > 0 ? handleClick(p.id) : undefined}
               >
                 <div className={`search-hex ${p.gender === 'male' ? 'male' : 'female'} ${p.is_root ? 'root' : ''} ${p.is_deceased ? 'deceased' : ''}`}>
-                  {p.name[0]}
+                  {p.photo_url ? <span className="search-hex-inner"><img src={p.photo_url} alt="" /></span> : p.name[0]}
                 </div>
                 <div className="search-info">
                   <span className="search-name">

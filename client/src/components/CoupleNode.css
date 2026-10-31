@@ -33,9 +33,9 @@
   position: relative;
 }
 
-.chex.male .chex-shape    { background: linear-gradient(150deg, var(--male), var(--male-dark)); }
-.chex.female .chex-shape  { background: linear-gradient(150deg, var(--female), var(--female-dark)); }
-.chex.me .chex-shape      { background: linear-gradient(150deg, var(--gold), var(--gold-dark)); }
+.chex.male .chex-shape    { background: var(--male); }
+.chex.female .chex-shape  { background: var(--female); }
+.chex.me .chex-shape      { background: var(--gold); }
 
 .chex.selected .chex-shape {
   filter: drop-shadow(0 0 8px rgba(46,94,78,0.6));
@@ -77,20 +77,21 @@
 }
 
 .anon-chex { cursor: default; }
-.anon-chex .anon-hex { background: linear-gradient(135deg, var(--text-4), var(--text-3)) !important; }
+.anon-chex .anon-hex { background: var(--text-4) !important; }
 .anon-chex .anon-icon { font-size: var(--fs-18); }
 .anon-chex .anon-name { color: var(--text-4) !important; font-style: italic; }
 
 /* 고인: 테두리는 회갈색, 아바타는 살짝 바래게, 이름은 연하게 */
-.chex.deceased .chex-shape { background: linear-gradient(150deg, var(--deceased), var(--deceased-dark)); }
+.chex.deceased .chex-shape { background: var(--deceased); }
 .chex.deceased .avatar-hex-inner img { filter: grayscale(45%); opacity: 0.88; }
 .chex.deceased .chex-name { color: var(--text-3); }
 
 .chex-name {
+  line-height: 1.35;
   font-size: var(--fs-12);
   font-weight: 700;
   color: var(--text);
-  margin-top: 6px;
+  margin-top: 5px;
   text-align: center;
   max-width: 76px;
   overflow: hidden;
@@ -99,11 +100,24 @@
   font-family: 'Pretendard Variable', sans-serif;
 }
 
+/* 이름 아래: 관계명 한 줄, 나이 한 줄 */
+.node-relation {
+  max-width: 76px;
+  font-size: var(--fs-10);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chex.me .node-relation { color: var(--gold-dark); font-weight: 800; }
 .chex-age {
   font-weight: 400;
-  color: var(--text-3);
-  font-size: var(--fs-12);
-  margin-left: 2px;
+  color: var(--text-4);
+  font-size: var(--fs-9);
+  line-height: 1.3;
 }
 
 .chex-birth {
@@ -112,41 +126,27 @@
   margin-top: 1px;
 }
 
+/* 촌수: 육각형 왼쪽 위에 작은 테두리 알약 */
 .chusu-badge {
   position: absolute;
-  top: -6px;
-  left: calc(50% - 40px);
-  background: var(--pri);
-  color: white;
+  top: -4px;
+  left: calc(50% - 38px);
+  background: var(--surface);
+  color: var(--pri);
+  border: 1.5px solid var(--pri);
   font-size: 10px;
-  font-weight: 700;
-  border-radius: 11px;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 4px;
+  font-weight: 800;
+  border-radius: 10px;
+  min-width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 5px;
   white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  box-shadow: 0 1px 3px rgba(42,38,32,0.2);
 }
-
-.me-badge {
-  position: absolute;
-  top: -6px;
-  right: calc(50% - 40px);
-  background: var(--gold);
-  color: white;
-  font-size: 9px;
-  font-weight: 800;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(42,38,32,0.2);
-}
+.chex.female .chusu-badge { color: var(--female-dark); border-color: var(--female); }
+.chex.deceased .chusu-badge { color: var(--deceased-dark); border-color: var(--deceased); }
 

@@ -91,6 +91,14 @@ function findBloodPath(baseId: string, targetId: string, g: Graph): BloodPath | 
   return best;
 }
 
+/** 4촌 경로의 사촌 종류: 아버지 쪽 고모면 고종, 어머니 쪽은 외/이종 */
+function cousinPrefix(bp: BloodPath, g: Graph): string {
+  const maternal = g.byId.get(bp.basePath[1])?.gender === 'female';
+  const uncleIsFemale = g.byId.get(bp.targetPath[1])?.gender === 'female';
+  if (maternal) return uncleIsFemale ? '이종사촌' : '외사촌';
+  return uncleIsFemale ? '고종사촌' : '사촌';
+}
+
 function bloodLabel(bp: BloodPath, base: Person, target: Person, g: Graph): string {
   const { up, down, basePath, targetPath } = bp;
   const t: Gender = target.gender;
@@ -147,11 +155,13 @@ function bloodLabel(bp: BloodPath, base: Person, target: Person, g: Graph): stri
     return '삼촌';
   }
 
-  // ── 사촌 (4촌) ── 친사촌 / 고종사촌 / 외사촌 / 이종사촌
+  // ── 사촌 (4촌) ── 친사촌 / 고종사촌 / 외사촌 / 이종사촌 + 형·누나·오빠·언니·동생
   if (up === 2 && down === 2) {
-    const uncleIsFemale = gender(targetPath[1]) === 'female';
-    if (maternal) return uncleIsFemale ? '이종사촌' : '외사촌';
-    return uncleIsFemale ? '고종사촌' : '사촌';
+    const prefix = cousinPrefix(bp, g);
+    const cmp = ageCompare(target, base);
+    if (cmp < 0) return `${prefix}동생`;
+    if (cmp > 0) return prefix + (F ? (me === 'male' ? '누나' : '언니') : (me === 'female' ? '오빠' : '형'));
+    return prefix; // 나이 판별 불가 → 손위·손아래를 붙이지 않음
   }
 
   // ── 5촌 조카: 당질 / 종질 ──
@@ -297,6 +307,11 @@ export function getRelationLabel(
     if (rbp.up === 1 && rbp.down === 1) {
       const lbl = siblingSpouseLabel(rel, base, target);
       if (lbl) return lbl;
+    }
+    // 사촌의 배우자: 사촌형수 / 사촌매형 / 외사촌올케 …
+    if (rbp.up === 2 && rbp.down === 2 && ageCompare(rel, base) !== 0) {
+      const lbl = siblingSpouseLabel(rel, base, target);
+      if (lbl) return cousinPrefix(rbp, g) + lbl;
     }
     // 여기 도달한 부모의 배우자는 내 친부모가 아님 → 새어머니/새아버지
     const relLabel = bloodLabel(rbp, base, rel, g);

@@ -5,6 +5,7 @@ import { useFamilyStore } from '../store/familyStore';
 import { getManAge, getAgeAtDeath } from '../utils/age';
 import './CoupleNode.css';
 import { Icon } from './Icon';
+import { useRelationLabel } from '../hooks/useRelationLabel';
 
 interface CoupleNodeData {
   persons: Person[];
@@ -22,6 +23,7 @@ function HexAvatar({
 }) {
   const isMale = person.gender === 'male';
   const deceased = person.is_deceased;
+  const relation = useRelationLabel(person.id);
 
   if (anon) {
     return (
@@ -41,7 +43,6 @@ function HexAvatar({
       onClick={onClick}
     >
       {chusu !== null && chusu > 0 && <div className="chusu-badge">{chusu}촌</div>}
-      {showME && <div className="me-badge">나</div>}
       <div className="chex-shape-wrapper">
         <div className="chex-shape">
           {person.photo_url
@@ -50,11 +51,12 @@ function HexAvatar({
         </div>
       </div>
       <div className="chex-name">{deceased && <span className="deceased-prefix">故</span>}{person.name}</div>
+      {(showME || relation) && <div className="node-relation">{showME ? '나' : relation}</div>}
       {person.birth_date && (
         <div className="chex-age">
           {person.is_deceased && person.death_date
-            ? `(향 ${getAgeAtDeath(person.birth_date, person.death_date)})`
-            : `(${getManAge(person.birth_date)})`}
+            ? `향 ${getAgeAtDeath(person.birth_date, person.death_date)}`
+            : `${getManAge(person.birth_date)}세`}
         </div>
       )}
     </div>

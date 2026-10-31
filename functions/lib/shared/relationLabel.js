@@ -87,6 +87,15 @@ function findBloodPath(baseId, targetId, g) {
     }
     return best;
 }
+/** 4촌 경로의 사촌 종류: 아버지 쪽 고모면 고종, 어머니 쪽은 외/이종 */
+function cousinPrefix(bp, g) {
+    var _a, _b;
+    const maternal = ((_a = g.byId.get(bp.basePath[1])) === null || _a === void 0 ? void 0 : _a.gender) === 'female';
+    const uncleIsFemale = ((_b = g.byId.get(bp.targetPath[1])) === null || _b === void 0 ? void 0 : _b.gender) === 'female';
+    if (maternal)
+        return uncleIsFemale ? '이종사촌' : '외사촌';
+    return uncleIsFemale ? '고종사촌' : '사촌';
+}
 function bloodLabel(bp, base, target, g) {
     var _a, _b;
     const { up, down, basePath, targetPath } = bp;
@@ -154,12 +163,15 @@ function bloodLabel(bp, base, target, g) {
             return ((_b = (_a = g.spousesOf.get(target.id)) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0 ? '작은아버지' : '삼촌';
         return '삼촌';
     }
-    // ── 사촌 (4촌) ── 친사촌 / 고종사촌 / 외사촌 / 이종사촌
+    // ── 사촌 (4촌) ── 친사촌 / 고종사촌 / 외사촌 / 이종사촌 + 형·누나·오빠·언니·동생
     if (up === 2 && down === 2) {
-        const uncleIsFemale = gender(targetPath[1]) === 'female';
-        if (maternal)
-            return uncleIsFemale ? '이종사촌' : '외사촌';
-        return uncleIsFemale ? '고종사촌' : '사촌';
+        const prefix = cousinPrefix(bp, g);
+        const cmp = ageCompare(target, base);
+        if (cmp < 0)
+            return `${prefix}동생`;
+        if (cmp > 0)
+            return prefix + (F ? (me === 'male' ? '누나' : '언니') : (me === 'female' ? '오빠' : '형'));
+        return prefix; // 나이 판별 불가 → 손위·손아래를 붙이지 않음
     }
     // ── 5촌 조카: 당질 / 종질 ──
     if (up === 2 && down === 3) {
@@ -309,6 +321,12 @@ function getRelationLabel(targetId, base, persons, rels) {
             const lbl = siblingSpouseLabel(rel, base, target);
             if (lbl)
                 return lbl;
+        }
+        // 사촌의 배우자: 사촌형수 / 사촌매형 / 외사촌올케 …
+        if (rbp.up === 2 && rbp.down === 2 && ageCompare(rel, base) !== 0) {
+            const lbl = siblingSpouseLabel(rel, base, target);
+            if (lbl)
+                return cousinPrefix(rbp, g) + lbl;
         }
         // 여기 도달한 부모의 배우자는 내 친부모가 아님 → 새어머니/새아버지
         const relLabel = bloodLabel(rbp, base, rel, g);

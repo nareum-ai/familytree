@@ -253,28 +253,12 @@ function getChusu(personId, baseId, rels) {
     }
     return null;
 }
-// 사촌류(혈족)는 나이·성별로 형/누나/오빠/언니/동생을 붙임 — '사촌' → '사촌형'
-function withSibTitle(relation, base, target) {
-    var _a, _b;
-    if (!/사촌$/.test(relation) || relation.includes(' '))
-        return relation;
-    const bb = (_a = base.birth_date) !== null && _a !== void 0 ? _a : '', tb = (_b = target.birth_date) !== null && _b !== void 0 ? _b : '';
-    if (!bb || !tb || bb === tb)
-        return relation;
-    if (tb > bb)
-        return `${relation}동생`;
-    if (base.gender === 'female')
-        return relation + (target.gender === 'female' ? '언니' : '오빠');
-    if (base.gender === 'male')
-        return relation + (target.gender === 'female' ? '누나' : '형');
-    return relation;
-}
 // '사촌형 홍재학' 처럼 관계명을 이름 앞에 붙임 — 관계를 못 구하면 이름만
 function annivName(target, base, persons, rels) {
     const relation = base ? (0, relationLabel_1.getRelationLabel)(target.id, base, persons, rels) : '';
     if (!base || !relation || relation.includes('세대') || relation === '나')
         return target.name;
-    return `${withSibTitle(relation, base, target)} ${target.name}`;
+    return `${relation} ${target.name}`;
 }
 function annivWhen(offset) {
     return offset === 0 ? '오늘' : offset === 1 ? '내일' : `${offset}일 후`;

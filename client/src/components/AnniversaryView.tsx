@@ -11,6 +11,7 @@ import { NotifBlockedModal } from './NotifBlockedModal';
 import './AnniversaryView.css';
 import './NotifBlockedModal.css';
 import { Icon } from './Icon';
+import type { Person } from '../types';
 
 interface PushPrefs {
   enabled: boolean;
@@ -35,54 +36,99 @@ interface Props {
   onClose: () => void;
 }
 
-function DayChip({ days }: { days: number }) {
-  if (days === 0) return <span className="day-chip today">오늘</span>;
-  if (days <= 7)  return <span className="day-chip soon">D-{days}</span>;
-  if (days <= 30) return <span className="day-chip near">D-{days}</span>;
-  return <span className="day-chip far">D-{days}</span>;
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function annTitle(item: AnniversaryItem): string {
+  return `${item.personName} ${item.type}`;
+}
+
+/** 관계, 음력 날짜, 나이·주년 — 있는 것만 쉼표로 잇는다 */
+function annDetail(item: AnniversaryItem): string {
+  const relation = item.type === '결혼기념일'
+    ? ''
+    : (item.relationLabel ?? (item.chusu != null ? `${item.chusu}촌` : ''));
+  let lunar = '';
+  if (item.isLunar && item.lunarMonthDay) {
+    const [m, d] = item.lunarMonthDay.split('.');
+    lunar = d ? `음력 ${m}월 ${d}일` : `음력 ${item.lunarMonthDay}`;
+  }
+  const count = item.count == null ? ''
+    : item.type === '생일' ? `만 ${item.count}세`
+    : item.type === '결혼기념일' ? `${item.count}주년`
+    : `${item.count}주기`;
+  return [relation, lunar, count].filter(Boolean).join(', ');
+}
+
+function AnnAvatar({ person, size }: { person?: Person; size: 'md' | 'lg' }) {
+  const tone = !person ? '' : person.is_deceased ? 'deceased' : person.gender === 'male' ? 'male' : 'female';
+  return (
+    <span className={`ann-avatar ${size} ${tone}`}>
+      {person?.photo_url
+        ? <img src={person.photo_url} alt="" />
+        : <span className="ann-avatar-initial">{person?.name?.[0] ?? '?'}</span>}
+    </span>
+  );
 }
 
 function AnniversaryRow({
-  item, onClick,
+  item, person, onClick,
 }: {
   item: AnniversaryItem;
+  person?: Person;
   onClick: () => void;
 }) {
-  const countLabel = item.type === '생일'
-    ? `만 ${item.count}세`
-    : item.type === '결혼기념일'
-      ? `${item.count}주년`
-      : `${item.count}주기`;
-  const chusuLabel = item.type === '결혼기념일'
-    ? ''
-    : (item.relationLabel ?? (item.chusu != null ? `${item.chusu}촌` : ''));
-
+  const d = item.nextSolarDate;
+  const wd = WEEKDAYS[d.getDay()];
   return (
-    <div
-      className={`ann-row clickable ${item.type === '기일' ? 'memorial' : ''} ${item.type === '결혼기념일' ? 'wedding' : ''}`}
+    <button
+      type="button"
+      className={`ann-row ${item.type === '기일' ? 'memorial' : ''}`}
       onClick={onClick}
     >
-      <DayChip days={item.daysUntil} />
-      <div className="ann-info">
-        <span className="ann-name">{item.personName}</span>
-        {chusuLabel && <span className="ann-chusu">{chusuLabel}</span>}
-        <span className={`ann-type ${item.type === '기일' ? 'memorial' : item.type === '결혼기념일' ? 'wedding' : 'birthday'}`}>
-          {item.type}
-        </span>
-      </div>
-      <div className="ann-date">
-        <span className="ann-date-main">
-          {item.isLunar && item.solarConverted
-            ? `${formatDate(item.nextSolarDate)} (음 ${item.lunarMonthDay})`
-            : item.isLunar
-              ? `음 ${item.lunarMonthDay}`
-              : formatDate(item.nextSolarDate)
-          }
-        </span>
-        <span className="ann-count">{countLabel}</span>
-      </div>
-    </div>
+      <span className={`ann-day ${d.getDay() === 0 ? 'sun' : ''}`}>
+        <span className="ann-day-num">{d.getDate()}</span>
+        <span className="ann-day-wd">{wd}</span>
+      </span>
+      <AnnAvatar person={person} size="md" />
+      <span className="ann-info">
+        <span className="ann-name">{annTitle(item)}</span>
+        <span className="ann-detail">{annDetail(item)}</span>
+      </span>
+      <span className="ann-dday">D-{item.daysUntil}</span>
+    </button>
   );
+}
+
+function TodayCard({ item, person, onClick }: { item: AnniversaryItem; person?: Person; onClick: () => void }) {
+  const d = item.nextSolarDate;
+  return (
+    <button type="button" className="ann-today-card" onClick={onClick}>
+      <AnnAvatar person={person} size="lg" />
+      <span className="ann-info">
+        <span className="ann-today-label">오늘, {formatDate(d)} {WEEKDAYS[d.getDay()]}요일</span>
+        <span className="ann-today-title">{annTitle(item)}</span>
+        <span className="ann-detail">{annDetail(item)}</span>
+      </span>
+    </button>
+  );
+}
+
+/** 오늘 이후 항목을 양력 날짜의 연·월로 묶는다 (items는 가까운 순) */
+function groupByMonth(items: AnniversaryItem[]) {
+  const thisYear = new Date().getFullYear();
+  const groups: { key: string; label: string; items: AnniversaryItem[] }[] = [];
+  for (const item of items) {
+    const d = item.nextSolarDate;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== key) {
+      const label = d.getFullYear() === thisYear ? `${d.getMonth() + 1}월` : `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
+      g = { key, label, items: [] };
+      groups.push(g);
+    }
+    g.items.push(item);
+  }
+  return groups;
 }
 
 export function AnniversaryView({ onClose }: Props) {
@@ -203,8 +249,10 @@ export function AnniversaryView({ onClose }: Props) {
     }
   };
 
-  const upcoming = items.filter(i => i.daysUntil <= 90);
-  const later    = items.filter(i => i.daysUntil > 90);
+  const personById = useMemo(() => new Map(persons.map(p => [p.id, p])), [persons]);
+  const todayItems = items.filter(i => i.daysUntil === 0);
+  const monthGroups = groupByMonth(items.filter(i => i.daysUntil > 0));
+  const itemKey = (item: AnniversaryItem) => `${item.relationshipId ?? item.personId}-${item.type}`;
 
   return (
     <>
@@ -333,22 +381,19 @@ export function AnniversaryView({ onClose }: Props) {
             <p className="ann-empty">생년월일 또는 기일이 입력된 가족이 없습니다.</p>
           ) : (
             <div className="ann-list">
-              {upcoming.length > 0 && (
-                <>
-                  <div className="ann-section-label">90일 이내</div>
-                  {upcoming.map(item => (
-                    <AnniversaryRow key={`${item.relationshipId ?? item.personId}-${item.type}`} item={item} onClick={() => handleClick(item)} />
-                  ))}
-                </>
-              )}
-              {later.length > 0 && (
-                <>
-                  <div className="ann-section-label">이후 ({later.length}건)</div>
-                  {later.map(item => (
-                    <AnniversaryRow key={`${item.relationshipId ?? item.personId}-${item.type}`} item={item} onClick={() => handleClick(item)} />
-                  ))}
-                </>
-              )}
+              {todayItems.map(item => (
+                <TodayCard key={itemKey(item)} item={item} person={personById.get(item.personId)} onClick={() => handleClick(item)} />
+              ))}
+              {monthGroups.map(g => (
+                <section key={g.key} className="ann-month">
+                  <h3 className="ann-month-title">{g.label}<span className="ann-month-count">{g.items.length}건</span></h3>
+                  <div className="ann-group">
+                    {g.items.map(item => (
+                      <AnniversaryRow key={itemKey(item)} item={item} person={personById.get(item.personId)} onClick={() => handleClick(item)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
           )
         )}

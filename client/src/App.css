@@ -576,6 +576,8 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 700;
   color: var(--deceased-dark);
   margin-right: 2px;
+  /* 명조 글꼴의 높은 줄 높이가 이름 줄을 밀어내지 않게 */
+  line-height: 1;
 }
 
 /* ── 모바일 가독성·조작성 보정 (노안 사용자) ───────────────────────────── */

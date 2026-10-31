@@ -88,7 +88,7 @@ export function InviteFamilyView({ onClose }: Props) {
           ) : pending.map(({ person: p, chusu, label }) => (
             <div key={p.id} className="invfam-item">
               <div className="invfam-row">
-                <div className={`search-hex ${p.gender === 'male' ? 'male' : 'female'}`}>{p.name[0]}</div>
+                <div className={`search-hex ${p.gender === 'male' ? 'male' : 'female'}`}>{p.photo_url ? <span className="search-hex-inner"><img src={p.photo_url} alt="" /></span> : p.name[0]}</div>
                 <div className="search-info">
                   <span className="search-name">
                     {p.name}
@@ -116,7 +116,7 @@ export function InviteFamilyView({ onClose }: Props) {
               <p className="invfam-section">이미 가입한 가족 {joined.length}명</p>
               {joined.map(({ person: p, chusu, label }) => (
                 <div key={p.id} className="invfam-row joined">
-                  <div className={`search-hex ${p.gender === 'male' ? 'male' : 'female'}`}>{p.name[0]}</div>
+                  <div className={`search-hex ${p.gender === 'male' ? 'male' : 'female'}`}>{p.photo_url ? <span className="search-hex-inner"><img src={p.photo_url} alt="" /></span> : p.name[0]}</div>
                   <div className="search-info">
                     <span className="search-name">
                       {p.name}

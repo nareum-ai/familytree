@@ -5,6 +5,7 @@ import { getManAge, getAgeAtDeath } from '../utils/age';
 import { useFamilyStore } from '../store/familyStore';
 import './PersonNode.css';
 import { Icon } from './Icon';
+import { useRelationLabel } from '../hooks/useRelationLabel';
 
 interface PersonNodeData {
   person: Person;
@@ -23,6 +24,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
   const isMale = person.gender === 'male';
   const show나 = viewpointPersonId ? viewpointPersonId === person.id : isRoot;
   const deceased = person.is_deceased;
+  const relation = useRelationLabel(person.id);
 
   // 익명 노드: 작성자가 아닌 경우 회색 잠금 육각형
   if (anon) {
@@ -45,7 +47,6 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {chusu !== null && chusu > 0 && <div className="chusu-badge">{chusu}촌</div>}
-      {show나 && <div className="me-badge">나</div>}
 
       <div className="hex-wrapper">
         <div className="hex-shape">
@@ -56,11 +57,12 @@ export const PersonNode = memo(({ data, selected }: NodeProps) => {
       </div>
 
       <div className="person-name">{deceased && <span className="deceased-prefix">故</span>}{person.name}</div>
+      {(show나 || relation) && <div className="node-relation">{show나 ? '나' : relation}</div>}
       {person.birth_date && (
         <div className="person-age">
           {person.is_deceased && person.death_date
-            ? `(향 ${getAgeAtDeath(person.birth_date, person.death_date)})`
-            : `(${getManAge(person.birth_date)})`}
+            ? `향 ${getAgeAtDeath(person.birth_date, person.death_date)}`
+            : `${getManAge(person.birth_date)}세`}
         </div>
       )}
 
