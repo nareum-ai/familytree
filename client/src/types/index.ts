@@ -20,10 +20,10 @@ export interface Person {
   created_at: string;
   phone?: string | null;
   email?: string | null;
-  recent_status?: RecentStatus[] | null;  // 근황 (최신순 최대 3개 유지)
 }
 
-interface RecentStatus {
+/** 인물 메모 한 줄 — person_memos 에 저장, 쓴 사람만 볼 수 있다 (인물 본인도 못 봄) */
+export interface MemoEntry {
   text: string;
   at: string;  // 작성일 ("YYYY-MM-DD")
 }
