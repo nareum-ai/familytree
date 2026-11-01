@@ -3,7 +3,7 @@
 // 결과:
 //   store_icon_512.png        — 스토어 앱 아이콘 (512×512)
 //   feature_graphic.png       — 그래픽 이미지 (1024×500)
-//   screenshot_1~3.png        — 휴대전화 스크린샷 (1080×1920)
+//   screenshot_1~4.png        — 휴대전화 스크린샷 (1080×1920)
 //   client/public/icons/maskable-192.png, maskable-512.png — 안드로이드 적응형 아이콘
 const puppeteer = require('puppeteer');
 const { Resvg } = require('@resvg/resvg-js');
@@ -267,6 +267,49 @@ function inviteScreen() {
   </div>`;
 }
 
+// 4) 정보공개 요청
+function privacyScreen() {
+  const lock = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>';
+  const lockIcon = (s, c) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0">${lock}</svg>`;
+  const reqs = [
+    { a: 'm_professor', g: 'male', n: '김태호', rel: '3촌 · 작은아버지', when: '방금 전' },
+    { a: 'f_cook', g: 'female', n: '최나영', rel: '3촌 · 작은어머니', when: '어제' },
+  ];
+  return `
+  <div style="padding:18px 16px 6px">
+    <span class="serif" style="font-size:20px;font-weight:700">정보공개 요청</span>
+    <div style="font-size:13px;color:${C.text3};margin-top:4px">내 연락처·생일을 볼 수 있는 사람을 직접 정해요</div>
+  </div>
+  <div style="margin:10px 14px;background:${C.surface};border:1px solid ${C.border};border-radius:16px;overflow:hidden">
+    ${reqs.map((r, i) => `
+    <div style="padding:14px;${i < reqs.length - 1 ? `border-bottom:1px solid ${C.surface3}` : ''}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="ring hex ${r.g}" style="width:40px;height:44px;flex-shrink:0"><div class="inner hex" style="width:34px;height:38px"><img src="${avatar(r.a)}"></div></div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700">${r.n}</div>
+          <div style="font-size:12px;color:${C.text3};margin-top:2px">${r.rel} · ${r.when}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <div style="flex:1;text-align:center;padding:10px 0;border-radius:10px;background:${C.pri};color:#fff;font-size:14px;font-weight:700">승인</div>
+        <div style="flex:1;text-align:center;padding:10px 0;border-radius:10px;border:1px solid ${C.border};color:${C.text2};font-size:14px;font-weight:600">거절</div>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div style="margin:14px;padding:16px;background:${C.surface};border:1px solid ${C.border};border-radius:16px;display:flex;gap:14px;align-items:center">
+    <div style="position:relative">
+      <div class="ring hex deceased" style="width:56px;height:62px;opacity:.7"><div class="inner hex" style="width:48px;height:54px;background:${C.surface3};display:flex;align-items:center;justify-content:center">${lockIcon(22, C.text3)}</div></div>
+    </div>
+    <div style="flex:1;font-size:13px;color:${C.text2};line-height:1.55">
+      <b style="color:${C.text}">2촌 이내 가족</b>은 바로 보이고,<br>먼 친척은 <b style="color:${C.pri}">서로 승인</b>해야 정보가 열려요
+    </div>
+  </div>
+  <div style="margin:0 14px;padding:14px 16px;border-radius:14px;background:${C.pri};color:${C.bg};display:flex;gap:12px;align-items:center">
+    ${lockIcon(22, '#F3C9A8')}
+    <div style="font-size:13px;line-height:1.5">초대받은 가족만 들어올 수 있는<br><b>우리 가족만의 비공개 공간</b>이에요</div>
+  </div>`;
+}
+
 // ── 그래픽 이미지 1024×500 ───────────────────────────────────────────────
 function featureHTML() {
   const g = [{ n: '김대수', a: 'm_hanbok_elder', g: 'male' }, { n: '이복순', a: 'f_hanbok_elder', g: 'female' }];
@@ -310,6 +353,7 @@ function featureHTML() {
     { name: 'screenshot_1.png', w: W, h: H, scale: 2, html: shot('3대 가족을<br>한눈에', '아바타로 그리는 우리 집 가계도.<br>돌아가신 분도 함께 기억해요.', treeScreen(), '') },
     { name: 'screenshot_2.png', w: W, h: H, scale: 2, html: shot('음력 생신까지<br>잊지 않게', '생일·결혼기념일·기일을 모아<br>다가오는 날을 알려드려요.', annScreen(), '기념일') },
     { name: 'screenshot_3.png', w: W, h: H, scale: 2, html: shot('링크 하나로<br>가족을 초대해요', '카카오톡으로 보내면 가입과 동시에<br>가계도에 연결돼요.', inviteScreen(), '초대') },
+    { name: 'screenshot_4.png', w: W, h: H, scale: 2, html: shot('우리 가족 정보는<br>우리끼리만', '연락처·생일은 승인한 가족에게만<br>보여요.', privacyScreen(), 'My') },
   ];
   console.log('스토어 이미지');
   for (const j of jobs) {
